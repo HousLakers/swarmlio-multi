@@ -1,0 +1,29 @@
+experiment_id: two_uav_smoke_v1
+uav_count: 2
+duration_sim_s: 120
+repetitions: 1
+seed: 20260814
+single_uav_baseline: LE8-E
+platform_repository: /home/houslakers/auto_tune_racer/racer-platform
+platform_commit: 3728134aa67227993127c4060567882efc18dd63
+baseline_runtime:
+  obstacles_inflation: 0.35
+  progress_guard_enabled: false
+  global_trajectory_guard_enabled: false
+  global_trajectory_reject_unknown: false
+  registration_source: gt
+map_mode: shared_async
+partition_mode: static
+communication_delay_ms: 0
+launch_command: REPLACE_WITH_VERIFIED_2UAV_LAUNCH_COMMAND
+metrics:
+  - per_uav_completion
+  - per_uav_freeze
+  - per_uav_crash
+  - per_uav_coverage
+  - fleet_coverage
+  - overlap_ratio
+  - minimum_inter_uav_distance
+  - contact_count
+  - telemetry_completeness
+abort_on: [crash, severe_contact, corrupted_telemetry]
