@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<launch>
+  <node pkg="swarm_lio" type="px4_bridge.py" name="px4_bridge_1" output="log">
+    <param name="drone_id" value="1"/>
+    <param name="mavros_ns" value="/uav0"/>
+    <param name="init_pos" type="yaml" value="[0.0, 0.0]"/>
+    <param name="odom_topic" value="/mavros_relay/odom_1"/>
+  </node>
+  <node pkg="swarm_lio" type="px4_bridge.py" name="px4_bridge_2" output="log">
+    <param name="drone_id" value="2"/>
+    <param name="mavros_ns" value="/uav1"/>
+    <param name="init_pos" type="yaml" value="[1.5, 0.0]"/>
+    <param name="odom_topic" value="/mavros_relay/odom_2"/>
+  </node>
+</launch>

@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="map_size_x" default="50.0"/>
+  <arg name="map_size_y" default="50.0"/>
+  <arg name="map_size_z" default="3.0"/>
+  <arg name="simulation" default="px4"/>
+  <param name="use_sim_time" value="true"/>
+
+  <!-- The included frozen file owns all single-node algorithm parameters. -->
+  <include file="$(find exploration_manager)/launch/single_drone_exploration.xml">
+    <arg name="drone_id" value="1"/><arg name="drone_num" value="2"/>
+    <arg name="init_x" value="0.0"/><arg name="init_y" value="0.0"/><arg name="init_z" value="0.0"/>
+    <arg name="map_size_x" value="$(arg map_size_x)"/><arg name="map_size_y" value="$(arg map_size_y)"/><arg name="map_size_z" value="$(arg map_size_z)"/>
+    <arg name="odom_prefix" value="/lidar_slam/odom"/>
+    <arg name="simulation" value="$(arg simulation)"/>
+  </include>
+  <include file="$(find exploration_manager)/launch/single_drone_exploration.xml">
+    <arg name="drone_id" value="2"/><arg name="drone_num" value="2"/>
+    <arg name="init_x" value="1.5"/><arg name="init_y" value="0.0"/><arg name="init_z" value="0.0"/>
+    <arg name="map_size_x" value="$(arg map_size_x)"/><arg name="map_size_y" value="$(arg map_size_y)"/><arg name="map_size_z" value="$(arg map_size_z)"/>
+    <arg name="odom_prefix" value="/lidar_slam/odom"/>
+    <arg name="simulation" value="$(arg simulation)"/>
+  </include>
+
+  <!-- Environment-only bounds for the versioned 50x50 public baseline. -->
+  <param name="/exploration_node_1/sdf_map/box_min_x" value="-24.5"/>
+  <param name="/exploration_node_1/sdf_map/box_min_y" value="-24.5"/>
+  <param name="/exploration_node_1/sdf_map/box_max_x" value="24.5"/>
+  <param name="/exploration_node_1/sdf_map/box_max_y" value="24.5"/>
+  <param name="/exploration_node_2/sdf_map/box_min_x" value="-24.5"/>
+  <param name="/exploration_node_2/sdf_map/box_min_y" value="-24.5"/>
+  <param name="/exploration_node_2/sdf_map/box_max_x" value="24.5"/>
+  <param name="/exploration_node_2/sdf_map/box_max_y" value="24.5"/>
+</launch>

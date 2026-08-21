@@ -13,6 +13,12 @@ platform_commit: 57c1f34
 platform_role: LE8E host-runtime-smoke-verified baseline
 ```
 
+本次多机节点候选不是裸 LE8-E，而是在同一公共环境上应用
+`swarmlio-single@c01f1f5af40ec25631aa11765a0f21e06834abc4` 提供的
+`range20m_omnidirectional_v1` overlay。完整 hash、导入和回读命令见
+`handoff/SINGLE_TO_MULTI_TRANSFER_20260820.md`。必须先固定公共平台，再安装 overlay；
+不得把带未记录本地修改的平台作为公共基线。
+
 不要用 `latest`、未提交的本地目录或浮动 branch 作为实验环境身份。环境升级时，先在 `racer-platform` 形成新 commit，再更新本文件中的 commit。
 
 ## 队友安装/同步
@@ -79,10 +85,15 @@ cd /home/houslakers/auto_tune_racer/swarmlio_multi
 
 必须先完成：
 
-1. `handoff/SINGLE_UAV_BASELINE.md` 与当前 platform commit 一致；
-2. `experiments/manifests/2uav_smoke.yaml` 填入经过批准的 2-UAV 启动入口；
-3. 每架 UAV 使用独立 namespace、初始位姿、日志和结果目录；
-4. 通过 2-UAV preflight、topic/TF/telemetry smoke；
-5. 由 sol 写入 `state/sol_approval.md` 后，DeepSeek 才能执行实验。
+1. `handoff/SINGLE_TO_MULTI_TRANSFER_20260820.md` 中的平台、单机和 overlay 身份全部
+   回读一致；
+2. `handoff/SINGLE_UAV_BASELINE.md` 与当前节点候选一致；
+3. `experiments/manifests/2uav_smoke.yaml` 使用经过验证的 2-UAV runner 入口和完整命令
+   白名单；
+4. 每架 UAV 使用独立 namespace、初始位姿、vehicle ID、端口、日志和结果目录；
+5. 通过 2-UAV preflight；首次 smoke 若失败，必须按正式状态中的最小修复门重新闭环；
+6. 由 Sol 写入 `state/sol_approval.md` 后，DeepSeek 才能执行实验。
 
-当前仓库仍是多机编排骨架，`racer-platform` 只负责公共环境同步，不替代多机 launch、DeepSeek runner 或实验状态合同。
+当前仓库已具备受 approval package 约束的多机 launch、runner 和指标采集；
+`racer-platform` 只负责公共环境同步，不替代本仓库的实验状态与安全合同。当前是否可执行
+必须以 `state/current_summary.md` 为准。

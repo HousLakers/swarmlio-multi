@@ -24,3 +24,17 @@ description: 在单轮实验结束后审核结果，合并状态，并形成唯�
 ```text
 Finalize RUN-YYYYMMDD-NNN: <pass|fail|diagnosis>
 ```
+
+## 步骤完成后的交接协议
+
+收尾完成时必须输出：
+
+```text
+handoff_status: <FINALIZED|BLOCKED>
+handoff_model: lead-planning
+handoff_command:
+下一轮从 AGENTS.md、state/current_summary.md 和最新 SESSION_HANDOFF 重新规划；不得复用本轮 approval package 或 runroot。
+```
+
+若 luna、runroot、hash 或用户 push 授权缺失，保持 `handoff_status: BLOCKED`，目标模型仍为
+`lead-planning`，只交接缺口清单，不得创建或推送收尾 commit。

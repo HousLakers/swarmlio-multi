@@ -1,4 +1,8 @@
 __pycache__/
 .env
+state/2uav_approval.yaml
 results/*/logs/
 results/*/raw/
+results/*/2uav_approval.yaml
+results/*/telemetry.jsonl
+results/*/*/telemetry.jsonl

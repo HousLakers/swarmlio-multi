@@ -1,0 +1,67 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="vehicle" default="iris"/>
+  <arg name="world" default="/home/houslakers/auto_tune_racer/racer-platform/environment/worlds/2uav_outdoor_50x50_v1.world"/>
+  <arg name="gui" default="false"/>
+
+  <!-- Gazebo is the sole /clock publisher. -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="gui" value="$(arg gui)"/>
+    <arg name="world_name" value="$(arg world)"/>
+    <arg name="paused" value="false"/>
+  </include>
+
+  <group ns="uav0">
+    <arg name="ID" value="0"/>
+    <include file="$(find px4)/launch/single_vehicle_spawn.launch">
+      <arg name="x" value="0.0"/><arg name="y" value="0.0"/><arg name="z" value="0.0"/>
+      <arg name="R" value="0"/><arg name="P" value="0"/><arg name="Y" value="0"/>
+      <arg name="vehicle" value="$(arg vehicle)"/>
+      <arg name="mavlink_udp_port" value="14560"/>
+      <arg name="mavlink_tcp_port" value="4560"/>
+      <arg name="ID" value="$(arg ID)"/>
+      <arg name="gst_udp_port" value="5600"/>
+      <arg name="video_uri" value="5600"/>
+      <arg name="mavlink_cam_udp_port" value="14530"/>
+    </include>
+    <include file="$(find mavros)/launch/px4.launch">
+      <arg name="fcu_url" value="udp://:14540@localhost:14580"/>
+      <arg name="gcs_url" value=""/>
+      <arg name="tgt_system" value="1"/>
+      <arg name="tgt_component" value="1"/>
+    </include>
+    <rosparam param="mavros/tf/send">false</rosparam>
+    <rosparam param="mavros/static_tf/send">false</rosparam>
+    <rosparam param="mavros/local_position/tf/send">false</rosparam>
+    <rosparam param="mavros/local_position/tf/send_fcu">false</rosparam>
+    <rosparam param="mavros/global_position/tf/send">false</rosparam>
+    <rosparam param="mavros/imu/tf/send">false</rosparam>
+  </group>
+
+  <group ns="uav1">
+    <arg name="ID" value="1"/>
+    <include file="$(find px4)/launch/single_vehicle_spawn.launch">
+      <arg name="x" value="1.5"/><arg name="y" value="0.0"/><arg name="z" value="0.0"/>
+      <arg name="R" value="0"/><arg name="P" value="0"/><arg name="Y" value="0"/>
+      <arg name="vehicle" value="$(arg vehicle)"/>
+      <arg name="mavlink_udp_port" value="14561"/>
+      <arg name="mavlink_tcp_port" value="4561"/>
+      <arg name="ID" value="$(arg ID)"/>
+      <arg name="gst_udp_port" value="5601"/>
+      <arg name="video_uri" value="5601"/>
+      <arg name="mavlink_cam_udp_port" value="14531"/>
+    </include>
+    <include file="$(find mavros)/launch/px4.launch">
+      <arg name="fcu_url" value="udp://:14541@localhost:14581"/>
+      <arg name="gcs_url" value=""/>
+      <arg name="tgt_system" value="2"/>
+      <arg name="tgt_component" value="1"/>
+    </include>
+    <rosparam param="mavros/tf/send">false</rosparam>
+    <rosparam param="mavros/static_tf/send">false</rosparam>
+    <rosparam param="mavros/local_position/tf/send">false</rosparam>
+    <rosparam param="mavros/local_position/tf/send_fcu">false</rosparam>
+    <rosparam param="mavros/global_position/tf/send">false</rosparam>
+    <rosparam param="mavros/imu/tf/send">false</rosparam>
+  </group>
+</launch>

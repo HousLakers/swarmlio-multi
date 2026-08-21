@@ -5,7 +5,8 @@
 - 终端 A：一个长期 Codex 会话，按阶段使用 luna、sol、terra；
 - 终端 B：DeepSeek，负责执行已批准的实验和保存 runroot。
 
-本目录目前是编排骨架，不是已经接好 ROS/Gazebo 的一键运行器。首次实验前必须完成“准备阶段”。
+本目录当前由 `scripts/two_uav_runner.py` 编排 ROS/Gazebo 生命周期，但仍必须先完成
+静态准备和一次性 live preflight；preflight 未通过不得进入 smoke。
 
 ## 0. 当前文件各自的用途
 
@@ -36,20 +37,28 @@ cd /home/houslakers/auto_tune_racer/swarmlio_multi
 
 完成以下事项：
 
-1. 填写 `handoff/SINGLE_UAV_BASELINE.md` 中的源码 commit、源码路径、地图、GT 模式和实际可复用脚本。
-2. 检查 `handoff/KNOWN_RISKS.md`。
-3. 将 `experiments/manifests/2uav_smoke.yaml` 的 `launch_command` 替换成已经验证的 2-UAV 启动入口。
-4. 把实际的 preflight、启动、监控、停止、指标收集脚本列入白名单。
-5. 确认每架 UAV 使用独立 namespace、初始位姿、日志目录和结果目录。
-6. 确认 runner 能保存源码 hash、运行时参数、manifest、退出原因和每架 UAV 状态。
+1. 读取 `handoff/SINGLE_TO_MULTI_TRANSFER_20260820.md`，核对公共平台、单机仓库和
+   overlay 的冻结 commit/hash；不要重新推断或浮动到最新分支。
+2. 核对 `handoff/SINGLE_UAV_BASELINE.md` 中的地图、GT 模式和节点能力边界。
+3. 检查 `handoff/KNOWN_RISKS.md`。
+4. 确认 `experiments/manifests/2uav_smoke.yaml` 的 `launch_command` 和命令白名单只
+   指向已验证的 runner 入口；不得另写临时 launch 命令。
+5. 确认 manifest 白名单包含 preflight、smoke launch、monitor、stop、collect 五个固定
+   runner 命令。
+6. 确认每架 UAV 使用独立 namespace、初始位姿、vehicle ID、端口、TF、日志目录和
+   结果目录。
+7. 确认 runner 能保存源码 hash、运行时参数、manifest、退出原因、每架 UAV 状态和
+   fleet 指标。
 
-当前 manifest 仍含有：
+当前唯一 manifest 已固定为：
 
-```yaml
-launch_command: REPLACE_WITH_APPROVED_2UAV_LAUNCH_COMMAND
+```text
+python3 scripts/two_uav_runner.py preflight --manifest experiments/manifests/2uav_smoke.yaml
+python3 scripts/two_uav_runner.py launch --manifest experiments/manifests/2uav_smoke.yaml
 ```
 
-在替换它之前，不得启动实验。
+这两个命令都必须通过 runner 的 immutable approval package。不得直接执行
+`roslaunch`、Gazebo 或其它未列入 manifest 的命令。
 
 ## 2. Codex 终端 A：打开一个长期会话
 
@@ -61,7 +70,10 @@ codex
 新会话第一句话：
 
 ```text
-这是多机项目的新工作阶段。请先读取 AGENTS.md、handoff/SINGLE_UAV_BASELINE.md、state/SESSION_HANDOFF.md 和 state/current_summary.md。不要读取完整历史，不要修改源码，不要启动实验。先用不超过20行说明当前状态和准备阶段缺口。
+这是从单机 20 m 水平全向候选进入多机集成的新阶段。请先读取 AGENTS.md、
+handoff/SINGLE_TO_MULTI_TRANSFER_20260820.md、state/SESSION_HANDOFF.md、
+state/current_summary.md 和 experiments/manifests/2uav_smoke.yaml。不要读取完整历史，
+不要启动实验。先核对冻结身份并说明 2-UAV 静态接入缺口。
 ```
 
 用户的本轮意见可以直接追加在 Skill 后面，例如：
@@ -97,13 +109,29 @@ sol 必须确认：
 - abort 条件；
 - 允许 DeepSeek 执行的具体命令或 manifest。
 
-批准后由 sol 写入：
+计划审核记录仍由 sol 写入：
 
 ```text
 state/sol_approval.md
 ```
 
-没有 `sol_approval.md`，DeepSeek 不得运行。
+但 `state/sol_approval.md` 不是 runner 的执行授权。实际执行必须有独立的一次性
+`state/2uav_approval.yaml`，其内容绑定当前 manifest SHA-256 和
+`config/2uav_source_hashes.sha256` SHA-256：
+
+```yaml
+schema_version: 1
+stage: preflight        # smoke 阶段必须另发 stage: smoke
+approved: true
+allowed_actions: [preflight]
+manifest_sha256: <current manifest sha256>
+source_hash_manifest_sha256: <current source-hash-manifest sha256>
+issued_by: sol
+max_uses: 1
+```
+
+每个 approval package 只能使用一次；hash、stage、action、issuer 或 receipt 不匹配时
+runner fail-closed。preflight 和 smoke 必须使用两个不同的批准包。
 
 ## 4. terra 阶段：只在 sol 要求时改代码
 
@@ -127,7 +155,7 @@ terra 完成后切回 sol：
 
 terra 不得维护正式 `project_state.md`。
 
-## 5. DeepSeek 终端 B：执行一轮已批准实验
+## 5. DeepSeek 终端 B：执行 preflight，再执行一轮已批准实验
 
 打开另一个终端：
 
@@ -141,14 +169,43 @@ deepseek
 ```text
 你是实验执行手。
 
-先读取 AGENTS.md、state/current_summary.md、experiments/manifests/2uav_smoke.yaml、state/sol_approval.md。
+先读取 AGENTS.md、state/current_summary.md、experiments/manifests/2uav_smoke.yaml、
+state/sol_approval.md 和当前 `state/2uav_approval.yaml`（若不存在则停止）。
 
-只执行 sol 批准的 manifest 和白名单脚本。先做 preflight，再启动 2-UAV smoke。必须保存新的 results/RUN-时间戳/，包括 manifest、源码 hash、runtime 参数、每架 UAV 状态、metrics、日志摘要和退出原因。
+只执行 sol 批准的 manifest 和白名单脚本。执行顺序固定为：
+
+1. `preflight`：runner 先复核 manifest/source hash 和静态门，再启动 stack；随后做
+   live topic/clock/TF/参数/日志检查、24 s watchdog soak、停栈和最终 metrics 校验。
+2. 只有 preflight 的 `live_preflight.json` 为 `passed: true`，且 Sol 审核该 runroot 后，
+   才能签发新的 `stage: smoke` package。
+3. `launch`：runner 再次做静态/live/soak 门，通过后才发布
+   `/move_base_simple/goal`，运行 manifest 指定的 120 simulated seconds。
+
+preflight 和 smoke 各自创建不可覆盖的 `results/RUN-时间戳-2uav-*`。必须保存 manifest、
+source hash、runtime 参数、每架 UAV 状态、metrics、日志摘要、abort 和退出原因。
 
 实验期间不得修改源码、参数、project_state.md 或 state/SESSION_HANDOFF.md。不得删除或覆盖任何旧 runroot。实验结束后只写 execution_result.md 和必要事件记录；如果脚本有问题，写 state/execution_issue.md 并停止，不要自行修复代码。
 ```
 
-当前目录的 `scripts/monitor_experiment.py` 只是 DeepSeek API 监控接口骨架；它不会启动 ROS/Gazebo，也不会替代实际 runner。必须先接入真实 preflight、启动、监控和收集脚本。
+当前目录的 `scripts/monitor_experiment.py` 只是 DeepSeek API 监控接口骨架；它不会启动
+ROS/Gazebo，也不会替代实际 runner。运行中只能使用 manifest 白名单的 `monitor`、`stop`
+和 `collect` 命令，不能手工补发 goal 或重启单个 UAV。
+
+当前最新有效 preflight 是
+`results/RUN-20260821T082048Z-2uav-preflight/`，静态 53/53、live 48/48 全部通过。
+其后首次 smoke `results/RUN-20260821T083254Z-2uav-smoke/` 在 sim 32.39/120
+fail-closed 中止：uav0 trajectory 被错误按 5 s 连续 freshness 监管，同时存在真实的
+uav0 A* no-path 和 uav1 start-inside-inflated-occupancy 问题。两个 package 均已消费，
+当前没有有效执行授权；不得直接重试。
+
+对接时按以下产物判断，不要只看终端退出码：
+
+- runner 自动写入 `static_preflight.json`、`live_preflight.json`、`stop_result.json`，以及
+  成功进入 collector 后的 `uav0/`、`uav1/`、`fleet/` telemetry/metrics；
+- DeepSeek 在同一 runroot 追加 `execution_result.md`，记录命令、退出原因、源码 hash、
+  运行时参数和证据路径；
+- preflight 若在 `/clock`、topic 或参数门之前失败，没有逐机 metrics 是预期的基础设施
+  失败，不得补造 metrics，也不得据此启动 smoke。
 
 ## 6. luna 阶段：实验结束后读结果
 
@@ -232,8 +289,9 @@ sol 生成计划 → terra 修改 → sol 审核 → DeepSeek 重试
 新开对话后只输入：
 
 ```text
-请先读取 AGENTS.md、handoff/SINGLE_UAV_BASELINE.md、state/SESSION_HANDOFF.md 和 state/current_summary.md。
-不要读取完整旧对话。先确认当前阶段、最近一次实验和下一步唯一动作。
+请先读取 AGENTS.md、state/current_summary.md、state/SESSION_HANDOFF.md 和
+experiments/manifests/2uav_smoke.yaml。不要读取完整旧对话。先确认当前阶段、最近一次实验、
+已消费 package 和下一步唯一动作；不要启动实验。
 ```
 
 ## 10. 一轮实验的完成定义

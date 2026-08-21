@@ -86,3 +86,22 @@ LE8-E 在最终三臂×8×600 s矩阵中为推荐节点基线；独立扩展仍�
 4. 最新任务包和 runroot。
 
 除非发生争议或需要追溯，不要默认读取单机完整 `project_state.md`。
+
+## 7. 当前 20 m 全向节点候选
+
+LE8-E 仍是历史节点参考；当前进入多机的节点候选是在同一公共平台上应用
+`platform_overlays/range20m_omnidirectional_v1` 后的 20 m 水平全向配置。单机 v8
+smoke 全门 PASS；功能长测达到 97.56% coverage 后由用户早停，正式结论为
+`FUNCTIONAL_VALIDATION_PASS / FORMAL_ENDURANCE_INCOMPLETE`。它只允许作为节点候选，
+不构成 fleet 结论。
+
+多机接入以 `handoff/SINGLE_TO_MULTI_TRANSFER_20260820.md` 为正式入口。必须同时固定：
+
+- `racer-platform@57c1f34a607b834915f9aa4a4a6b301ecc5a4ffc`；
+- `swarmlio-single@c01f1f5af40ec25631aa11765a0f21e06834abc4`；
+- overlay manifest SHA-256
+  `80d0d06a5a9b3722804c28d3efc6ace9a71d5955b26f8124e12bf3579e0d9529`；
+- installer SHA-256
+  `7e2280d5d0ba88ee501764ab5b5ccc3f3724d5b6abf39704badc7a8976349151`。
+
+不得把 2-UAV manifest 的节点候选改回裸 LE8-E 后仍声称在验证本次视野/视角调整。
