@@ -16,13 +16,14 @@
 - D9r 源码修复：`sdf_map.clearVehicleBody(pos, r=0.8)` + `planTrajToView` 前置清理；
   collector `ack_timeout` 竞态误杀修复（可恢复语义，`command_ack_timeout_s=6.0`）。
 - D10 3-UAV `node_level` 掉线 smoke 最终验证通过：
-  - runroot `results/RUN-20260823T190024Z-3uav-smoke/`
+  - runroot `results/RUN-20260823T194616Z-3uav-smoke/`
   - `exit_reason=duration_complete`、`final_safety_passed=true`、`abort_reasons=[]`
-  - uav1 掉线（node_level，sim 86.65s，三节点全杀）分类 `intentional_dropout`
-  - 剩余机继续：uav0 +7,461、uav2 +10,212 voxels
+  - uav1 掉线（node_level，sim 87.166s，三节点全杀）分类 `intentional_dropout`
+  - 剩余机继续：uav0 +5,350、uav2 +24,231 voxels
   - 三机 freeze=false / crash=false / ack_timeout=0
-- D11 报告与收尾：`state/luna_review.md` 按掉线模板撰写；`current_summary.md` 更新；
-  固定交付 `grid_path.png` + `point_cloud.png`（collector 自动生成）。
+- D11 报告与收尾：`state/luna_review.md` 按掉线模板重写；`current_summary.md` 更新；
+  固定交付 `grid_path.png` + `point_cloud.png`（collector 收尾自动生成）
+  且本次图基于 **无人机真实建图 voxel** 重做。
 
 ## 最终身份链
 
@@ -33,22 +34,22 @@
   - installer `8cabae8d6c8019cf49e4f3f6d836ac9c0fa7d26d6926e1140af8cc87c42ee5eb`
 - 3-UAV manifest：`experiments/manifests/3uav_smoke.yaml`
   - SHA-256 `d9a64bf7b469ef85954fffdb09e7c9143b8b6b72b18b735477852a0e0265ebfe`
-  - `dropout.mode=node_level`（D10 最终版本）
+  - `dropout.mode=node_level`（D10 重跑版本）
 - 3-UAV source hash manifest：`config/3uav_source_hashes.sha256`
-  - SHA-256 `e4c79a5ce232254199ea319773cc28eb7955db909e5a880f24f226b190048ec9`
-- 已消费 approval：`dropout-smoke-20260823-3uav-D10-node_level`（不得复用）
+  - SHA-256 `146591227da89c43093c1d3b6783950f08b7a8bc92c735166f9c70586fbf6784`
+- 已消费 approval：`dropout-smoke-20260824-3uav-D10-replay`（不得复用）
 
 ## 已知偏差（不阻断掉线语义结论）
 
-- RT factor：全程实测 p50 < 0.5（历史偏差，掉线语义 ≠ 实时性对比）。
-- ready MemAvailable：2.76 GiB < 3 GiB 门限（3-UAV 栈 ≈9.3 GiB，16 GB 主机边界）。
-  若需正式 PASS 口径，须在资源更充裕主机复跑 preflight + smoke。
+- RT factor：全程实测 p50=0.278、p95=0.305（历史偏差，掉线语义 ≠ 实时性对比）。
+- 资源门：本次 ready MemAvailable=3.45 GiB，满足 ≥3 GiB 门。
 - 120 sim-s 内无 `completion` 触发（探索未收敛，属地图规模正常现象）。
 
 ## 固定交付约定（新增）
 
 - 每个实验 run 的 collector 收尾自动输出 `grid_path.png`（top-down 栅格路径）与
   `point_cloud.png`（点云），保存在对应 runroot。
+- 本次 D10 重跑的图已按“真实建图数据”标准生成并替换旧版本。
 
 ## 后续边界
 

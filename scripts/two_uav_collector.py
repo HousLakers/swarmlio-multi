@@ -921,6 +921,11 @@ class Collector:
             with open(self.runroot / name / "metrics.json", "x",
                       encoding="utf-8") as stream:
                 stream.write(json.dumps(report, indent=2, sort_keys=True) + "\n")
+            with open(self.runroot / name / "coverage_voxels.json", "x",
+                      encoding="utf-8") as stream:
+                voxels = sorted(self.states[name].coverage_voxels)
+                stream.write(json.dumps({"vehicle": name, "voxels": voxels},
+                                        indent=2, sort_keys=True) + "\n")
         with open(self.runroot / "fleet" / "metrics.json", "x",
                   encoding="utf-8") as stream:
             stream.write(json.dumps(fleet, indent=2, sort_keys=True) + "\n")
