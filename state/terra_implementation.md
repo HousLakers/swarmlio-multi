@@ -2945,4 +2945,67 @@ preflight: 41f0c76913532c4d184162d787055ec49155d9ba6272690c96d687b0c52be1aa
 - 3-UAV 时 fleet 的 `overlap_ratio`/`map_consistency_jaccard` 取最小 pairwise 值，语义与
   2-UAV 的「单对」一致且更保守；若后续需要全对报告可在 D6 扩展。
 
+## 53. D6 3-UAV 资产新建（config/launch/manifest/hash，2-UAV 冻结文件未动）
+
+- 任务来源：`state/dropout_experiment_plan.md` D6
+- 约束：只新建 3uav 资产；禁止修改 2-UAV 冻结文件；未启动实验。
+
+### 53.1 新建资产（7 个文件）
+
+1. `config/3uav_static.yaml`：`uav_count: 3`、`contract_id: range20m_omnidirectional_3uav_static_v1`；
+   新增 uav2（namespace `/uav2`、racer_id 3、mavlink_system_id 3、
+   端口 14542/14582/14562/4562/5602/14532、初始位姿 `[-3.0, 3.0, 0.0]` 避开 uav0/uav1 及
+   建筑/墙体/柱体）；uav0/uav1 字段与 2uav 契约逐项一致。
+2. `launch/3uav_px4_sitl.launch`：复用 2uav 模板，新增 uav2 group（ID=2、spawn
+   `-3.0 3.0 0.0`、mavlink 14562/4562、gst 5602、cam 14532、fcu `udp://:14542@localhost:14582`、
+   tgt_system 3）。
+3. `launch/3uav_bridges.launch`：新增 `px4_bridge_3`（drone_id 3、mavros_ns `/uav2`、
+   init_pos `[-3.0, 3.0]`、odom `/mavros_relay/odom_3`）。
+4. `launch/3uav_racer.launch`：新增 drone_id 3（drone_num 3、init `-3.0 3.0 0.0`）与
+   `/exploration_node_3/sdf_map/box_*` 边界参数。
+5. `experiments/manifests/3uav_smoke.yaml`：`experiment_id: three_uav_smoke_v1`、
+   `uav_count: 3`、`duration_sim_s: 120`、dropout 段（uav1/control_chain/trigger 60/
+   stop_active_reclaim，沿用 2uav 语义）。
+6. `config/3uav_approval_contract.yaml`：同 2uav 契约，`approval_package: state/3uav_approval.yaml`
+   （approval package 本身由高终端在 preflight/smoke 时签发）。
+7. `config/3uav_source_hashes.sha256`：新 source-hash manifest（脚本复用 2uav 的
+   validate_2uav_outdoor_world.py / 2uav_outdoor_50x50_v1.world 共享资产，hash 与当前
+   工作树一致）。
+
+world 评估结论：`2uav_outdoor_50x50_v1.world` 无 UAV 模型/出生点（spawn 由 px4_sitl
+launch 注入），50×50 内可放置第三机位姿，**无需新建 world**。
+
+### 53.2 验证证据（未启动实验）
+
+```text
+python3 scripts/two_uav_preflight.py --mode static \
+  --config config/3uav_static.yaml --manifest experiments/manifests/3uav_smoke.yaml
+passed: true，55 项检查全部 ok（uav_count/isolation 三机、3uav launch XML、
+wiring.uav2_bridge/racer/px4、approval contract、source.multi_hash_manifest 全部匹配）
+
+py_compile + self-test（runner/preflight/collector）: 全部 PASS（D6 无脚本改动，回归通过）
+git diff --check: PASS
+2-UAV 冻结文件：未修改（config/2uav_static.yaml 的工作树改动为 D6 之前既有变更）
+```
+
+### 53.3 新资产 hash
+
+```text
+config/3uav_static.yaml:              c307d66070a57fdb23d1a6f38e72d950da941e9d7f8caab7f6cfc5c4027fc406
+config/3uav_approval_contract.yaml:   d57b9f8675a752128dddc97965639a1d2ca33fe6a42f5e9ede520716ec646143
+config/3uav_source_hashes.sha256:     f8b2a8a078c4f42125456a7d0afc78902b4b85ab7da1b57a2876427694300af9
+launch/3uav_px4_sitl.launch:          a79f9c9e8e84dcb8ed76221ddaa59f8af3dac632291f5f5237de432388afd6ab
+launch/3uav_bridges.launch:           5c6fdf8837c83841623f9c98527966ade9d60c0f009ffc58800aaf4d07ff6eb3
+launch/3uav_racer.launch:             bec4e99d0b27931561154a3ce2b9746534a4437f4dbef87c069df2e1dbc41cf1
+experiments/manifests/3uav_smoke.yaml: 2232cb58445e7bd765e9747443dd3296532fd10a8f3afd0ae1e8fad6262ef26b
+```
+
+### 53.4 残余风险
+
+- `state/3uav_approval.yaml` 尚未签发（由高终端在 preflight/smoke 时按契约签发）。
+- runner 的 `CONFIG`/`ACTIVE` 全局仍指向 2uav；3-UAV 实跑需要 D7 让 runner 从 manifest
+  `static_contract` 解析 config（脚本层已由 D5 参数化，实例化尚缺）。
+- gt_mapper `load_contract` 仍要求 `uav_count == 2`（2uav 冻结脚本），3-UAV 实跑前需
+  单独评审其参数化；本次未改。
+
 

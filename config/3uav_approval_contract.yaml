@@ -1,0 +1,26 @@
+schema_version: 1
+approval_package: state/3uav_approval.yaml
+manifest_status_must_remain: blocked_pending_verified_launch_and_preflight
+required_fields:
+  - schema_version
+  - stage
+  - approved
+  - allowed_actions
+  - manifest_sha256
+  - source_hash_manifest_sha256
+  - issued_by
+  - max_uses
+issued_by_must_be: sol
+max_uses: 1
+stages:
+  preflight:
+    allowed_actions: [preflight]
+  smoke:
+    allowed_actions: [launch]
+fail_closed:
+  - missing_package
+  - malformed_package
+  - unsigned_stage
+  - manifest_hash_drift
+  - source_hash_manifest_drift
+  - approval_already_consumed

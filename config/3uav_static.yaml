@@ -1,0 +1,179 @@
+schema_version: 1
+contract_id: range20m_omnidirectional_3uav_static_v1
+uav_count: 3
+world_frame: world
+clock:
+  topic: /clock
+  publishers: 1
+  use_sim_time: true
+registration_source: gt
+map_mode: shared_async
+partition_mode: static
+communication_delay_ms: 0
+paths:
+  platform_repository: /home/houslakers/auto_tune_racer/racer-platform
+  single_repository: /home/houslakers/auto_tune_racer/swarmlio-single-v2
+  px4_repository: /home/houslakers/PX4-Autopilot
+  racer_workspace: /home/houslakers/racer_ws
+  swarm_workspace: /home/houslakers/swarm_ws
+  world: /home/houslakers/auto_tune_racer/racer-platform/environment/worlds/2uav_outdoor_50x50_v1.world
+environment:
+  baseline_id: racer_outdoor_50x50_v1
+  baseline_manifest: /home/houslakers/auto_tune_racer/racer-platform/environment/baselines/racer_outdoor_50x50_v1.yaml
+  baseline_manifest_sha256: ce595cafba088955b38c4c9bd1d08f9af254dbfa0bf013481372a75e17980944
+  world_sha256: 28a306b646297011b564c5ce94ac97634281a5e9a34e337956c5f4a9227c320e
+  map_size_m: [50.0, 50.0, 3.0]
+  planner_box_min: [-24.5, -24.5, 1.15]
+  planner_box_max: [24.5, 24.5, 2.7]
+  validation_state: static_validated_runtime_pending
+frozen:
+  platform_commit: 57c1f34a607b834915f9aa4a4a6b301ecc5a4ffc
+  single_commit: 8c8ddf2add3f7b3ce4f9943583fd945f16b1bd91
+  overlay_manifest: platform_overlays/range20m_omnidirectional_v1/current_config.sha256
+  overlay_manifest_sha256: 68ceb54faa24f4cc97396634bfc3d611f8e40a6db89999d3cbabc112092ccf62
+  overlay_installer: scripts/apply_range20m_omnidirectional_overlay.sh
+  overlay_installer_sha256: 7e2280d5d0ba88ee501764ab5b5ccc3f3724d5b6abf39704badc7a8976349151
+baseline_runtime:
+  lidar_effective_range_m: 20.0
+  horizontal_field_of_view_deg: 360.0
+  obstacles_inflation: 0.35
+  sdf_resolution_m: 0.10
+  all_map_publish_period_s: 2.0
+  progress_guard_enabled: false
+  global_trajectory_guard_enabled: false
+  global_trajectory_reject_unknown: false
+  registration_source: gt
+vehicles:
+  - name: uav0
+    namespace: /uav0
+    racer_id: 1
+    mavlink_system_id: 1
+    initial_position: [0.0, 0.0, 0.0]
+    ports:
+      fcu_local_udp: 14540
+      fcu_remote_udp: 14580
+      mavlink_udp: 14560
+      mavlink_tcp: 4560
+      gst_udp: 5600
+      camera_udp: 14530
+    frames:
+      parent: world
+      child: uav0/base_link
+    topics:
+      raw_cloud: /uav0/livox/scan
+      mavros_odom: /uav0/mavros/local_position/odom
+      registered_cloud: /cloud_registered_1
+      registered_odom: /lidar_slam/odom_1
+      registered_pose: /lidar_slam/pose_1
+      frontier: /planning_vis/frontier_1
+      trajectory: /planning/bspline_1
+      pos_cmd: /planning/pos_cmd_1
+      ack: /planning/command_ack_1
+      occupancy: /sdf_map/occupancy_all_1
+      health: /uav0/mavros/state
+    log_subdir: uav0
+  - name: uav1
+    namespace: /uav1
+    racer_id: 2
+    mavlink_system_id: 2
+    initial_position: [1.5, 0.0, 0.0]
+    ports:
+      fcu_local_udp: 14541
+      fcu_remote_udp: 14581
+      mavlink_udp: 14561
+      mavlink_tcp: 4561
+      gst_udp: 5601
+      camera_udp: 14531
+    frames:
+      parent: world
+      child: uav1/base_link
+    topics:
+      raw_cloud: /uav1/livox/scan
+      mavros_odom: /uav1/mavros/local_position/odom
+      registered_cloud: /cloud_registered_2
+      registered_odom: /lidar_slam/odom_2
+      registered_pose: /lidar_slam/pose_2
+      frontier: /planning_vis/frontier_2
+      trajectory: /planning/bspline_2
+      pos_cmd: /planning/pos_cmd_2
+      ack: /planning/command_ack_2
+      occupancy: /sdf_map/occupancy_all_2
+      health: /uav1/mavros/state
+    log_subdir: uav1
+  - name: uav2
+    namespace: /uav2
+    racer_id: 3
+    mavlink_system_id: 3
+    initial_position: [-3.0, 3.0, 0.0]
+    ports:
+      fcu_local_udp: 14542
+      fcu_remote_udp: 14582
+      mavlink_udp: 14562
+      mavlink_tcp: 4562
+      gst_udp: 5602
+      camera_udp: 14532
+    frames:
+      parent: world
+      child: uav2/base_link
+    topics:
+      raw_cloud: /uav2/livox/scan
+      mavros_odom: /uav2/mavros/local_position/odom
+      registered_cloud: /cloud_registered_3
+      registered_odom: /lidar_slam/odom_3
+      registered_pose: /lidar_slam/pose_3
+      frontier: /planning_vis/frontier_3
+      trajectory: /planning/bspline_3
+      pos_cmd: /planning/pos_cmd_3
+      ack: /planning/command_ack_3
+      occupancy: /sdf_map/occupancy_all_3
+      health: /uav2/mavros/state
+    log_subdir: uav2
+fleet:
+  task_state_topic: /swarm_expl/drone_state
+  contact_topic: /gazebo/contact_states
+  log_subdir: fleet
+  required_metrics:
+    - fleet_coverage
+    - overlap_ratio
+    - minimum_inter_uav_distance
+    - fleet_contact_count
+    - map_consistency
+    - task_allocation_state
+    - process_liveness
+safety_contract:
+  contact:
+    force_threshold_n: 8.0
+    persistence_threshold_s: 0.25
+    ground_contact_action: record_only
+    obstacle_or_inter_uav_action: abort_when_threshold_met
+  telemetry:
+    startup_grace_s: 20.0
+    preflight_soak_s: 24.0
+    freshness_s: 5.0
+    tf_freshness_s: 5.0
+    command_ack_timeout_s: 1.0
+    topic_owner_action: abort_on_missing_or_drift
+    tf_action: abort_on_missing_or_parent_cross_talk
+    occupancy_contract: startup_presence
+  metrics:
+    voxel_resolution_m: 0.25
+    coverage_denominator: planner_box_volume
+    overlap_denominator: smaller_per_uav_observed_set
+    map_consistency_denominator: union_per_uav_observed_set
+    coverage_missing_policy: abort_after_startup_grace
+    ack_timeout_policy: fail_closed_even_if_recovered
+    coverage_coalesce_sim_s: 2.0
+    resource_sample_wall_s: 1.0
+    resource_startup_mem_available_gib: 8
+    resource_running_mem_available_gib: 3
+    resource_startup_load1_max: 10.0
+    resource_swap_activity: abort
+  completion:
+    source: /rosout:exploration_node_FINISH
+    marker: finish exploration.
+abort_on:
+  - crash
+  - severe_contact
+  - corrupted_telemetry
+  - namespace_or_tf_cross_talk
+  - process_death
