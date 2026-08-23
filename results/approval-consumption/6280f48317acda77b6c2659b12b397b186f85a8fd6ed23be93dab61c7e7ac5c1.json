@@ -1,0 +1,6 @@
+{
+  "action": "preflight",
+  "consumed_utc": "2026-08-21T15:29:41.080779+00:00",
+  "manifest_sha256": "75aececfaaa99137ddc1862dd28dbd4b99cb02336580a9b606d3ba391eb81d46",
+  "runroot": "/home/houslakers/auto_tune_racer/swarmlio_multi/results/RUN-20260821T152941Z-2uav-preflight"
+}

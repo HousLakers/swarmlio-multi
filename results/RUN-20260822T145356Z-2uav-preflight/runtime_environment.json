@@ -1,0 +1,12 @@
+{
+  "ros_environment": {
+    "ROS_HOME": "/home/houslakers/auto_tune_racer/swarmlio_multi/results/RUN-20260822T145356Z-2uav-preflight/logs/ros-home",
+    "ROS_LOG_DIR": "/home/houslakers/auto_tune_racer/swarmlio_multi/results/RUN-20260822T145356Z-2uav-preflight/logs/ros"
+  },
+  "workspace_environment": {
+    "CMAKE_PREFIX_PATH": "/home/houslakers/swarm_ws/devel:/home/houslakers/racer_ws/devel:/opt/ros/noetic",
+    "LD_LIBRARY_PATH": "/home/houslakers/swarm_ws/devel/lib:/home/houslakers/racer_ws/devel/lib:/opt/ros/noetic/lib",
+    "PYTHONPATH": "/home/houslakers/swarm_ws/devel/lib/python3/dist-packages:/home/houslakers/racer_ws/devel/lib/python3/dist-packages:/opt/ros/noetic/lib/python3/dist-packages",
+    "ROS_PACKAGE_PATH": "/home/houslakers/swarm_ws/src:/home/houslakers/racer_ws/src:/opt/ros/noetic/share"
+  }
+}

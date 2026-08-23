@@ -1,0 +1,77 @@
+{
+  "checks": [
+    {
+      "detail": "timeout",
+      "name": "final.metrics",
+      "ok": false
+    },
+    {
+      "detail": "final metrics timeout",
+      "name": "final.safety",
+      "ok": false
+    },
+    {
+      "detail": "running resource gate failed: swap activity observed",
+      "name": "preflight.runtime",
+      "ok": false
+    }
+  ],
+  "passed": false,
+  "resource_usage": {
+    "available": true,
+    "roles": {
+      "bridges": {
+        "cpu_delta_ticks": 502,
+        "max_cpu_cores": 2.881123949738883,
+        "max_rss_kb": 136316,
+        "p50_cpu_cores": 0.14932819549205356,
+        "p50_rss_kb": 136316,
+        "p95_cpu_cores": 2.881123949738883,
+        "p95_rss_kb": 136316
+      },
+      "collector": {
+        "cpu_delta_ticks": 0,
+        "max_rss_kb": 3960,
+        "p50_rss_kb": 3960,
+        "p95_rss_kb": 3960
+      },
+      "gazebo": {
+        "cpu_delta_ticks": 4941,
+        "max_cpu_cores": 3.2813805944347694,
+        "max_rss_kb": 5168108,
+        "p50_cpu_cores": 1.2775768007523594,
+        "p50_rss_kb": 5165220,
+        "p95_cpu_cores": 3.2813805944347694,
+        "p95_rss_kb": 5168108
+      },
+      "gt_mapper": {
+        "cpu_delta_ticks": 969,
+        "max_cpu_cores": 0.45781867103135077,
+        "max_rss_kb": 102132,
+        "p50_cpu_cores": 0.3240231016400911,
+        "p50_rss_kb": 101148,
+        "p95_cpu_cores": 0.45781867103135077,
+        "p95_rss_kb": 102132
+      },
+      "racer": {
+        "cpu_delta_ticks": 584,
+        "max_cpu_cores": 0.695501184483537,
+        "max_rss_kb": 1743184,
+        "p50_cpu_cores": 0.32981583965135963,
+        "p50_rss_kb": 1739064,
+        "p95_cpu_cores": 0.695501184483537,
+        "p95_rss_kb": 1743184
+      }
+    },
+    "rt_factor": null,
+    "samples": 17,
+    "top_cpu_consumers": [
+      "gazebo",
+      "gt_mapper",
+      "racer",
+      "bridges",
+      "collector"
+    ],
+    "valid_rt_samples": 0
+  }
+}

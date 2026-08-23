@@ -1,0 +1,16 @@
+{
+  "baseline": {
+    "load1": 2.25,
+    "mem_available_bytes": 11546288128,
+    "swap_in": 0,
+    "swap_out": 0
+  },
+  "detail": "MemAvailable below 3 GiB",
+  "facts": {
+    "load1": 3.01,
+    "mem_available_bytes": 1725186048,
+    "swap_in": 2,
+    "swap_out": 2939
+  },
+  "ok": false
+}

@@ -1,0 +1,16 @@
+{
+  "baseline": {
+    "load1": 1.24,
+    "mem_available_bytes": 12522786816,
+    "swap_in": 25007,
+    "swap_out": 117147
+  },
+  "detail": "swap activity observed",
+  "facts": {
+    "load1": 1.71,
+    "mem_available_bytes": 6212292608,
+    "swap_in": 25474,
+    "swap_out": 207853
+  },
+  "ok": false
+}

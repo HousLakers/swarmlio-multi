@@ -1,0 +1,78 @@
+{
+  "ack_count": 0,
+  "ack_timeout": {
+    "count": 0,
+    "recovered_count": 0,
+    "recovered_trajectory_ids": [],
+    "threshold_s": 1.0,
+    "trajectory_ids": []
+  },
+  "completion": {
+    "marker": "finish exploration.",
+    "observed": false,
+    "source": "/rosout",
+    "wall_s": null
+  },
+  "contact": {
+    "ground": 0,
+    "inter_uav": 0,
+    "obstacle": 0
+  },
+  "coverage": {
+    "available": true,
+    "callback_wall_duration_s": [
+      5.059999239165336e-06,
+      5.386000339058228e-06,
+      5.134999810252339e-06,
+      8.145998435793445e-06,
+      3.4810000215657055e-06,
+      4.023999281344004e-06,
+      3.7680001696571708e-06,
+      8.611999874119647e-06
+    ],
+    "coalesced": 0,
+    "denominator_voxels": 268912,
+    "last_message_wall_s": 9187.117914069,
+    "last_processed_sim_s": null,
+    "last_processed_wall_s": 9188.225687846,
+    "message_age_s": 1.1171080189997156,
+    "missing_policy": "abort_after_startup_grace",
+    "observed_voxels": 2450,
+    "processed": 8,
+    "processed_age_s": 0.009334242000477389,
+    "processing_wall_duration_s": [
+      1.049999991664663e-05,
+      4.743000317830592e-06,
+      0.0015047519991640002,
+      0.002591254999060766,
+      0.0032171789989661193,
+      0.00989276100153802,
+      0.0112202830005117,
+      0.006502386999272858
+    ],
+    "ratio": 0.009110787172011662,
+    "received": 8
+  },
+  "crash": false,
+  "freeze": true,
+  "last_ack_id": null,
+  "path_length_m": 1.7233848044983344,
+  "position": [
+    1.4847384225577116,
+    -0.0054316273890435696,
+    1.5050048828125
+  ],
+  "telemetry": {
+    "ack": 0,
+    "cloud": 168,
+    "frontier": 2379,
+    "health": 18,
+    "occupancy": 8,
+    "odometry": 168,
+    "pos_cmd": 0,
+    "trajectory": 0
+  },
+  "telemetry_complete": true,
+  "telemetry_missing_channels": [],
+  "telemetry_stale_channels": []
+}

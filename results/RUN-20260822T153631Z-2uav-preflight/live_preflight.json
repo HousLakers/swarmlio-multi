@@ -1,0 +1,334 @@
+{
+  "checks": [
+    {
+      "detail": "all present",
+      "name": "live.required_topics",
+      "ok": true
+    },
+    {
+      "detail": "1",
+      "name": "live.clock_single_publisher",
+      "ok": true
+    },
+    {
+      "detail": "true",
+      "name": "live.use_sim_time",
+      "ok": true
+    },
+    {
+      "detail": "all expected TF edges observed",
+      "name": "live.tf_expected_unique_dynamic_edges",
+      "ok": true
+    },
+    {
+      "detail": "payload",
+      "name": "live.payload.uav0.raw_cloud",
+      "ok": true
+    },
+    {
+      "detail": "payload",
+      "name": "live.payload.uav0.mavros_odom",
+      "ok": true
+    },
+    {
+      "detail": "payload",
+      "name": "live.payload.uav0.registered_cloud",
+      "ok": true
+    },
+    {
+      "detail": "payload",
+      "name": "live.payload.uav0.registered_odom",
+      "ok": true
+    },
+    {
+      "detail": "payload",
+      "name": "live.payload.uav0.frontier",
+      "ok": true
+    },
+    {
+      "detail": "payload",
+      "name": "live.payload.uav1.raw_cloud",
+      "ok": true
+    },
+    {
+      "detail": "payload",
+      "name": "live.payload.uav1.mavros_odom",
+      "ok": true
+    },
+    {
+      "detail": "payload",
+      "name": "live.payload.uav1.registered_cloud",
+      "ok": true
+    },
+    {
+      "detail": "payload",
+      "name": "live.payload.uav1.registered_odom",
+      "ok": true
+    },
+    {
+      "detail": "payload",
+      "name": "live.payload.uav1.frontier",
+      "ok": true
+    },
+    {
+      "detail": "0.1",
+      "name": "readback.uav0.sdf_map/resolution",
+      "ok": false
+    },
+    {
+      "detail": "0.35",
+      "name": "readback.uav0.sdf_map/obstacles_inflation",
+      "ok": true
+    },
+    {
+      "detail": "20.0",
+      "name": "readback.uav0.sdf_map/max_ray_length",
+      "ok": true
+    },
+    {
+      "detail": "20.5",
+      "name": "readback.uav0.map_ros/depth_filter_maxdist",
+      "ok": true
+    },
+    {
+      "detail": "2.0",
+      "name": "readback.uav0.map_ros/all_map_publish_period",
+      "ok": true
+    },
+    {
+      "detail": "false",
+      "name": "readback.uav0.planner_escape/v2_progress_guard_enabled",
+      "ok": true
+    },
+    {
+      "detail": "false",
+      "name": "readback.uav0.trajectory_safety/global_postplan_guard_enabled",
+      "ok": true
+    },
+    {
+      "detail": "false",
+      "name": "readback.uav0.trajectory_safety/reject_unknown",
+      "ok": true
+    },
+    {
+      "detail": "20.0",
+      "name": "readback.uav0.perception_utils/max_dist",
+      "ok": true
+    },
+    {
+      "detail": "omnidirectional",
+      "name": "readback.uav0.perception_utils/horizontal_model",
+      "ok": true
+    },
+    {
+      "detail": "50.0",
+      "name": "readback.uav0.sdf_map/map_size_x",
+      "ok": true
+    },
+    {
+      "detail": "50.0",
+      "name": "readback.uav0.sdf_map/map_size_y",
+      "ok": true
+    },
+    {
+      "detail": "-24.5",
+      "name": "readback.uav0.sdf_map/box_min_x",
+      "ok": true
+    },
+    {
+      "detail": "-24.5",
+      "name": "readback.uav0.sdf_map/box_min_y",
+      "ok": true
+    },
+    {
+      "detail": "24.5",
+      "name": "readback.uav0.sdf_map/box_max_x",
+      "ok": true
+    },
+    {
+      "detail": "24.5",
+      "name": "readback.uav0.sdf_map/box_max_y",
+      "ok": true
+    },
+    {
+      "detail": "/home/houslakers/auto_tune_racer/swarmlio_multi/results/RUN-20260822T153631Z-2uav-preflight/uav0",
+      "name": "logdir.uav0",
+      "ok": true
+    },
+    {
+      "detail": "0.1",
+      "name": "readback.uav1.sdf_map/resolution",
+      "ok": false
+    },
+    {
+      "detail": "0.35",
+      "name": "readback.uav1.sdf_map/obstacles_inflation",
+      "ok": true
+    },
+    {
+      "detail": "20.0",
+      "name": "readback.uav1.sdf_map/max_ray_length",
+      "ok": true
+    },
+    {
+      "detail": "20.5",
+      "name": "readback.uav1.map_ros/depth_filter_maxdist",
+      "ok": true
+    },
+    {
+      "detail": "2.0",
+      "name": "readback.uav1.map_ros/all_map_publish_period",
+      "ok": true
+    },
+    {
+      "detail": "false",
+      "name": "readback.uav1.planner_escape/v2_progress_guard_enabled",
+      "ok": true
+    },
+    {
+      "detail": "false",
+      "name": "readback.uav1.trajectory_safety/global_postplan_guard_enabled",
+      "ok": true
+    },
+    {
+      "detail": "false",
+      "name": "readback.uav1.trajectory_safety/reject_unknown",
+      "ok": true
+    },
+    {
+      "detail": "20.0",
+      "name": "readback.uav1.perception_utils/max_dist",
+      "ok": true
+    },
+    {
+      "detail": "omnidirectional",
+      "name": "readback.uav1.perception_utils/horizontal_model",
+      "ok": true
+    },
+    {
+      "detail": "50.0",
+      "name": "readback.uav1.sdf_map/map_size_x",
+      "ok": true
+    },
+    {
+      "detail": "50.0",
+      "name": "readback.uav1.sdf_map/map_size_y",
+      "ok": true
+    },
+    {
+      "detail": "-24.5",
+      "name": "readback.uav1.sdf_map/box_min_x",
+      "ok": true
+    },
+    {
+      "detail": "-24.5",
+      "name": "readback.uav1.sdf_map/box_min_y",
+      "ok": true
+    },
+    {
+      "detail": "24.5",
+      "name": "readback.uav1.sdf_map/box_max_x",
+      "ok": true
+    },
+    {
+      "detail": "24.5",
+      "name": "readback.uav1.sdf_map/box_max_y",
+      "ok": true
+    },
+    {
+      "detail": "/home/houslakers/auto_tune_racer/swarmlio_multi/results/RUN-20260822T153631Z-2uav-preflight/uav1",
+      "name": "logdir.uav1",
+      "ok": true
+    },
+    {
+      "detail": "/home/houslakers/auto_tune_racer/swarmlio_multi/results/RUN-20260822T153631Z-2uav-preflight/fleet",
+      "name": "logdir.fleet",
+      "ok": true
+    },
+    {
+      "detail": "schema complete",
+      "name": "live.resource_profile",
+      "ok": true
+    },
+    {
+      "detail": "watchdog evidence complete",
+      "name": "live.watchdog_soak",
+      "ok": true
+    },
+    {
+      "detail": "available",
+      "name": "final.metrics",
+      "ok": true
+    },
+    {
+      "detail": "final safety metrics complete",
+      "name": "final.safety",
+      "ok": true
+    }
+  ],
+  "passed": false,
+  "resource_usage": {
+    "available": true,
+    "roles": {
+      "bridges": {
+        "cpu_delta_ticks": 1022,
+        "max_cpu_cores": 0.6326846567990339,
+        "max_rss_kb": 137028,
+        "p50_cpu_cores": 0.1280228927937338,
+        "p50_rss_kb": 137028,
+        "p95_cpu_cores": 0.167359211389234,
+        "p95_rss_kb": 137028
+      },
+      "collector": {
+        "cpu_delta_ticks": 365,
+        "max_cpu_cores": 0.1362705415920594,
+        "max_rss_kb": 51860,
+        "p50_cpu_cores": 0.049264028276685336,
+        "p50_rss_kb": 50808,
+        "p95_cpu_cores": 0.07891208516656373,
+        "p95_rss_kb": 51860
+      },
+      "gazebo": {
+        "cpu_delta_ticks": 10176,
+        "max_cpu_cores": 3.2948955265787605,
+        "max_rss_kb": 5172184,
+        "p50_cpu_cores": 1.2445525811036715,
+        "p50_rss_kb": 5172180,
+        "p95_cpu_cores": 1.3912166704000555,
+        "p95_rss_kb": 5172184
+      },
+      "gt_mapper": {
+        "cpu_delta_ticks": 2403,
+        "max_cpu_cores": 0.4734283997841311,
+        "max_rss_kb": 108404,
+        "p50_cpu_cores": 0.33482910422976536,
+        "p50_rss_kb": 108392,
+        "p95_cpu_cores": 0.4233203582198272,
+        "p95_rss_kb": 108404
+      },
+      "racer": {
+        "cpu_delta_ticks": 4283,
+        "max_cpu_cores": 1.6729012185292051,
+        "max_rss_kb": 1785528,
+        "p50_cpu_cores": 1.2620785763476798,
+        "p50_rss_kb": 1781464,
+        "p95_cpu_cores": 1.5855406242629222,
+        "p95_rss_kb": 1781652
+      }
+    },
+    "rt_factor": {
+      "max": 1.9759417710943374,
+      "p50": 0.0,
+      "p95": 1.974601034840058
+    },
+    "samples": 40,
+    "top_cpu_consumers": [
+      "gazebo",
+      "racer",
+      "gt_mapper",
+      "bridges",
+      "collector"
+    ],
+    "valid_rt_samples": 23
+  }
+}

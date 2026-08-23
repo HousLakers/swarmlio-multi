@@ -60,21 +60,123 @@ python3 scripts/two_uav_runner.py launch --manifest experiments/manifests/2uav_s
 这两个命令都必须通过 runner 的 immutable approval package。不得直接执行
 `roslaunch`、Gazebo 或其它未列入 manifest 的命令。
 
-## 2. Codex 终端 A：打开一个长期会话
+## 2. 三终端模型与启动前置（2026-08-23 起）
+
+### 2.1 三终端模型
+
+三个并行终端各自固定 skill：
+
+```text
+高终端（思考审核规划）:  $lead-planning   [$sol-finalize-sync 收尾职责已合并]
+中终端（写代码）:        $low-level-implementation
+低终端（执行与总结）:    $experiment-execution → $result-reporting
+```
+
+打开方式（各开一个会话）：
 
 ```bash
 cd /home/houslakers/auto_tune_racer/swarmlio_multi
-codex
+codex    # 高终端
+codex    # 中终端
+codex    # 低终端
 ```
 
-新会话第一句话：
+### 2.2 高终端启动前置
+
+先读文件（只读这些，不读完整旧对话）：
+
+- `AGENTS.md`
+- `handoff/TERMINAL_HANDOFF_PROTOCOL.md`
+- `handoff/DROPOUT_EXPERIMENT_WORKFLOW.md`
+- `state/current_summary.md`
+- `state/SESSION_HANDOFF.md`
+- `state/dropout_experiment_plan.md`
+- `experiments/manifests/2uav_smoke.yaml`
+- `config/2uav_static.yaml`
+
+然后输入这段提示语：
 
 ```text
-这是从单机 20 m 水平全向候选进入多机集成的新阶段。请先读取 AGENTS.md、
-handoff/SINGLE_TO_MULTI_TRANSFER_20260820.md、state/SESSION_HANDOFF.md、
-state/current_summary.md 和 experiments/manifests/2uav_smoke.yaml。不要读取完整历史，
-不要启动实验。先核对冻结身份并说明 2-UAV 静态接入缺口。
+这是三终端模型中的「高」终端（思考审核规划）。请先只读取以下文件：
+AGENTS.md、handoff/TERMINAL_HANDOFF_PROTOCOL.md、handoff/DROPOUT_EXPERIMENT_WORKFLOW.md、
+state/current_summary.md、state/SESSION_HANDOFF.md、state/dropout_experiment_plan.md、
+experiments/manifests/2uav_smoke.yaml 和 config/2uav_static.yaml。
+不要读取完整旧对话，不要启动实验。请确认：
+1. 当前阶段是掉线实验 Route A 的哪个 Dx；
+2. 当前 git HEAD 和最近一次 stage commit；
+3. 已消费的 approval package；
+4. 唯一下一步动作（签计划、签发 approval、审核证据或收尾）。
+输出 handoff_status 和下一步指令。
 ```
+
+### 2.3 中终端启动前置
+
+先读文件：
+
+- `AGENTS.md`
+- `handoff/TERMINAL_HANDOFF_PROTOCOL.md`
+- `handoff/DROPOUT_EXPERIMENT_WORKFLOW.md`
+- `state/current_summary.md`
+- `state/SESSION_HANDOFF.md`
+- `state/dropout_experiment_plan.md`
+- `state/sol_plan_dropout.md`
+- `state/terra_implementation.md`
+
+然后输入这段提示语：
+
+```text
+这是三终端模型中的「中」终端（写代码）。请先只读取以下文件：
+AGENTS.md、handoff/TERMINAL_HANDOFF_PROTOCOL.md、handoff/DROPOUT_EXPERIMENT_WORKFLOW.md、
+state/current_summary.md、state/SESSION_HANDOFF.md、state/dropout_experiment_plan.md、
+state/sol_plan_dropout.md 和 state/terra_implementation.md。
+不要读取完整旧对话，不要启动实验。请确认：
+1. 当前待实现的 Dx 任务编号和允许写入的文件清单；
+2. 已完成的实现是否已提交 stage commit；
+3. 当前 git diff 的未提交部分；
+4. 唯一下一步动作（继续实现、补充验证证据或交回高终端审核）。
+输出 handoff_status 和下一步指令。
+```
+
+### 2.4 低终端启动前置
+
+先读文件：
+
+- `AGENTS.md`
+- `handoff/TERMINAL_HANDOFF_PROTOCOL.md`
+- `handoff/DROPOUT_EXPERIMENT_WORKFLOW.md`
+- `state/current_summary.md`
+- `state/SESSION_HANDOFF.md`
+- `state/dropout_experiment_plan.md`
+- `experiments/manifests/2uav_smoke.yaml`（或后续 `3uav_smoke.yaml`）
+- `state/2uav_approval.yaml`（或 `state/3uav_approval.yaml`）
+
+然后输入这段提示语：
+
+```text
+这是三终端模型中的「低」终端（执行与总结）。请先只读取以下文件：
+AGENTS.md、handoff/TERMINAL_HANDOFF_PROTOCOL.md、handoff/DROPOUT_EXPERIMENT_WORKFLOW.md、
+state/current_summary.md、state/SESSION_HANDOFF.md、state/dropout_experiment_plan.md、
+experiments/manifests/2uav_smoke.yaml（或 3uav_smoke.yaml）。
+不要读取完整旧对话。请确认：
+1. 当前是否持有一次性 approval package 及其 hash；
+2. 应执行的白名单命令（preflight / launch / monitor / stop / collect）；
+3. 最近一个 runroot 的位置和结论；
+4. 唯一下一步动作（执行实验、写 execution_result 或写 luna_review）。
+输出 handoff_status 和下一步指令。
+```
+
+### 2.5 刷新后重启的启动前置
+
+刷新文档生成后，三个终端各自新开会话，首条消息统一为：
+
+```text
+请先只读取 AGENTS.md、handoff/TERMINAL_HANDOFF_PROTOCOL.md、state/current_summary.md、
+state/SESSION_HANDOFF.md 和 handoff/DROPOUT_EXPERIMENT_WORKFLOW.md。
+我是「高/中/低」终端。只确认当前阶段、最近 stage commit、已消费 package 和唯一下一步动作；
+不要启动实验，不要重复已完成的工作。
+```
+
+### 2.6 用户意见优先级
 
 用户的本轮意见可以直接追加在 Skill 后面，例如：
 
@@ -88,7 +190,7 @@ $lead-planning
 
 ## 3. sol 阶段：批准一轮实验
 
-在 Codex 中选择 sol，执行：
+在「高」终端选择 sol，执行：
 
 ```text
 $lead-planning
@@ -276,9 +378,17 @@ sol 生成计划 → terra 修改 → sol 审核 → DeepSeek 重试
 
 只有完成一次新的实验并经过 luna 审核后，sol 才更新正式状态。
 
-## 9. 长对话压缩和新会话
+## 9. 长对话压缩、刷新和新会话
 
-当 Codex 对话过长，在旧对话中执行：
+三终端模型下，任意终端都可以说「刷新」触发刷新流程（规则见
+`handoff/TERMINAL_HANDOFF_PROTOCOL.md` 第 2 节）：
+
+- 收到「刷新」的终端先暂停当前动作、整理自己的状态；
+- 最后由高终端汇总写入 `state/SESSION_HANDOFF.md`；
+- 刷新不是新实验，也不是 commit 替代品；
+- 刷新后三终端按第 2.5 节「刷新后重启的启动前置」重新开会话。
+
+三终端均可执行：
 
 ```text
 请生成 state/SESSION_HANDOFF.md。
@@ -286,13 +396,7 @@ sol 生成计划 → terra 修改 → sol 审核 → DeepSeek 重试
 不要修改源码，不要启动实验。
 ```
 
-新开对话后只输入：
-
-```text
-请先读取 AGENTS.md、state/current_summary.md、state/SESSION_HANDOFF.md 和
-experiments/manifests/2uav_smoke.yaml。不要读取完整旧对话。先确认当前阶段、最近一次实验、
-已消费 package 和下一步唯一动作；不要启动实验。
-```
+新开对话后，按第 2.2/2.3/2.4 节对应终端的启动前置执行（只读对应文件 + 输入对应提示语）。
 
 ## 10. 一轮实验的完成定义
 
@@ -306,3 +410,52 @@ experiments/manifests/2uav_smoke.yaml。不要读取完整旧对话。先确认�
 - luna 已写 `state/luna_review.md`；
 - sol 已审核并只更新一次正式状态；
 - `project_state.md` 和 `state/SESSION_HANDOFF.md` 已包含证据路径和下一步动作。
+
+## 11. 每阶段提交规则（掉线实验 Route A 专用，2026-08-23 起）
+
+掉线实验 D0–D11 每完成一阶段，必须 commit + push，规则写死在 `AGENTS.md`
+「每阶段提交」节和 `handoff/TERMINAL_HANDOFF_PROTOCOL.md` 第 4 节：
+
+1. 每阶段至少一个 commit；commit 信息格式固定为
+   `stage: <阶段ID> <终端>: <一句话>`；
+2. 只提交该阶段交付物（源码/脚本/config/manifest/state 文档/runroot 摘要）；
+   不提交原始日志、点云、build/devel/install、密钥、整个 results 目录；
+3. 每次 commit 后 push origin main；
+4. 不 rewrite history、不 force push、不 amend 已推送 commit；
+5. 失败阶段先提交 `stage: Dx FAIL <原因>`，再提交修复版；
+6. 高终端审核交付物后，才由对应终端执行 commit + push；
+7. 标准 preflight/smoke（非掉线）仍按一轮一收尾 commit。
+
+commit 命名参考：
+
+```text
+stage: D0 dropout semantics frozen (high)
+stage: D1 runner dropout event (mid)
+stage: D2 collector dropout classification (mid)
+stage: D3 2uav dropout rehearsal (low)
+stage: D5 3uav parameterization (mid)
+stage: D9 3uav control-chain dropout smoke (low)
+stage: D11 dropout report and closeout (high)
+```
+
+## 12. 掉线实验（Route A）阶段速查
+
+详细清单见 `state/dropout_experiment_plan.md`；语义见 `handoff/DROPOUT_EXPERIMENT_WORKFLOW.md`。
+
+| 阶段 | 内容 | 终端 |
+|---|---|---|
+| D0 | 冻结掉线语义 | 高 |
+| D1 | runner 掉线事件（fault injection） | 中 |
+| D2 | collector 掉线分类 | 中 |
+| D3 | 2-UAV 掉线 rehearsal | 低 |
+| D4 | 分类强化 + 报告字段 | 中 |
+| D5 | 三机参数化 | 中 |
+| D6 | 3-UAV config/launch/manifest | 中 |
+| D7 | 3-UAV static 校验 | 中 |
+| D8 | 3-UAV diagnostic preflight | 低 |
+| D9 | 3-UAV 掉线 smoke（control_chain） | 低 |
+| D10 | 3-UAV 掉线 smoke（node_level 最终） | 低 |
+| D11 | 报告与收尾 | 低→高 |
+
+当前 git 身份：`HousLakers <HousLakers@users.noreply.github.com>`，远程 `origin` =
+`https://github.com/HousLakers/swarmlio-multi.git`。

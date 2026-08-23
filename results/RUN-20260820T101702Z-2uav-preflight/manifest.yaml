@@ -1,0 +1,81 @@
+experiment_id: two_uav_smoke_v1
+approval_status: blocked_pending_verified_launch_and_preflight
+approval_contract: config/2uav_approval_contract.yaml
+uav_count: 2
+duration_sim_s: 120
+repetitions: 1
+seed: 20260814
+single_uav_baseline: range20m_omnidirectional_v1
+platform_repository: /home/houslakers/auto_tune_racer/racer-platform
+platform_commit: 57c1f34a607b834915f9aa4a4a6b301ecc5a4ffc
+environment_baseline:
+  id: racer_outdoor_50x50_v1
+  manifest: /home/houslakers/auto_tune_racer/racer-platform/environment/baselines/racer_outdoor_50x50_v1.yaml
+  manifest_sha256: 48d00fca6032c76f59ca26134ff39dba2d555a552c2d73f81e3ca51b4583dc44
+  world: /home/houslakers/auto_tune_racer/racer-platform/environment/worlds/2uav_outdoor_50x50_v1.world
+  world_sha256: 28a306b646297011b564c5ce94ac97634281a5e9a34e337956c5f4a9227c320e
+  map_size_m: [50.0, 50.0, 3.0]
+  planner_box_min: [-24.5, -24.5, 1.15]
+  planner_box_max: [24.5, 24.5, 2.7]
+  runtime_validation: not_run
+single_repository: https://github.com/HousLakers/swarmlio-single.git
+single_commit: c01f1f5af40ec25631aa11765a0f21e06834abc4
+overlay_manifest: platform_overlays/range20m_omnidirectional_v1/current_config.sha256
+overlay_manifest_sha256: 80d0d06a5a9b3722804c28d3efc6ace9a71d5955b26f8124e12bf3579e0d9529
+overlay_installer_sha256: 7e2280d5d0ba88ee501764ab5b5ccc3f3724d5b6abf39704badc7a8976349151
+baseline_runtime:
+  lidar_effective_range_m: 20.0
+  horizontal_field_of_view_deg: 360.0
+  obstacles_inflation: 0.35
+  progress_guard_enabled: false
+  global_trajectory_guard_enabled: false
+  global_trajectory_reject_unknown: false
+  registration_source: gt
+map_mode: shared_async
+partition_mode: static
+communication_delay_ms: 0
+static_contract: config/2uav_static.yaml
+launch_command: python3 scripts/two_uav_runner.py launch --manifest experiments/manifests/2uav_smoke.yaml
+command_whitelist:
+  - python3 scripts/two_uav_runner.py preflight --manifest experiments/manifests/2uav_smoke.yaml
+  - python3 scripts/two_uav_runner.py launch --manifest experiments/manifests/2uav_smoke.yaml
+  - python3 scripts/two_uav_runner.py monitor --manifest experiments/manifests/2uav_smoke.yaml
+  - python3 scripts/two_uav_runner.py stop --manifest experiments/manifests/2uav_smoke.yaml
+  - python3 scripts/two_uav_runner.py collect --manifest experiments/manifests/2uav_smoke.yaml
+required_preflight:
+  - frozen_source_identity
+  - namespace_and_topic_isolation
+  - vehicle_id_and_port_isolation
+  - unique_monotonic_clock_and_sim_time
+  - tf_tree_isolation
+  - per_uav_log_and_result_isolation
+  - runtime_parameter_readback
+  - per_uav_telemetry_readback
+  - fleet_abort_path
+metrics:
+  - per_uav_completion
+  - per_uav_freeze
+  - per_uav_crash
+  - per_uav_contact
+  - per_uav_coverage
+  - per_uav_telemetry
+  - per_uav_ack_timeout
+  - fleet_coverage
+  - overlap_ratio
+  - minimum_inter_uav_distance
+  - fleet_contact_count
+  - map_consistency
+  - telemetry_completeness
+metric_contract:
+  completion: per_uav_RACER_FINISH_rosout_event
+  coverage: observed_occupancy_voxels_over_planner_box_volume
+  coverage_missing: fail_closed_after_startup_grace
+  overlap_ratio: intersection_over_smaller_per_uav_observed_set
+  map_consistency: jaccard_over_per_uav_observed_sets
+  ack_timeout: fail_closed_even_if_later_recovered
+abort_on:
+  - crash
+  - severe_contact
+  - corrupted_telemetry
+  - namespace_or_tf_cross_talk
+  - process_death

@@ -3185,4 +3185,26 @@ package 静态验证: ALL PASS（8 项）
   若超余量仍可能失败（swap 兜底：swap delta > 200000 页 abort）。
 - startup 门限仍为 8 GiB（上次实测 11.5 GiB 空闲，充足）。
 
+## 54.11 D9 3-UAV dropout-smoke 审核（RUN-20260823T153614Z-3uav-smoke）
+
+- 命令：`python3 scripts/two_uav_runner.py launch --manifest experiments/manifests/3uav_smoke.yaml`
+- approval：dropout-smoke-20260823-3uav-1（digest ca7aceaa），已消费
+- exit：duration_complete；dropout 注入 sim 86.739s（uav1 control_chain kill
+  exploration_node_2+traj_server_2），classification=intentional_dropout
+- uav0 存活恢复验证通过：掉线后覆盖增量 10727 voxels，路径 72.9 m
+- uav2 冻结：trajectory/pos_cmd/ack=0，freeze=true，final safety FAIL（设计捕获，
+  由 uav2 telemetry=0 触发）。**判定为独立于掉线实验的规划链路问题**（掉线前即冻结；
+  cloud/odom/coverage 均正常，说明 SLAM 与探索端在跑，traj_server_3 未产出轨迹）
+- 资源门：startup 11.68 GiB / ready 2.54 GiB（D8 门限参数化生效）
+- RT p50=0.272（已知偏差不阻断）；stop clean，无 survivors
+
+### 54.12 审核结论与后续
+
+- **D9 dropout-smoke 认可通过**：掉线注入正确性、存活恢复、abort 路径、资源合约
+  全部达成。uav2 冻结如实标注，转中终端独立排查（新任务）。
+- manifest approval_status：blocked_pending_verified_launch_and_preflight
+  → smoke_completed；3uav manifest hash 2232cb58 → f3c0544c；
+  3uav hashes manifest b5b0f2d4 → 802b8340（15/15 逐文件一致）。
+- 2-UAV 与 3-UAV 主流程至此闭环（D1→D9）。
+
 

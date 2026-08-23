@@ -1,0 +1,314 @@
+{
+  "checks": [
+    {
+      "detail": "all present",
+      "name": "live.required_topics",
+      "ok": true
+    },
+    {
+      "detail": "1",
+      "name": "live.clock_single_publisher",
+      "ok": true
+    },
+    {
+      "detail": "true",
+      "name": "live.use_sim_time",
+      "ok": true
+    },
+    {
+      "detail": "all expected TF edges observed",
+      "name": "live.tf_expected_unique_dynamic_edges",
+      "ok": true
+    },
+    {
+      "detail": "payload",
+      "name": "live.payload.uav0.raw_cloud",
+      "ok": true
+    },
+    {
+      "detail": "payload",
+      "name": "live.payload.uav0.mavros_odom",
+      "ok": true
+    },
+    {
+      "detail": "payload",
+      "name": "live.payload.uav0.registered_cloud",
+      "ok": true
+    },
+    {
+      "detail": "payload",
+      "name": "live.payload.uav0.registered_odom",
+      "ok": true
+    },
+    {
+      "detail": "payload",
+      "name": "live.payload.uav0.frontier",
+      "ok": true
+    },
+    {
+      "detail": "payload",
+      "name": "live.payload.uav1.raw_cloud",
+      "ok": true
+    },
+    {
+      "detail": "payload",
+      "name": "live.payload.uav1.mavros_odom",
+      "ok": true
+    },
+    {
+      "detail": "payload",
+      "name": "live.payload.uav1.registered_cloud",
+      "ok": true
+    },
+    {
+      "detail": "payload",
+      "name": "live.payload.uav1.registered_odom",
+      "ok": true
+    },
+    {
+      "detail": "payload",
+      "name": "live.payload.uav1.frontier",
+      "ok": true
+    },
+    {
+      "detail": "0.35",
+      "name": "readback.uav0.sdf_map/obstacles_inflation",
+      "ok": true
+    },
+    {
+      "detail": "20.0",
+      "name": "readback.uav0.sdf_map/max_ray_length",
+      "ok": true
+    },
+    {
+      "detail": "20.5",
+      "name": "readback.uav0.map_ros/depth_filter_maxdist",
+      "ok": true
+    },
+    {
+      "detail": "false",
+      "name": "readback.uav0.planner_escape/v2_progress_guard_enabled",
+      "ok": true
+    },
+    {
+      "detail": "false",
+      "name": "readback.uav0.trajectory_safety/global_postplan_guard_enabled",
+      "ok": true
+    },
+    {
+      "detail": "false",
+      "name": "readback.uav0.trajectory_safety/reject_unknown",
+      "ok": true
+    },
+    {
+      "detail": "20.0",
+      "name": "readback.uav0.perception_utils/max_dist",
+      "ok": true
+    },
+    {
+      "detail": "omnidirectional",
+      "name": "readback.uav0.perception_utils/horizontal_model",
+      "ok": true
+    },
+    {
+      "detail": "50.0",
+      "name": "readback.uav0.sdf_map/map_size_x",
+      "ok": true
+    },
+    {
+      "detail": "50.0",
+      "name": "readback.uav0.sdf_map/map_size_y",
+      "ok": true
+    },
+    {
+      "detail": "-24.5",
+      "name": "readback.uav0.sdf_map/box_min_x",
+      "ok": true
+    },
+    {
+      "detail": "-24.5",
+      "name": "readback.uav0.sdf_map/box_min_y",
+      "ok": true
+    },
+    {
+      "detail": "24.5",
+      "name": "readback.uav0.sdf_map/box_max_x",
+      "ok": true
+    },
+    {
+      "detail": "24.5",
+      "name": "readback.uav0.sdf_map/box_max_y",
+      "ok": true
+    },
+    {
+      "detail": "/home/houslakers/auto_tune_racer/swarmlio_multi/results/RUN-20260821T194922Z-2uav-preflight/uav0",
+      "name": "logdir.uav0",
+      "ok": true
+    },
+    {
+      "detail": "0.35",
+      "name": "readback.uav1.sdf_map/obstacles_inflation",
+      "ok": true
+    },
+    {
+      "detail": "20.0",
+      "name": "readback.uav1.sdf_map/max_ray_length",
+      "ok": true
+    },
+    {
+      "detail": "20.5",
+      "name": "readback.uav1.map_ros/depth_filter_maxdist",
+      "ok": true
+    },
+    {
+      "detail": "false",
+      "name": "readback.uav1.planner_escape/v2_progress_guard_enabled",
+      "ok": true
+    },
+    {
+      "detail": "false",
+      "name": "readback.uav1.trajectory_safety/global_postplan_guard_enabled",
+      "ok": true
+    },
+    {
+      "detail": "false",
+      "name": "readback.uav1.trajectory_safety/reject_unknown",
+      "ok": true
+    },
+    {
+      "detail": "20.0",
+      "name": "readback.uav1.perception_utils/max_dist",
+      "ok": true
+    },
+    {
+      "detail": "omnidirectional",
+      "name": "readback.uav1.perception_utils/horizontal_model",
+      "ok": true
+    },
+    {
+      "detail": "50.0",
+      "name": "readback.uav1.sdf_map/map_size_x",
+      "ok": true
+    },
+    {
+      "detail": "50.0",
+      "name": "readback.uav1.sdf_map/map_size_y",
+      "ok": true
+    },
+    {
+      "detail": "-24.5",
+      "name": "readback.uav1.sdf_map/box_min_x",
+      "ok": true
+    },
+    {
+      "detail": "-24.5",
+      "name": "readback.uav1.sdf_map/box_min_y",
+      "ok": true
+    },
+    {
+      "detail": "24.5",
+      "name": "readback.uav1.sdf_map/box_max_x",
+      "ok": true
+    },
+    {
+      "detail": "24.5",
+      "name": "readback.uav1.sdf_map/box_max_y",
+      "ok": true
+    },
+    {
+      "detail": "/home/houslakers/auto_tune_racer/swarmlio_multi/results/RUN-20260821T194922Z-2uav-preflight/uav1",
+      "name": "logdir.uav1",
+      "ok": true
+    },
+    {
+      "detail": "/home/houslakers/auto_tune_racer/swarmlio_multi/results/RUN-20260821T194922Z-2uav-preflight/fleet",
+      "name": "logdir.fleet",
+      "ok": true
+    },
+    {
+      "detail": "schema complete",
+      "name": "live.resource_profile",
+      "ok": true
+    },
+    {
+      "detail": "watchdog evidence complete",
+      "name": "live.watchdog_soak",
+      "ok": true
+    },
+    {
+      "detail": "available",
+      "name": "final.metrics",
+      "ok": true
+    },
+    {
+      "detail": "final safety metrics complete",
+      "name": "final.safety",
+      "ok": true
+    }
+  ],
+  "passed": true,
+  "resource_usage": {
+    "available": true,
+    "roles": {
+      "bridges": {
+        "cpu_delta_ticks": 1093,
+        "max_cpu_cores": 2.9555482159560476,
+        "max_rss_kb": 136360,
+        "p50_cpu_cores": 0.11810098865732625,
+        "p50_rss_kb": 136072,
+        "p95_cpu_cores": 0.18707070620514712,
+        "p95_rss_kb": 136360
+      },
+      "collector": {
+        "cpu_delta_ticks": 384,
+        "max_cpu_cores": 0.1548448254294854,
+        "max_rss_kb": 54108,
+        "p50_cpu_cores": 0.03941858660883052,
+        "p50_rss_kb": 50736,
+        "p95_cpu_cores": 0.07869768094918486,
+        "p95_rss_kb": 53844
+      },
+      "gazebo": {
+        "cpu_delta_ticks": 10898,
+        "max_cpu_cores": 3.139483451537631,
+        "max_rss_kb": 5172348,
+        "p50_cpu_cores": 1.2436235734794339,
+        "p50_rss_kb": 5172340,
+        "p95_cpu_cores": 1.5157782481049724,
+        "p95_rss_kb": 5172348
+      },
+      "gt_mapper": {
+        "cpu_delta_ticks": 2478,
+        "max_cpu_cores": 0.4580667424084011,
+        "max_rss_kb": 102812,
+        "p50_cpu_cores": 0.3054006611567063,
+        "p50_rss_kb": 102808,
+        "p95_cpu_cores": 0.4430621989069274,
+        "p95_rss_kb": 102812
+      },
+      "racer": {
+        "cpu_delta_ticks": 5506,
+        "max_cpu_cores": 2.197359891010444,
+        "max_rss_kb": 7252904,
+        "p50_cpu_cores": 1.7603939757785152,
+        "p50_rss_kb": 7174508,
+        "p95_cpu_cores": 2.19494036461538,
+        "p95_rss_kb": 7248832
+      }
+    },
+    "rt_factor": {
+      "max": 1.9836740707091787,
+      "p50": 0.0,
+      "p95": 1.9812141178957283
+    },
+    "samples": 41,
+    "top_cpu_consumers": [
+      "gazebo",
+      "racer",
+      "gt_mapper",
+      "bridges",
+      "collector"
+    ],
+    "valid_rt_samples": 22
+  }
+}

@@ -1,0 +1,303 @@
+{
+  "checks": [
+    {
+      "detail": "{'uav_count': 3, 'vehicles': 3}",
+      "name": "contract.uav_count",
+      "ok": true
+    },
+    {
+      "detail": "['\"/uav0\"', '\"/uav1\"', '\"/uav2\"']",
+      "name": "isolation.namespace",
+      "ok": true
+    },
+    {
+      "detail": "['1', '2', '3']",
+      "name": "isolation.racer_id",
+      "ok": true
+    },
+    {
+      "detail": "['1', '2', '3']",
+      "name": "isolation.mavlink_system_id",
+      "ok": true
+    },
+    {
+      "detail": "['[0.0, 0.0, 0.0]', '[1.5, 0.0, 0.0]', '[-3.0, 3.0, 0.0]']",
+      "name": "isolation.initial_position",
+      "ok": true
+    },
+    {
+      "detail": "['\"uav0\"', '\"uav1\"', '\"uav2\"']",
+      "name": "isolation.log_subdir",
+      "ok": true
+    },
+    {
+      "detail": "[14540, 14580, 14560, 4560, 5600, 14530, 14541, 14581, 14561, 4561, 5601, 14531, 14542, 14582, 14562, 4562, 5602, 14532]",
+      "name": "isolation.ports",
+      "ok": true
+    },
+    {
+      "detail": "['uav0/base_link', 'uav1/base_link', 'uav2/base_link']",
+      "name": "isolation.tf_child",
+      "ok": true
+    },
+    {
+      "detail": "['/uav0/livox/scan', '/uav0/mavros/local_position/odom', '/cloud_registered_1', '/lidar_slam/odom_1', '/lidar_slam/pose_1', '/planning_vis/frontier_1', '/planning/bspline_1', '/planning/pos_cmd_1', '/planning/command_ack_1', '/sdf_map/occupancy_all_1', '/uav0/mavros/state', '/uav1/livox/scan', '/uav1/mavros/local_position/odom', '/cloud_registered_2', '/lidar_slam/odom_2', '/lidar_slam/pose_2', '/planning_vis/frontier_2', '/planning/bspline_2', '/planning/pos_cmd_2', '/planning/command_ack_2', '/sdf_map/occupancy_all_2', '/uav1/mavros/state', '/uav2/livox/scan', '/uav2/mavros/local_position/odom', '/cloud_registered_3', '/lidar_slam/odom_3', '/lidar_slam/pose_3', '/planning_vis/frontier_3', '/planning/bspline_3', '/planning/pos_cmd_3', '/planning/command_ack_3', '/sdf_map/occupancy_all_3', '/uav2/mavros/state']",
+      "name": "isolation.vehicle_topics",
+      "ok": true
+    },
+    {
+      "detail": "{'topic': '/clock', 'publishers': 1, 'use_sim_time': True}",
+      "name": "clock.contract",
+      "ok": true
+    },
+    {
+      "detail": "gt",
+      "name": "registration_source",
+      "ok": true
+    },
+    {
+      "detail": "57c1f34a607b834915f9aa4a4a6b301ecc5a4ffc",
+      "name": "source.platform_commit",
+      "ok": true
+    },
+    {
+      "detail": "clean",
+      "name": "source.platform_tracked_clean",
+      "ok": true
+    },
+    {
+      "detail": "8c8ddf2add3f7b3ce4f9943583fd945f16b1bd91",
+      "name": "source.single_commit",
+      "ok": true
+    },
+    {
+      "detail": "clean",
+      "name": "source.single_tracked_clean",
+      "ok": true
+    },
+    {
+      "detail": "68ceb54faa24f4cc97396634bfc3d611f8e40a6db89999d3cbabc112092ccf62",
+      "name": "source.overlay_manifest_sha256",
+      "ok": true
+    },
+    {
+      "detail": "7e2280d5d0ba88ee501764ab5b5ccc3f3724d5b6abf39704badc7a8976349151",
+      "name": "source.overlay_installer_sha256",
+      "ok": true
+    },
+    {
+      "detail": "racer_outdoor_50x50_v1",
+      "name": "environment.baseline_id",
+      "ok": true
+    },
+    {
+      "detail": "28a306b646297011b564c5ce94ac97634281a5e9a34e337956c5f4a9227c320e",
+      "name": "environment.world_sha256",
+      "ok": true
+    },
+    {
+      "detail": "ce595cafba088955b38c4c9bd1d08f9af254dbfa0bf013481372a75e17980944",
+      "name": "environment.manifest_sha256",
+      "ok": true
+    },
+    {
+      "detail": "racer_outdoor_50x50_v1",
+      "name": "environment.manifest_id",
+      "ok": true
+    },
+    {
+      "detail": "28a306b646297011b564c5ce94ac97634281a5e9a34e337956c5f4a9227c320e",
+      "name": "environment.manifest_world_sha256",
+      "ok": true
+    },
+    {
+      "detail": "[50.0, 50.0, 3.0]",
+      "name": "environment.map_size",
+      "ok": true
+    },
+    {
+      "detail": "21/21 CURRENT",
+      "name": "source.overlay_installed_21_of_21",
+      "ok": true
+    },
+    {
+      "detail": "0.10",
+      "name": "frozen_param.sdf_map/resolution",
+      "ok": true
+    },
+    {
+      "detail": "0.35",
+      "name": "frozen_param.sdf_map/obstacles_inflation",
+      "ok": true
+    },
+    {
+      "detail": "20.0",
+      "name": "frozen_param.sdf_map/max_ray_length",
+      "ok": true
+    },
+    {
+      "detail": "20.5",
+      "name": "frozen_param.map_ros/depth_filter_maxdist",
+      "ok": true
+    },
+    {
+      "detail": "2.0",
+      "name": "frozen_param.map_ros/all_map_publish_period",
+      "ok": true
+    },
+    {
+      "detail": "false",
+      "name": "frozen_param.planner_escape/v2_progress_guard_enabled",
+      "ok": true
+    },
+    {
+      "detail": "false",
+      "name": "frozen_param.trajectory_safety/global_postplan_guard_enabled",
+      "ok": true
+    },
+    {
+      "detail": "false",
+      "name": "frozen_param.trajectory_safety/reject_unknown",
+      "ok": true
+    },
+    {
+      "detail": "20.0",
+      "name": "frozen_param.perception_utils/max_dist",
+      "ok": true
+    },
+    {
+      "detail": "omnidirectional",
+      "name": "frozen_param.perception_utils/horizontal_model",
+      "ok": true
+    },
+    {
+      "detail": "well-formed",
+      "name": "launch.xml.launch/3uav_px4_sitl.launch",
+      "ok": true
+    },
+    {
+      "detail": "well-formed",
+      "name": "launch.xml.launch/3uav_bridges.launch",
+      "ok": true
+    },
+    {
+      "detail": "well-formed",
+      "name": "launch.xml.launch/3uav_racer.launch",
+      "ok": true
+    },
+    {
+      "detail": "/home/houslakers/auto_tune_racer/racer-platform/environment/worlds/2uav_outdoor_50x50_v1.world",
+      "name": "environment.px4_world",
+      "ok": true
+    },
+    {
+      "detail": "{'map_size_x': '50.0', 'map_size_y': '50.0', 'map_size_z': '3.0'}",
+      "name": "environment.racer_map_size",
+      "ok": true
+    },
+    {
+      "detail": "{'use_sim_time': 'true', '/exploration_node_1/sdf_map/box_min_x': '-24.5', '/exploration_node_1/sdf_map/box_min_y': '-24.5', '/exploration_node_1/sdf_map/box_max_x': '24.5', '/exploration_node_1/sdf_map/box_max_y': '24.5', '/exploration_node_2/sdf_map/box_min_x': '-24.5', '/exploration_node_2/sdf_map/box_min_y': '-24.5', '/exploration_node_2/sdf_map/box_max_x': '24.5', '/exploration_node_2/sdf_map/box_max_y': '24.5', '/exploration_node_3/sdf_map/box_min_x': '-24.5', '/exploration_node_3/sdf_map/box_min_y': '-24.5', '/exploration_node_3/sdf_map/box_max_x': '24.5', '/exploration_node_3/sdf_map/box_max_y': '24.5'}",
+      "name": "environment.racer_box_bounds",
+      "ok": true
+    },
+    {
+      "detail": "{'drone_id': '1', 'mavros_ns': '/uav0', 'init_pos': '[0.0, 0.0]', 'odom_topic': '/mavros_relay/odom_1'}",
+      "name": "wiring.uav0_bridge",
+      "ok": true
+    },
+    {
+      "detail": "{'drone_id': '1', 'drone_num': '3', 'init_x': '0.0', 'init_y': '0.0', 'init_z': '0.0', 'map_size_x': '$(arg map_size_x)', 'map_size_y': '$(arg map_size_y)', 'map_size_z': '$(arg map_size_z)', 'odom_prefix': '/lidar_slam/odom', 'simulation': '$(arg simulation)'}",
+      "name": "wiring.uav0_racer",
+      "ok": true
+    },
+    {
+      "detail": "{'ID': '0', 'x': '0.0', 'y': '0.0', 'z': '0.0', 'R': '0', 'P': '0', 'Y': '0', 'vehicle': '$(arg vehicle)', 'mavlink_udp_port': '14560', 'mavlink_tcp_port': '4560', 'gst_udp_port': '5600', 'video_uri': '5600', 'mavlink_cam_udp_port': '14530', 'fcu_url': 'udp://:14540@localhost:14580', 'gcs_url': '', 'tgt_system': '1', 'tgt_component': '1'}",
+      "name": "wiring.uav0_px4",
+      "ok": true
+    },
+    {
+      "detail": "{'drone_id': '2', 'mavros_ns': '/uav1', 'init_pos': '[1.5, 0.0]', 'odom_topic': '/mavros_relay/odom_2'}",
+      "name": "wiring.uav1_bridge",
+      "ok": true
+    },
+    {
+      "detail": "{'drone_id': '2', 'drone_num': '3', 'init_x': '1.5', 'init_y': '0.0', 'init_z': '0.0', 'map_size_x': '$(arg map_size_x)', 'map_size_y': '$(arg map_size_y)', 'map_size_z': '$(arg map_size_z)', 'odom_prefix': '/lidar_slam/odom', 'simulation': '$(arg simulation)'}",
+      "name": "wiring.uav1_racer",
+      "ok": true
+    },
+    {
+      "detail": "{'ID': '1', 'x': '1.5', 'y': '0.0', 'z': '0.0', 'R': '0', 'P': '0', 'Y': '0', 'vehicle': '$(arg vehicle)', 'mavlink_udp_port': '14561', 'mavlink_tcp_port': '4561', 'gst_udp_port': '5601', 'video_uri': '5601', 'mavlink_cam_udp_port': '14531', 'fcu_url': 'udp://:14541@localhost:14581', 'gcs_url': '', 'tgt_system': '2', 'tgt_component': '1'}",
+      "name": "wiring.uav1_px4",
+      "ok": true
+    },
+    {
+      "detail": "{'drone_id': '3', 'mavros_ns': '/uav2', 'init_pos': '[-3.0, 3.0]', 'odom_topic': '/mavros_relay/odom_3'}",
+      "name": "wiring.uav2_bridge",
+      "ok": true
+    },
+    {
+      "detail": "{'drone_id': '3', 'drone_num': '3', 'init_x': '-3.0', 'init_y': '3.0', 'init_z': '0.0', 'map_size_x': '$(arg map_size_x)', 'map_size_y': '$(arg map_size_y)', 'map_size_z': '$(arg map_size_z)', 'odom_prefix': '/lidar_slam/odom', 'simulation': '$(arg simulation)'}",
+      "name": "wiring.uav2_racer",
+      "ok": true
+    },
+    {
+      "detail": "{'ID': '2', 'x': '-3.0', 'y': '3.0', 'z': '0.0', 'R': '0', 'P': '0', 'Y': '0', 'vehicle': '$(arg vehicle)', 'mavlink_udp_port': '14562', 'mavlink_tcp_port': '4562', 'gst_udp_port': '5602', 'video_uri': '5602', 'mavlink_cam_udp_port': '14532', 'fcu_url': 'udp://:14542@localhost:14582', 'gcs_url': '', 'tgt_system': '3', 'tgt_component': '1'}",
+      "name": "wiring.uav2_px4",
+      "ok": true
+    },
+    {
+      "detail": "blocked_pending_verified_launch_and_preflight",
+      "name": "manifest.approval_status_candidate",
+      "ok": true
+    },
+    {
+      "detail": "python3 scripts/two_uav_runner.py launch --manifest experiments/manifests/3uav_smoke.yaml",
+      "name": "manifest.launch_command",
+      "ok": true
+    },
+    {
+      "detail": "['python3 scripts/two_uav_runner.py preflight --manifest experiments/manifests/3uav_smoke.yaml', 'python3 scripts/two_uav_runner.py launch --manifest experiments/manifests/3uav_smoke.yaml', 'python3 scripts/two_uav_runner.py monitor --manifest experiments/manifests/3uav_smoke.yaml', 'python3 scripts/two_uav_runner.py stop --manifest experiments/manifests/3uav_smoke.yaml', 'python3 scripts/two_uav_runner.py collect --manifest experiments/manifests/3uav_smoke.yaml']",
+      "name": "manifest.command_whitelist",
+      "ok": true
+    },
+    {
+      "detail": "['frozen_source_identity', 'namespace_and_topic_isolation', 'vehicle_id_and_port_isolation', 'unique_monotonic_clock_and_sim_time', 'tf_tree_isolation', 'per_uav_log_and_result_isolation', 'runtime_parameter_readback', 'per_uav_telemetry_readback', 'fleet_abort_path']",
+      "name": "manifest.parameter_readback_gate",
+      "ok": true
+    },
+    {
+      "detail": "{'schema_version': 1, 'approval_package': 'state/3uav_approval.yaml', 'manifest_status_must_remain': 'blocked_pending_verified_launch_and_preflight', 'required_fields': ['schema_version', 'stage', 'approved', 'allowed_actions', 'manifest_sha256', 'source_hash_manifest_sha256', 'issued_by', 'max_uses'], 'issued_by_must_be': 'sol', 'max_uses': 1, 'stages': {'preflight': {'allowed_actions': ['preflight']}, 'smoke': {'allowed_actions': ['launch']}}, 'fail_closed': ['missing_package', 'malformed_package', 'unsigned_stage', 'manifest_hash_drift', 'source_hash_manifest_drift', 'approval_already_consumed']}",
+      "name": "approval.immutable_package_contract",
+      "ok": true
+    },
+    {
+      "detail": "{'id': 'racer_outdoor_50x50_v1', 'manifest': '/home/houslakers/auto_tune_racer/racer-platform/environment/baselines/racer_outdoor_50x50_v1.yaml', 'manifest_sha256': 'ce595cafba088955b38c4c9bd1d08f9af254dbfa0bf013481372a75e17980944', 'world': '/home/houslakers/auto_tune_racer/racer-platform/environment/worlds/2uav_outdoor_50x50_v1.world', 'world_sha256': '28a306b646297011b564c5ce94ac97634281a5e9a34e337956c5f4a9227c320e', 'map_size_m': [50.0, 50.0, 3.0], 'planner_box_min': [-24.5, -24.5, 1.15], 'planner_box_max': [24.5, 24.5, 2.7], 'runtime_validation': 'not_run'}",
+      "name": "manifest.environment_baseline",
+      "ok": true
+    },
+    {
+      "detail": "{'telemetry': {'startup_grace_s': 20.0, 'preflight_soak_s': 24.0, 'freshness_s': 5.0, 'tf_freshness_s': 5.0, 'command_ack_timeout_s': 1.0, 'topic_owner_action': 'abort_on_missing_or_drift', 'tf_action': 'abort_on_missing_or_parent_cross_talk', 'occupancy_contract': 'startup_presence'}, 'metrics': {'voxel_resolution_m': 0.25, 'coverage_denominator': 'planner_box_volume', 'overlap_denominator': 'smaller_per_uav_observed_set', 'map_consistency_denominator': 'union_per_uav_observed_set', 'coverage_missing_policy': 'abort_after_startup_grace', 'ack_timeout_policy': 'fail_closed_even_if_recovered', 'coverage_coalesce_sim_s': 2.0, 'resource_sample_wall_s': 1.0, 'resource_startup_mem_available_gib': 8, 'resource_running_mem_available_gib': 1, 'resource_startup_load1_max': 10.0, 'resource_swap_activity': 'abort'}}",
+      "name": "safety.watchdog_contract",
+      "ok": true
+    },
+    {
+      "detail": "all entries match",
+      "name": "source.multi_hash_manifest",
+      "ok": true
+    }
+  ],
+  "passed": true,
+  "source_hashes": {
+    "config/3uav_approval_contract.yaml": "d57b9f8675a752128dddc97965639a1d2ca33fe6a42f5e9ede520716ec646143",
+    "config/3uav_source_hashes.sha256": "b5b0f2d4d331af1de31e1cbade5cce38f0a7e2b580afd939b9d08b460ff9259f",
+    "config/3uav_static.yaml": "dd4ee86228e69adc9b97d2dd288a167ce56fb5ae8ec4b1aad63e0a76f5abe49f",
+    "experiments/manifests/3uav_smoke.yaml": "2232cb58445e7bd765e9747443dd3296532fd10a8f3afd0ae1e8fad6262ef26b",
+    "launch/3uav_bridges.launch": "5c6fdf8837c83841623f9c98527966ade9d60c0f009ffc58800aaf4d07ff6eb3",
+    "launch/3uav_px4_sitl.launch": "a79f9c9e8e84dcb8ed76221ddaa59f8af3dac632291f5f5237de432388afd6ab",
+    "launch/3uav_racer.launch": "bec4e99d0b27931561154a3ce2b9746534a4437f4dbef87c069df2e1dbc41cf1",
+    "scripts/two_uav_collector.py": "20a1832b89c6c6425d15ef948423e38e020f29da82ee32d5fb5a72f7629806b2",
+    "scripts/two_uav_gt_mapper.py": "ead7324d68fa69b00df6a44d90532be758d91538c1e467d1023d2259c0a8c23c",
+    "scripts/two_uav_preflight.py": "9f7c60f2a793ce272eed56d429f67acdda1efb0d1f9473aca17c048141fa1074",
+    "scripts/two_uav_runner.py": "56ce9ff243a7e8afb8976b60f28ff6ee2b841432c29dcad06733df50a43c9127"
+  }
+}

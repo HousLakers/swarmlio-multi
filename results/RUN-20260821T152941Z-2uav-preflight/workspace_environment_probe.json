@@ -1,0 +1,23 @@
+{
+  "exploration_manager": {
+    "command": "rospack find exploration_manager",
+    "ok": true,
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "/home/houslakers/racer_ws/src/RACER/swarm_exploration/exploration_manager"
+  },
+  "quadrotor_msgs": {
+    "command": "python3 -c 'import quadrotor_msgs.msg'",
+    "ok": true,
+    "returncode": 0,
+    "stderr": "",
+    "stdout": ""
+  },
+  "swarm_lio": {
+    "command": "rospack find swarm_lio",
+    "ok": true,
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "/home/houslakers/swarm_ws/src/Swarm-LIO2/swarm_lio"
+  }
+}

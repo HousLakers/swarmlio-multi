@@ -678,3 +678,503 @@ decision: BLOCKED_PENDING_MINIMAL_REPAIR_AND_NEW_PREFLIGHT_REVIEW
 当前不得复用任何历史 package，不得现场调参或直接重试。后续只有完成
 `state/sol_plan.md` 第 19 节最小修复、离线验证和 Sol 审核后，才可另行签发新的单次
 `stage: preflight` package；不得直接签发 smoke。
+
+## 18. 2026-08-21 第 21 节返工复审：批准一次 diagnostic preflight
+
+### 决定
+
+```text
+approved_preflight_retry: true
+approved_smoke: false
+decision: APPROVED_SINGLE_USE_DIAGNOSTIC_PREFLIGHT_ONLY
+```
+
+本决定只批准一次 manifest 白名单 preflight，用于复验无 goal 接入/watchdog，并采集 GT mapper
+self/peer 机体 collision-envelope candidate 诊断；不批准 `launch`、smoke、长跑、点过滤或参数
+搜索。审核输入为 `AGENTS.md`、`state/current_summary.md`、`state/sol_plan.md` 第 20/21 节、
+`state/terra_implementation.md` 第 23/24 节、当前源码 diff、唯一 manifest/static contract、
+source hash manifest、runner、approval contract 与历史 receipts。审核期间未启动 ROS、Gazebo 或
+实验。
+
+### 冻结身份与新 package
+
+- HEAD/分支：`694a9c30aa9ee8f8f04b4f165866ded55a82aa0c` / `main`（本轮以完整 source hash
+  manifest 冻结 dirty 工作树）；
+- manifest SHA-256：
+  `75aececfaaa99137ddc1862dd28dbd4b99cb02336580a9b606d3ba391eb81d46`；
+- static contract SHA-256：
+  `415c9961cae6eb999ed18330ee84bac4881150aef5c76b44798090512a9d465e`；
+- source hash manifest SHA-256：
+  `a962c13024a4cdbadfc3a667ead557214af249698afbfcbedd69749af69c5f03`；
+- collector SHA-256：
+  `2343f0b9024878ea9a5c58d6e4cb941cd99b3950fd3a4184be355361d134aeb4`；
+- GT mapper SHA-256：
+  `38645cdac77388f8546fe94f2c9d4f332d727500260d4ef2329e19d9f818a690`；
+- runner SHA-256：
+  `9e3141efafe8a6f618075d8fe6281b9a41e12f5542cad6d7def25fc377150621`；
+- 新 approval package SHA-256：
+  `aef23aefd98998693f57e4328010363bd849dfae794ab7691ff5b1b7baa57079`。
+
+package 固定为 `stage: preflight`、`approved: true`、`allowed_actions: [preflight]`、
+`issued_by: sol`、`max_uses: 1`，并只绑定上述 manifest/source-hash identity。Sol 已只读调用
+`approval_guard("preflight", ...)`，结果 PASS；对应 receipt 不存在，
+`/tmp/swarmlio_multi_2uav_active.json` 不存在。已消费 package
+`3986a46c53dd3c7cfae9dbc03eb388fe80327fc2d2f784b8506a01a8b3988038` 及全部历史 package
+永久不得复用。
+
+### 审核证据
+
+- collector 的 trajectory 在 command 阶段为 presence/event，旧 B-spline 不再按 5 s wall
+  freshness 误杀；`pos_cmd`、ACK、odom/cloud/health/occupancy、ACK 1 s、frontier presence、
+  TF/owner/liveness/coverage 合同未放宽；
+- GT mapper 仅诊断不删点，使用公共 baseline 冻结 iris collision primitives；两个 mapper 共享
+  线程安全 pose ledger，并以每 source 独立 counter lock 构造 detached JSON 深快照，锁外日志；
+- runner smoke 最终门恰好要求 uav0/uav1 两份 metrics，command count 只接受非 bool 正整数，
+  ACK timeout 只接受整数 0；NaN/Inf/float/bool/string/空/单机/三机均 fail-closed；preflight
+  无 goal 不受该 smoke-only 功能门影响；
+- Sol 复跑三个脚本 py_compile/self-test、坏计数/cardinality/deep-snapshot 负向 probe、12/12
+  source hash、静态 preflight 53/53 与 `git diff --check`，全部通过；manifest、static config、
+  单机参数、50×50 world、spawn、threshold 与公共环境 baseline 未改变。
+
+### 唯一允许动作与成功标准
+
+执行器启动前必须重新核对 package/manifest/source hash/static contract 四项摘要、package 字段、
+receipt 不存在、无 active lifecycle、静态 53/53、workspace probe 与 runroot-local ROS 环境。随后
+只允许执行一次：
+
+```text
+python3 scripts/two_uav_runner.py preflight --manifest experiments/manifests/2uav_smoke.yaml
+```
+
+runner 必须创建全新 append-only runroot 并立即消费本 package。preflight 运行成功标准保持：
+全部 static/live checks、双机真实 payload、唯一 TF、参数回读、日志隔离、24 s no-goal soak、
+topic owner、节点存活、逐机/fleet telemetry、final metrics 与 final safety 全通过，无 abort。
+
+本轮另有诊断交付门：`logs/gt_mapper.log` 必须至少包含 uav0、uav1 各一条可解析的
+`mapper_body_diagnostic=<JSON>`；每条需绑定本批准中的 geometry identity，并报告非零
+`registered_points`、self/peer candidate 累计值及 pose-status counters。执行器只转录这些原始
+值及 wall/sim/RT factor 到 `execution_result.md`，不得据此自行宣布 peer-body 假设成立、修改
+滤波或重试。runner 即使 `live_preflight.passed=true`，若诊断 JSON 缺失/不可解析，交回状态也必须
+标为诊断证据不完整，由 lead 决定下一步。
+
+成功或失败都必须完整停栈，保留 package、receipt、runroot、日志和 execution result，再交回
+`lead-planning`；不得自动进入 smoke。
+
+### 禁止动作
+
+- 不得执行 `launch`、smoke、长跑、参数搜索或任何非白名单命令；
+- 不得修改源码、workspace、manifest、static config、参数、environment baseline、package 或
+  receipt 后继续使用本授权；
+- 不得过滤 candidate 点、清空起点地图、移动 spawn、改变 inflation/freshness/ACK 阈值；
+- 不得复用/覆盖任何旧 runroot 或 package，不得手工补发 goal、重启单个 UAV 或同包重试；
+- 不得修改 `project_state.md`、`state/current_summary.md`、`state/SESSION_HANDOFF.md`，不得
+  commit/push/切换分支。
+
+## 19. 2026-08-21 diagnostic preflight 后授权终止
+
+第 18 节 package
+`aef23aefd98998693f57e4328010363bd849dfae794ab7691ff5b1b7baa57079` 已由
+`results/RUN-20260821T091542Z-2uav-preflight/` 成功消费；静态 53/53、live 48/48 和诊断
+交付门通过。该 package 已失效且不得复用。
+
+```text
+active_approval_package: none
+approved_preflight: false
+approved_smoke: false
+decision: BLOCKED_PENDING_TIGHT_PEER_FILTER_AND_POSE_TIMING_REPAIR
+```
+
+诊断证明 uav1 registered cloud 中存在 uav0 紧致 collision-envelope 回波，并与两出生点的
+inflated-occupancy 报告同时间段出现；但反向诊断因 peer pose availability 仅 2/187 而不可判。
+最小返工及下一门见 `state/sol_plan.md` 第 22 节。修复、离线验证和 Sol 复审前，不得创建新
+package或进入 smoke。
+
+## 20. 2026-08-21 第 22 节实现复审：拒绝签发 diagnostic preflight
+
+```text
+active_approval_package: none
+approved_preflight: false
+approved_smoke: false
+decision: REJECTED_ODOM_INPUT_ALIAS_CAN_DOUBLE_APPLY_INITIAL_OFFSET
+```
+
+离线验证与身份门本身合格：mapper py_compile/self-test、12/12 source hash、53/53 static 和
+`git diff --check` 通过；manifest SHA-256 为
+`75aececfaaa99137ddc1862dd28dbd4b99cb02336580a9b606d3ba391eb81d46`，source hash manifest
+SHA-256 为 `fff0f259ff24e1d2f8812c03ebe25677de96b8f3352c505a76a0abd610a9164b`。
+
+拒绝原因是 mapper 的同步 callback 以 `out_odom.pose = odom.pose` 共享 ROS message 子对象，随后
+原地叠加 initial offset；而原始 odom ledger callback 与 synchronizer 共用同一消息对象且后注册。
+uav1 在同步 callback 先执行的路径上可能被重复加 `1.5 m`，使 peer pose 和 exact mask 错位。
+ROS message alias probe 已确认输入会被修改，现有 self-test 未覆盖这条真实 callback 链。
+
+旧 `state/2uav_approval.yaml` SHA-256 仍为已消费的
+`aef23aefd98998693f57e4328010363bd849dfae794ab7691ff5b1b7baa57079`，对应 receipt 存在；本次未
+修改或签发 package。最小返工严格限定于 `state/sol_plan.md` 第 23 节。返工重新审核前不得执行
+preflight；smoke 继续禁止。
+
+## 21. 2026-08-21 odom alias 修复复审：批准一次 diagnostic preflight
+
+### 决定与目标
+
+```text
+approved_preflight_retry: true
+approved_smoke: false
+decision: APPROVED_SINGLE_USE_DIAGNOSTIC_PREFLIGHT_ONLY
+```
+
+本授权的唯一目标是以新 append-only runroot 验证 detached odom、双向 peer pose 可用率和 exact
+peer collision-mask 运行语义；不批准 `launch`、smoke、参数搜索或长跑。审核输入限于
+`AGENTS.md`、`state/current_summary.md`、`state/sol_plan.md` 第 22/23 节、
+`state/terra_implementation.md` 第 25/26 节、当前 git diff、唯一 manifest/static contract、source
+hash manifest、approval contract、旧 receipt 与无 active lifecycle 证据。审核期间未启动 ROS、
+Gazebo、preflight 或 smoke。
+
+### 冻结身份与新 package
+
+- HEAD/分支：`694a9c30aa9ee8f8f04b4f165866ded55a82aa0c` / `main`，dirty 工作树由完整 source
+  hash manifest 冻结；
+- manifest：`75aececfaaa99137ddc1862dd28dbd4b99cb02336580a9b606d3ba391eb81d46`；
+- static contract：`415c9961cae6eb999ed18330ee84bac4881150aef5c76b44798090512a9d465e`；
+- source hash manifest：`2d99a213de37c8228ddbb86a12d748b1b94480289be974d846506fc95efc7788`；
+- GT mapper：`2c4ab51bdecc26d03030ef93631f2376ba991178ea915ab787900096bb0df6ff`；
+- collector：`2343f0b9024878ea9a5c58d6e4cb941cd99b3950fd3a4184be355361d134aeb4`；
+- runner：`9e3141efafe8a6f618075d8fe6281b9a41e12f5542cad6d7def25fc377150621`；
+- 新 approval package：`296d93cc0fade2bc2a977da067495a78a502d132de2fd6cb2d58e1bc5cb4fa03`。
+
+package 固定为 `schema_version: 1`、`stage: preflight`、`approved: true`、
+`allowed_actions: [preflight]`、`issued_by: sol`、`max_uses: 1`，只绑定上述 manifest/source-hash
+identity。Sol 只读调用 `approval_guard("preflight", ...)` 已 PASS；新 digest 的 receipt 不存在，
+`/tmp/swarmlio_multi_2uav_active.json` 不存在。旧 package
+`aef23aefd98998693f57e4328010363bd849dfae794ab7691ff5b1b7baa57079` receipt 仍存在，永久不得复用。
+
+### 审核证据
+
+- `offset_pose_copy()` 对 pose-with-covariance 做 detached deep copy 后才叠加 initial offset；同步
+  callback 不再修改原始 MAVROS odom，ledger callback 任意顺序都只加一次冻结 offset；
+- mapper self-test 与真实 `nav_msgs/Odometry` probe 均证明 input=0.0、重复 output=1.5/1.5、
+  ledger=1.5，未累加到 3.0；
+- 第 22 节 peer-only exact mask、unavailable 全保留、rotated/empty、单调 ledger、双向分类、累计
+  恒等式和 deep snapshot 用例全部保留；geometry primitives、0.05 s 时间窗、发布 frame/timestamp
+  未改变；
+- Sol 复跑 mapper py_compile/self-test、alias probe、12/12 source hash、53/53 static 和
+  `git diff --check`，全部通过；manifest、static config、单机参数与公共 50×50 baseline 未改变。
+
+### 唯一允许动作
+
+执行器启动前必须重新核对 package/manifest/source hash/static contract 摘要、package 字段、新
+receipt 不存在、无 active lifecycle、静态 53/53、workspace 环境 probe、runroot-local
+`ROS_HOME/ROS_LOG_DIR` 和参数快照。随后只允许执行一次 manifest 白名单命令：
+
+```text
+python3 scripts/two_uav_runner.py preflight --manifest experiments/manifests/2uav_smoke.yaml
+```
+
+runner 必须创建全新 append-only runroot 并立即消费 package。无论成功或失败，均须完整停栈，保留
+package、receipt、runroot、logs、逐机/fleet metrics、live/static preflight 和 execution result，
+再交回 `lead-planning`；不得自动进入 smoke。
+
+### 成功标准
+
+基础门必须全部满足：static 53/53、live 48/48、双机真实 payload、唯一 TF、namespace/owner、参数
+回读、日志隔离、24 s no-goal soak、8/8 节点、逐机/fleet telemetry、final safety 全通过且无 abort。
+
+此外 execution result 必须从 `logs/gt_mapper.log` 原样汇总第二快照，供 lead 审核以下诊断门：
+
+1. uav0、uav1 两个 source 的第二快照 peer pose available 占比都大于 50%；
+2. 两方向第二快照 pre-filter `peer_candidates > 0`；
+3. 各 source 累计 `peer_removed_points == peer_candidates` 且
+   `published_points == registered_points - peer_removed_points`；
+4. unavailable scan 没有删点，preserved counter 与 status 可审核；
+5. sim≥15 的两出生点 `Astar vehicle start is inside inflated occupancy` 不再持续出现；
+6. 报告 wall/sim/RT factor，保留既有 RT≈0.33 的负载风险。
+
+基础门通过但任一诊断门缺证或失败，仍必须回 lead，不得据此进入 smoke。
+
+### 禁止动作
+
+- 不得执行 manifest `launch`、smoke、长跑、参数搜索、手工 goal 或非白名单命令；
+- 不得修改源码、workspace、manifest、static config、geometry、时间窗、过滤、参数、环境 baseline、
+  package 或 receipt 后继续使用本授权；
+- 不得复用/覆盖任何旧 package 或 runroot，不得重启单机或同包重试；
+- 不得修改 `project_state.md`、`state/current_summary.md`、`state/SESSION_HANDOFF.md`，不得
+  commit/push/切换分支。
+
+## 22. 2026-08-22 bridge readiness 与公共 identity 复审：批准一次 diagnostic preflight
+
+### 决定
+
+```text
+approved_preflight_retry: true
+approved_smoke: false
+decision: APPROVED_SINGLE_USE_BRIDGE_READINESS_DIAGNOSTIC_PREFLIGHT
+```
+
+审核确认：single 公共 identity commit 为
+`aea4b71cff10061f3211ffa1d2b21a6500caac78`，tracked-clean，精确只提交 bridge bundle 与 overlay
+清单；运行时 bridge/bundle 均 mode `0755`、SHA-256
+`b673080c46916790431f257aea1a27fa8616adeb6b409fe22968e0316b57f34f`。multi frozen identity 已同步，
+Lead 复跑 source hash 15/15 与 static 53/53 均通过。无 active lifecycle/仿真残留，签发时机器负载
+`0.26/0.25/0.62`。
+
+新 package 固定为 `schema_version: 1`、`stage: preflight`、`approved: true`、
+`allowed_actions: [preflight]`、`issued_by: sol`、`max_uses: 1`，绑定：
+
+- manifest `5e841a9662fb49b1289951f490b094843740412f9845e122627e8d069fe1a871`；
+- source-hash manifest `1a6e4caa4d784016e763942a601f22c29e1f247a23a582c7927106fc07943ef7`；
+- issuance `preflight-20260822-bridge-readiness-retry-1`。
+
+唯一允许动作是执行一次：
+
+```text
+python3 scripts/two_uav_runner.py preflight --manifest experiments/manifests/2uav_smoke.yaml
+```
+
+执行器必须先重新验证 package digest 无既有 receipt、manifest/source hash/static identity、workspace
+环境、无 active lifecycle，并创建全新 append-only runroot。无论通过或失败都须完整停栈，保留 package、
+receipt、runroot、logs、live/static preflight、逐机/fleet metrics 与 execution result，再交回 Lead。
+
+本轮重点审核 uav0/uav1 是否均成功进入 OFFBOARD+armed 和 physical-hover ready、readiness service 重试
+日志、逐机升空高度、bridge 存活、48/48 live/final safety，以及 mapper/occupancy 诊断延续。不得执行
+manifest `launch`、smoke、长跑、手工 goal、参数搜索或同包重试；不得修改任何源码、参数、identity、package
+或 receipt 后继续使用；不得复用任何旧 package/runroot，不得 commit/push 或更新正式状态文件。
+
+## 23. 2026-08-22 RUN-20260821T183523Z 审核：批准一次 120 sim s smoke
+
+### 决定
+
+```text
+preflight_review: PASS
+approved_smoke: true
+decision: APPROVED_SINGLE_USE_120_SIM_SECOND_SMOKE
+```
+
+`RUN-20260821T183523Z-2uav-preflight` 的 static 53/53、live 48/48、24 s no-goal soak、final safety、
+双机 telemetry/TF/owner/参数、8/8 process liveness 与 clean teardown 全部通过；无 abort/contact/crash，
+RT≈0.275。uav0/uav1 最终位置分别约 z=1.45/1.41，`px4_bridge_1/2` 均存活，上一轮 uav0 未升空与
+bridge timeout 崩溃链已消失。preflight package
+`b697986cae1f23ef987481394b9f168f39dc73cae3e2ee5decf4adc43a770e8a` 已消费，永久不得复用。
+
+`execution_result.md` 将 single commit 转录成旧 `c01f1f5...`，这是报告错误；runroot 原始
+`static_preflight.json` 的 `source.single_commit` 明确为
+`aea4b71cff10061f3211ffa1d2b21a6500caac78` 且检查通过，runroot manifest/static/source hashes 也与
+当前冻结 identity 一致。审核以原始 static JSON 为准，不修改不可变 runroot。
+
+残余风险已显式接受为本次 bounded smoke 的观察门：racer 在 sim≥15 有 52 条 start-inflated，末次
+sim18.182、uav1 仍在上升 z=1.116；最终悬停后未再记录。mapper sim20 仍见 2 个
+`uav1_hover_voxels`，来源均为 uav0。该风险不放宽任何安全门；smoke 必须依赖现有 abort/process/telemetry/
+contact/TF watchdog fail-closed，并在结果中逐机报告 command 链与 occupancy 是否复发。
+
+新 package 固定为 `schema_version: 1`、`stage: smoke`、`approved: true`、
+`allowed_actions: [launch]`、`issued_by: sol`、`max_uses: 1`，绑定当前 manifest
+`5e841a9662fb49b1289951f490b094843740412f9845e122627e8d069fe1a871` 与 source-hash manifest
+`1a6e4caa4d784016e763942a601f22c29e1f247a23a582c7927106fc07943ef7`。
+
+唯一允许执行一次：
+
+```text
+python3 scripts/two_uav_runner.py launch --manifest experiments/manifests/2uav_smoke.yaml
+```
+
+执行器启动前必须验证新 package receipt 不存在、source/static/workspace identity、无 active lifecycle、
+机器负载与新 append-only runroot。运行仅限 manifest 固定 120 sim s/单次/seed，不得改参数或延长。无论正常
+结束或 fail-closed 中止，必须完整停栈并保存 receipt、runroot、logs、逐机/fleet metrics 和 execution result。
+
+Lead 回审至少要求：两机分别 trajectory/pos_cmd/ACK 与路径运动；ACK timeout=0；无 crash/severe contact/
+process death/TF-owner drift/telemetry abort；报告 completion/freeze/coverage；统计 sim≥goal 后每架 start-inflated
+次数、末次时间/位置和 mapper hover-voxel provenance。任一机 command 链为零、freeze、持续 occupancy、abort
+或证据缺失均不得写成 fleet PASS。禁止同包重试、第二轮、长跑、参数搜索、手工 goal、修改源码/参数/package/
+receipt、复用旧 runroot、commit/push 或更新正式状态文件。
+
+## 24. 2026-08-22 peer inflation endpoint mask 复审：批准一次 diagnostic preflight
+
+### 决定
+
+```text
+implementation_review: PASS
+approved_preflight: true
+approved_smoke: false
+decision: APPROVED_SINGLE_USE_PEER_INFLATION_ENDPOINT_DIAGNOSTIC_PREFLIGHT
+```
+
+Lead 审核 `state/terra_implementation.md`、当前 diff、manifest、source hash 与验证证据后确认：mapper
+仅在 peer pose `available` 时，将既有精确碰撞 endpoint mask 扩展为冻结
+`OCCUPANCY_INFLATION_M=0.35` 邻域；ray mask 仍保持精确碰撞范围，peer unavailable/nonfinite 时保留全部点。
+新增 `peer_inflation_endpoint_candidates` 诊断计数，删除集合仍按 union 计算并维持
+`published_points == registered_points - peer_removed_points`。边界、旋转、重叠 union、远点、不可用 peer、
+输入不变性与等式测试均通过；Lead 复跑 mapper self-test PASS、source hash 15/15、static 53/53。
+
+冻结 identity 为：manifest
+`5e841a9662fb49b1289951f490b094843740412f9845e122627e8d069fe1a871`，source-hash manifest
+`a932046b25198a692d1932f4cf3b315692b6d4a85d137cf4f5e21b2ee0f6b5c5`，mapper
+`c90383cb1083b554e50355405353d5a5e3ed3ce9a586a2d30962f8fc40a5c4e9`，single commit
+`aea4b71cff10061f3211ffa1d2b21a6500caac78`。已消费 smoke package
+`a798ca4a30cab5972bc652074433f471fd6bf85dc0f09d3a87e3f88f2bcb3874` 永久不得复用。
+
+新 package 固定为 `schema_version: 1`、`stage: preflight`、`approved: true`、
+`allowed_actions: [preflight]`、`issued_by: sol`、`max_uses: 1`，issuance 为
+`preflight-20260822-peer-inflation-endpoint-mask-1`。唯一允许执行一次：
+
+```text
+python3 scripts/two_uav_runner.py preflight --manifest experiments/manifests/2uav_smoke.yaml
+```
+
+执行器必须先验证 package digest 无 receipt、冻结 identity、static config/workspace、无 active lifecycle，并创建
+全新 append-only runroot。无论成功或失败都须完整停栈，保存 package、receipt、runroot、logs、live/static
+preflight、逐机/fleet metrics 与 execution result 后交回 Lead；不得自动进入 smoke。
+
+基础门必须为 static 53/53、live 48/48、final safety 无 abort，双机均升至悬停高度且 bridge 存活。诊断证据必须
+原样汇总 mapper 第二快照中的 available 比例、`peer_endpoint_candidates`、
+`peer_inflation_endpoint_candidates`、ray candidates、removed、registered/published 等式，以及 uav1 悬停体素的
+数量、hits 与 source provenance；新 inflation endpoint 计数应实际激活。RACER 日志须统计 sim≥15 的
+start-inflated 次数及末次时间/位置，确认其不再持续到最终悬停。任一基础门失败、诊断缺证、uav1 悬停污染仍
+显著存在或 start-inflated 持续，均回 Lead，不得进入 smoke。
+
+禁止 manifest `launch`、smoke、长跑、手工 goal、参数搜索、修改源码/参数/identity/package/receipt 后继续、
+复用旧 package/runroot、同包重试、commit/push 或更新正式状态文件。
+
+Lead 已只读执行 `approval_guard("preflight", ...)`，结果 PASS；package digest 为
+`6ce1ec44d6b71d78aac31e6e63e44a4da7e6460e7ca95f677c776e921e07e5b3`，对应 receipt 不存在。
+
+## 25. 2026-08-22 peer inflation endpoint mask：批准一次 120 sim s smoke
+
+### 决定
+
+```text
+diagnostic_preflight_review: PASS
+approved_smoke: true
+decision: APPROVED_SINGLE_USE_120_SIM_PEER_INFLATION_ENDPOINT_SMOKE
+```
+
+用户已明确授权签发一次性 smoke package。Lead 已审核
+`RUN-20260821T190032Z-2uav-preflight`：static 53/53、live 48/48、final safety、双机悬停、8/8
+process liveness 和 clean teardown 全部通过，无 abort/contact/crash，RT≈0.341。mapper 两方向发布恒等式成立，
+inflation endpoint candidates 累计 6012/11711，published `uav1_hover_voxels={}`；start-inflated 虽有 274 次，
+但末次 sim17.580、uav1 尚在上升，最终悬停阶段未持续复发。该证据支持 bounded smoke，不授权放宽任何门。
+
+`execution_result.md` 中“removed 包含 unavailable”的转录不作为审批语义：removed 严格为 available peer 下
+exact endpoint、inflation-neighborhood endpoint 与 exact ray 三 mask 的 union；unavailable counters 仅为保留点
+的反事实诊断。已消费 preflight package
+`6ce1ec44d6b71d78aac31e6e63e44a4da7e6460e7ca95f677c776e921e07e5b3` 永久不得复用。
+
+新 package 固定为 `schema_version: 1`、`stage: smoke`、`approved: true`、
+`allowed_actions: [launch]`、`issued_by: sol`、`max_uses: 1`，绑定 manifest
+`5e841a9662fb49b1289951f490b094843740412f9845e122627e8d069fe1a871` 与 source-hash manifest
+`a932046b25198a692d1932f4cf3b315692b6d4a85d137cf4f5e21b2ee0f6b5c5`，issuance 为
+`smoke-20260822-peer-inflation-endpoint-mask-1`。
+
+唯一允许执行一次：
+
+```text
+python3 scripts/two_uav_runner.py launch --manifest experiments/manifests/2uav_smoke.yaml
+```
+
+执行器启动前必须重新验证 package receipt 不存在、冻结 source/static/workspace identity、无 active lifecycle、
+机器负载与全新 append-only runroot。运行严格限于 manifest 固定 120 sim s、单次、固定 seed；不得修改参数、
+延长、重试或追加第二轮。无论正常结束或 fail-closed 中止，均须完整停栈并保存 package、receipt、runroot、
+logs、逐机/fleet metrics、abort 与 execution result 后交回 Lead。
+
+Smoke 硬门：uav0/uav1 分别 trajectory/pos_cmd/ACK 非零且 ACK timeout=0；两机均产生实际探索运动且不得
+freeze；无 crash、contact、process death、TF/owner drift、telemetry/occupancy freshness abort。必须统计
+sim≥goal 后两机 start-inflated 次数、末次 sim/位置，以及 mapper inflation candidates、removed/published 等式
+和 hover-voxel source provenance。任一机零 command 链、最终悬停持续 start-inflated、hover 污染复发、abort
+或证据缺失均为 SMOKE_FAIL，不得写成 fleet PASS。
+
+禁止复用旧 package/runroot、同包重试、第二轮、长跑、参数搜索、手工 goal、修改源码/参数/manifest/static/
+package/receipt、commit/push、切换分支或在实验期间更新正式状态文件。
+
+Lead 已只读执行 `approval_guard("launch", ...)`，结果 PASS；package digest 为
+`fdf91a8adbb310fccbf5d426043df05850eab84623d0a77de70d9e0d1a062eca`，对应 receipt 不存在。
+
+## 26. 2026-08-22 occupancy snapshot 与资源 profile：批准一次 diagnostic preflight
+
+### 决定
+
+```text
+implementation_review: PASS
+approved_preflight: true
+approved_smoke: false
+decision: APPROVED_SINGLE_USE_OCCUPANCY_PROFILE_DIAGNOSTIC_PREFLIGHT
+```
+
+Lead 审核第 36/37 节实现、Terra 证据与当前 diff，并独立复跑 py_compile、collector/runner/preflight self-test、
+source hash 15/15、static 53/53 和 `git diff --check`，全部通过。上轮 captured-frame 饥饿竞态已修正：解析完成
+的旧帧必定提交 coverage/presence，解析期间到达的新帧继续 pending；确定性 A→B 测试覆盖该语义。
+
+Occupancy 仅从 continuous 5 wall s freshness 改为 startup presence + 2.0 sim s latest-only coverage snapshot；零帧、
+解析异常、coverage missing 仍 fail-closed，odom/cloud/health、pos_cmd/ACK、trajectory presence、ACK timeout、TF、
+owner、process death 与 abort 合同未放宽。资源 profiler 从首个 role spawn 起覆盖 readiness/soak/monitor，1 wall s
+采样 process tree CPU-core/RSS/threads、sim/wall/RT 与系统负载，证据缺失显式标记。
+
+冻结 identity：manifest
+`5e841a9662fb49b1289951f490b094843740412f9845e122627e8d069fe1a871`，static contract
+`d269f96c3c59fc15035ee8fcb0d47b97ae41db60f6ad00c726a8ae783e38c303`，source-hash manifest
+`0d240a7df3f442ded8eca4b0ae9bfc72b5995272fdfe501cd18824c67cef22ff`，collector
+`1685dcd64a442423fd3c00d4c1062e84e2fa667f01e2aee1009e195a7ad36eca`，runner
+`f818feec31d8ad8bc480b11d851580bd7d3fdb0fca571a5879bd83ba5bff41f2`，preflight
+`50fd9d421b64080f9b8616321a85032bd1b7ce4204276ba67ddd5fb2b69eac92`。已消费 smoke package
+`fdf91a8adbb310fccbf5d426043df05850eab84623d0a77de70d9e0d1a062eca` 永久不得复用。
+
+新 package 固定为 `schema_version: 1`、`stage: preflight`、`approved: true`、
+`allowed_actions: [preflight]`、`issued_by: sol`、`max_uses: 1`，issuance 为
+`preflight-20260822-occupancy-snapshot-resource-profile-1`。唯一允许执行一次：
+
+```text
+python3 scripts/two_uav_runner.py preflight --manifest experiments/manifests/2uav_smoke.yaml
+```
+
+执行器必须验证 package 无 receipt、冻结 identity、无 active lifecycle、机器负载，并创建全新 append-only
+runroot。无论成功失败均完整停栈，保存 live/static preflight、逐机/fleet metrics、occupancy received/processed/
+coalesced 与 age/duration、`resource_usage.jsonl`、CPU/RSS/RT summary、logs 和 execution result，再交回 Lead。
+
+成功标准：static 53/53、live 全通过、final safety 无 abort、双机 occupancy presence 与 coverage available；
+processed>0 且 received≥processed，持续输入下不得发生 processed 饥饿；profile 必须覆盖 gazebo/gt_mapper/bridges/
+racer/collector 五 role，具有有效 CPU-core/RSS 分位数和至少一个有效 RT sample，并报告 top consumers。基础门或
+profile 证据任一失败均回 Lead。禁止 launch/smoke、长跑、同包重试、参数搜索、修改源码/参数/package/receipt、
+复用旧 runroot、commit/push 或更新正式状态文件。
+
+Lead 已只读执行 `approval_guard("preflight", ...)`，结果 PASS；package digest 为
+`3b30d6591f22be886e188607875aea569fe4e8e0ec88a30a0cb1959f463db33f`，对应 receipt 不存在。
+
+## 27. 2026-08-22 compute overlay：批准一次 diagnostic preflight
+
+### 决定
+
+```text
+implementation_review: PASS
+static_preflight: PASS_55_OF_55
+approved_preflight: true
+approved_smoke: false
+decision: APPROVED_SINGLE_USE_COMPUTE_OVERLAY_DIAGNOSTIC_PREFLIGHT
+```
+
+Lead 审核 single 公共 identity `8c8ddf2add3f7b3ce4f9943583fd945f16b1bd91`、Terra 第 43–45 节、
+当前 diff、manifest、source hash 与验证证据，并独立复跑 runner/preflight self-test、source hashes 15/15、
+static 55/55、overlay verify/check 21/21 和 diff-check，全部通过。
+
+本 package 绑定 manifest `5cc07755cb46cfb13fda34fa96b9e528766340541c8eb919f62f7a000381e3c5`
+与 source-hash manifest `b275c3e06238b9e7a00653bd3b2439e893b47d947b7f085c64fa3974fb25c99a`；
+stage 为 `preflight`、allowed actions 仅 `[preflight]`、`max_uses: 1`、issuance 为
+`preflight-20260822-compute-overlay-010m-1`。已消费 package `3b30d659...` 永久不得复用。
+
+唯一允许执行一次：
+
+```text
+python3 scripts/two_uav_runner.py preflight --manifest experiments/manifests/2uav_smoke.yaml
+```
+
+执行器必须先验证新 package receipt 不存在、frozen single/overlay/source identity、static 55/55、无 active lifecycle
+和启动前 `MemAvailable>=8 GiB`、load1<10；创建全新 append-only runroot。无论结果如何均完整停栈，保存 package、
+receipt、static/live preflight、resource capacity/profile、逐机/fleet metrics、logs 与 execution result 后交回 Lead。
+
+成功门：live 全通过、final safety/teardown clean、双机悬停和 occupancy/coverage available；运行期
+`MemAvailable>=3 GiB`、无 swap delta；资源证据覆盖全部 role，并报告 overall RT、RSS/CPU、full-map 发布 cadence。
+诊断目标是验证 0.10 m SDF 与 2.0 sim s full-map cadence 是否将 MemAvailable 和 overall RT 提升到后续扩展门：
+最低 MemAvailable≥3 GiB、overall RT≥0.5。未达到资源目标可仍是有效 diagnostic run，但必须回 Lead 判定，绝不自动
+进入 smoke 或 3/4-UAV。
+
+禁止 launch/smoke、手工 goal、重复 preflight、长跑、3/4-UAV、参数搜索、修改源码/参数/identity/package/receipt、
+复用旧 package/runroot、commit/push 或更新正式项目状态。
+
+Lead 已只读执行 `approval_guard("preflight", ...)`，结果 PASS；新 package digest 为
+`be77efb9fe8689b30a54ed83183e3dda30e3e2ad923aac534389288f16eb0d26`，对应 receipt 不存在。

@@ -1,0 +1,20 @@
+{
+  "checks": [
+    {
+      "detail": "timeout",
+      "name": "final.metrics",
+      "ok": false
+    },
+    {
+      "detail": "final metrics timeout",
+      "name": "final.safety",
+      "ok": false
+    },
+    {
+      "detail": "readiness timeout: uav0:mavros_odom: no payload",
+      "name": "preflight.runtime",
+      "ok": false
+    }
+  ],
+  "passed": false
+}

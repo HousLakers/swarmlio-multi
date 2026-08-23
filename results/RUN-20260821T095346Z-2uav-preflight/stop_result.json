@@ -1,0 +1,7 @@
+{
+  "collector": "sigterm+sigkill",
+  "racer": "sigterm+sigkill",
+  "bridges": "sigterm+sigkill",
+  "gt_mapper": "sigterm+sigkill",
+  "gazebo": "sigterm+sigkill"
+}

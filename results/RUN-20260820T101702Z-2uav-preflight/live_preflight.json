@@ -1,0 +1,20 @@
+{
+  "checks": [
+    {
+      "detail": "timeout",
+      "name": "final.metrics",
+      "ok": false
+    },
+    {
+      "detail": "final metrics timeout",
+      "name": "final.safety",
+      "ok": false
+    },
+    {
+      "detail": "/clock did not appear",
+      "name": "preflight.runtime",
+      "ok": false
+    }
+  ],
+  "passed": false
+}
