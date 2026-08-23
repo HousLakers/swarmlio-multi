@@ -36,10 +36,12 @@
   - manifest `7c54d34ad5aa878a89fb07394b5efe88373fcdf848bbe0188b81b6fbdecb1f3c`（22 文件）
   - installer `8cabae8d6c8019cf49e4f3f6d836ac9c0fa7d26d6926e1140af8cc87c42ee5eb`
 - 3-UAV manifest：`experiments/manifests/3uav_smoke.yaml`
-  - SHA-256 `d9a64bf7b469ef85954fffdb09e7c9143b8b6b72b18b735477852a0e0265ebfe`
-  - `dropout.mode=node_level`（D10 重跑版本）
+  - SHA-256 `509e71fda25d275caae12f6d01246bf264ca3d1588c7a056853877764a29370f`
+  - `duration_sim_s=300`（用户决策，每组 300s）
+  - `dropout.mode=node_level`
 - 3-UAV source hash manifest：`config/3uav_source_hashes.sha256`
-  - SHA-256 `146591227da89c43093c1d3b6783950f08b7a8bc92c735166f9c70586fbf6784`
+  - SHA-256 `48ce54177330f445d4bb154fa2764f14c94d580e853c0dff3922bf300589f72e`
+- 新 approval（待消费）：`load-balancing-20260824-3uav-300s-smoke`（max_uses=1）
 - 已消费 approval：`dropout-smoke-20260824-3uav-D10-replay`（不得复用）
 
 ## 已知偏差（不阻断掉线语义结论）
@@ -59,12 +61,12 @@
 
 ## 下一阶段执行顺序
 
-1. 新增 `coverage_seq.json`，记录每架机和 fleet 的累计 unique coverage voxel 随 sim-s 增长。
-2. 重写多机绘图：`coverage.png` 上下两栏、`grid_map.png` 灰度栅格、`point_cloud.png` 二维俯视。
-3. 将 ACVRP 目标和容量参数化，保留历史默认 `MINSUM + 0.75`。
-4. 创建本地实验分支 `experiment/load-balancing`，只在该分支加入 `MINMAX` / `capacity=0.5` 实验改动。
-5. 在第四步“跑实验”之前完成静态检查、self-test、编译和参数回读；每组实验统一 `duration_sim_s=300`。
-6. 暂不启动实验，直到上述代码和版本工作完成并审核通过。
+1. ✅ 新增 `coverage_seq.json`，记录每架机和 fleet 的累计 unique coverage voxel 随 sim-s 增长。
+2. ✅ 重写多机绘图：`coverage.png` 上下两栏、`grid_map.png` 灰度栅格、`point_cloud.png` 二维俯视。
+3. ✅ 将 ACVRP 目标和容量参数化，保留历史默认 `MINSUM + 0.75`。
+4. ✅ 创建本地实验分支 `experiment/load-balancing`（RACER 仓库，含 D9r 修复 + MINMAX/容量参数化），已编译通过。
+5. ✅ 完成静态检查、self-test、编译和参数回读；每组实验统一 `duration_sim_s=300`；approval 已重签为 `load-balancing-20260824-3uav-300s-smoke`。
+6. ⬜ 按实验矩阵启动实验（当前尚未跑，等审核通过后再 launch）。
 
 ### 预注册实验矩阵（每组 300 sim-s）
 
