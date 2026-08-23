@@ -2,6 +2,7 @@
 """Per-UAV and fleet telemetry collector for the 2-UAV smoke contract."""
 
 import argparse
+import itertools
 import json
 import math
 from pathlib import Path
@@ -27,19 +28,27 @@ def planner_box_voxels(box_min, box_max, resolution):
     return math.prod(cells)
 
 
-def vehicle_names(collision_name):
+def vehicle_alias_map(config):
+    """Map collision-name tokens (uavN / iris_<racer_id-1>) to vehicle names."""
+    aliases = {}
+    for spec in config.get("vehicles", []):
+        aliases[spec["name"].lower()] = spec["name"]
+        aliases["iris_%d" % (int(spec["racer_id"]) - 1)] = spec["name"]
+    return aliases
+
+
+def vehicle_names(collision_name, alias_map=None):
     name = collision_name.lower()
-    found = set()
-    if "uav0" in name or "iris_0" in name:
-        found.add("uav0")
-    if "uav1" in name or "iris_1" in name:
-        found.add("uav1")
-    return found
+    if alias_map is None:
+        # Pre-D5 two-UAV contract keeps pure callers and self-tests stable.
+        alias_map = {"uav0": "uav0", "iris_0": "uav0",
+                     "uav1": "uav1", "iris_1": "uav1"}
+    return {vehicle for token, vehicle in alias_map.items() if token in name}
 
 
-def contact_category(collision1, collision2):
+def contact_category(collision1, collision2, alias_map=None):
     names = (collision1 + " " + collision2).lower()
-    vehicles = vehicle_names(names)
+    vehicles = vehicle_names(names, alias_map)
     if len(vehicles) == 2:
         return "inter_uav", vehicles
     if not vehicles:
@@ -47,6 +56,21 @@ def contact_category(collision1, collision2):
     if "ground" in names or "plane" in names:
         return "ground", vehicles
     return "obstacle", vehicles
+
+
+def pairwise_fleet_metrics(maps):
+    """Fleet-wide overlap/jaccard across every vehicle pair.
+
+    For the 2-UAV contract this reduces to the original single pair
+    (maps[0], maps[1]); for N>2 the most conservative (minimum) pairwise
+    values are reported so no weaker pair is masked.
+    """
+    overlaps = [overlap_ratio(left, right)
+                for left, right in itertools.combinations(maps, 2)]
+    jaccards = [jaccard(left, right)
+                for left, right in itertools.combinations(maps, 2)]
+    return (min(overlaps) if overlaps else 0.0,
+            min(jaccards) if jaccards else 0.0)
 
 
 def severe_contact(category, force_n, duration_s, force_threshold_n,
@@ -381,12 +405,11 @@ class Collector:
         self._subs.append(rospy.Subscriber(
             config["fleet"]["task_state_topic"], rospy.AnyMsg, self._task_cb))
         self.timer = rospy.Timer(rospy.Duration(2.0), self._flush)
-        self.expected_nodes = {
-            "/two_uav_gt_mapper", "/two_uav_collector",
-            "/px4_bridge_1", "/px4_bridge_2",
-            "/exploration_node_1", "/exploration_node_2",
-            "/traj_server_1", "/traj_server_2",
-        }
+        self.expected_nodes = {"/two_uav_gt_mapper", "/two_uav_collector"} | {
+            node for spec in config["vehicles"]
+            for node in ("/px4_bridge_%s" % spec["racer_id"],
+                         "/exploration_node_%s" % spec["racer_id"],
+                         "/traj_server_%s" % spec["racer_id"])}
         self.seen_nodes = set()
         self.last_active_liveness = None
         self.last_active_report_wall_s = None
@@ -400,6 +423,7 @@ class Collector:
             } for spec in config["vehicles"]}
         self.tf_vehicle = {spec["frames"]["child"]: spec["name"]
                            for spec in config["vehicles"]}
+        self.contact_alias_map = vehicle_alias_map(config)
 
     def _load_dropout_record(self):
         """Read the runner-authored fleet/dropout.json once and cache it.
@@ -470,8 +494,8 @@ class Collector:
         state.update_position((point.x, point.y, point.z))
         positions = [item.position for item in self.states.values()
                      if item.position is not None]
-        if len(positions) == 2:
-            distance = math.dist(positions[0], positions[1])
+        for left, right in itertools.combinations(positions, 2):
+            distance = math.dist(left, right)
             if self.minimum_inter_uav_distance is None:
                 self.minimum_inter_uav_distance = distance
             else:
@@ -573,8 +597,9 @@ class Collector:
 
     def _contact_cb(self, message):
         for contact in message.states:
-            category, involved = contact_category(contact.collision1_name,
-                                                  contact.collision2_name)
+            category, involved = contact_category(
+                contact.collision1_name, contact.collision2_name,
+                alias_map=self.contact_alias_map)
             if not involved:
                 continue
             # A contact between only dropped vehicles is expected dropout drift,
@@ -701,7 +726,7 @@ class Collector:
             require_freshness_reference=not active)
                            for name, state in self.states.items()}
         maps = [state.coverage_voxels for state in self.states.values()]
-        union = maps[0] | maps[1]
+        union = set().union(*maps)
         box = self.config["environment"]
         resolution = self.safety["metrics"]["voxel_resolution_m"]
         denominator = planner_box_voxels(box["planner_box_min"],
@@ -746,15 +771,16 @@ class Collector:
                 base = self.dropout_baseline["vehicles"].get(name)
                 continue_evidence[name] = dropout_continue_evidence(
                     base, report, dropped=(name == dropped_vehicle))
+        fleet_overlap, fleet_jaccard = pairwise_fleet_metrics(maps)
         fleet = {
             "fleet_coverage_voxels": len(union),
             "fleet_coverage_ratio": float(len(union)) / denominator,
             "coverage_denominator_voxels": denominator,
             "coverage_definition": self.safety["metrics"]["coverage_denominator"],
-            "overlap_ratio": overlap_ratio(maps[0], maps[1]),
+            "overlap_ratio": fleet_overlap,
             "minimum_inter_uav_distance_m": self.minimum_inter_uav_distance,
             "fleet_contact_count": self.fleet_contacts,
-            "map_consistency_jaccard": jaccard(maps[0], maps[1]),
+            "map_consistency_jaccard": fleet_jaccard,
             "task_allocation_state_samples": self.task_state_samples,
             "process_liveness": liveness["process_liveness"],
             "never_seen": liveness["never_seen"],
@@ -820,6 +846,24 @@ def self_test():
                                           "iris_1::base::collision")
     assert category == "inter_uav" and involved == {"uav0", "uav1"}
     assert severe_contact(category, 0.1, 0.25, 8.0, 0.25)
+    # D5: three-UAV alias map resolves uav2 / iris_2 and keeps 2-UAV tokens.
+    three_alias = {"uav0": "uav0", "iris_0": "uav0",
+                   "uav1": "uav1", "iris_1": "uav1",
+                   "uav2": "uav2", "iris_2": "uav2"}
+    category3, involved3 = contact_category("iris_1::base::collision",
+                                            "iris_2::base::collision",
+                                            alias_map=three_alias)
+    assert category3 == "inter_uav" and involved3 == {"uav1", "uav2"}
+    two_map = [{1, 2, 3}, {2, 3, 4}]
+    assert pairwise_fleet_metrics(two_map) == (overlap_ratio(*two_map),
+                                               jaccard(*two_map))
+    three_map = [{1, 2, 3}, {2, 3, 4}, {4, 5, 6}]
+    pairwise_overlap, pairwise_jaccard = pairwise_fleet_metrics(three_map)
+    assert pairwise_overlap == min(overlap_ratio(a, b)
+                                   for a, b in itertools.combinations(three_map, 2))
+    assert pairwise_jaccard == min(jaccard(a, b)
+                                   for a, b in itertools.combinations(three_map, 2))
+    assert pairwise_fleet_metrics([]) == (0.0, 0.0)
     assert exactly_one_topic_owner(("/owner",))
     assert dropout_classification("uav0", {"vehicle": "uav0"}, {"lost_after_seen": []}, {}, True) == \
         "intentional_dropout"
@@ -1019,7 +1063,7 @@ def main():
     with open(args.config, encoding="utf-8") as stream:
         config = yaml.safe_load(stream)
     runroot = Path(args.runroot)
-    for name in ("uav0", "uav1", "fleet"):
+    for name in [spec["name"] for spec in config["vehicles"]] + ["fleet"]:
         (runroot / name).mkdir(parents=True, exist_ok=True)
     import rospy
     rospy.init_node("two_uav_collector", anonymous=False)

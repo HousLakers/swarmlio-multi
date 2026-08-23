@@ -2857,4 +2857,92 @@ runner:    aca7cbd2f91ec37c57f6a4d1a9514ee091ce46124b84fd29dc7ec0e64878b90b
 - 对照 runroot（063342Z）是旧 control_chain（kill 含 px4_bridge_2）；与正式 runroot
   （070849Z）不可直接按 coverage 对比，D4 只用于验证分类字段齐全，不改变安全门。
 
+## 52. D5 三机参数化（uav_count 由 config.vehicles 驱动，2-UAV 向后兼容）
+
+- 任务来源：`state/dropout_experiment_plan.md` D5
+- 允许写入：`two_uav_runner.py`、`two_uav_collector.py`、`two_uav_preflight.py`、terra、events
+- 目标：把双机硬编码改为 config.vehicles 列表推导；2-UAV 行为不变；self-test 覆盖 uav_count=2 与 =3
+
+### 52.1 修改内容
+
+`scripts/two_uav_runner.py`：
+
+1. 新增 `config_vehicle_names()` / `config_bridge_nodes()` / `vehicle_metrics_summary()`
+   （全部由 `config.vehicles` 推导）。
+2. `process_specs()`：launch 文件由 `uav_count` 派生前缀（`2uav_*.launch` / `3uav_*.launch`），
+   2-UAV 路径不变。
+3. `make_runroot()`：runroot 目录 = 每机目录 + `fleet` + `logs`；runroot 名
+   `RUN-…-{n}uav-{kind}`。
+4. `start_stack()`：bridges/racer readiness 的 `required_nodes` 用 `config_bridge_nodes()`。
+5. `watchdog_evidence()` / `wait_final_metrics()` / `final_safety_result()`：
+   车辆列表改为 `config_vehicle_names()`。
+6. `smoke_command_chain_valid(vehicles, expected_names=("uav0","uav1"))`：N 机通用，
+   默认值保持 2-UAV 契约与既有 self-test。
+7. `action_launch` / `action_collect`：summary 用 `vehicle_metrics_summary()`（2-UAV 时
+   仍是 `uav0_metrics`/`uav1_metrics` 键，向后兼容）。
+
+`scripts/two_uav_collector.py`：
+
+1. `vehicle_alias_map(config)`：collision 名称 → vehicle（uavN / iris_<racer_id-1>），
+   `vehicle_names`/`contact_category` 接受 `alias_map`（默认 2-UAV 契约不变）。
+2. `pairwise_fleet_metrics(maps)`：任意机数下取**最小** pairwise overlap/jaccard（2 机时
+   与原单对结果一致）；fleet `union` 改为 `set().union(*maps)`。
+3. `_odom_cb`：最小机间距改为全部机对 `itertools.combinations` 计算。
+4. `expected_nodes` 由 config.vehicles 推导；`_contact_cb` 使用 config 派生的 alias map；
+   `main()` 目录循环由 config.vehicles 驱动。
+
+`scripts/two_uav_preflight.py`：
+
+1. `contract.uav_count` 校验改为「uav_count 为 int、≥2、且等于 vehicles 数量」。
+2. launch XML 检查路径、`expected_bounds`（drone_id 由 vehicles 的 racer_id 推导）、
+   `drone_num == str(uav_count)`、approval package 路径
+   （`state/{n}uav_approval.yaml`）、source hash manifest
+   （`config/{n}uav_source_hashes.sha256`）、source_files 全部由 `launch_prefix` 派生。
+3. self-test 增加 uav_count=3 的 TF contract 覆盖（vehicle-list 驱动）。
+
+### 52.2 验证证据（未启动实验）
+
+```text
+two_uav_runner    self-test: PASS（新增 3 机 smoke_command_chain / config 辅助 3 机断言）
+two_uav_preflight self-test: PASS（新增 uav2 TF contract 用例）
+two_uav_collector self-test: PASS（新增 alias map uav2 / pairwise metrics 3 机用例）
+py_compile（三脚本）: PASS
+git diff --check: PASS
+```
+
+### 52.1b preflight 附带健壮性强化（同批验证，经高终端审核后补录）
+
+`scripts/two_uav_preflight.py` 与 D5 参数化同文件包含以下健壮性强化（D4 审核时已
+存在于工作区，随 D5 一并验证提交）：
+
+1. `FROZEN_RUNTIME` 增补 `sdf_map/resolution` 与 `map_ros/all_map_publish_period` 检查项；
+2. `readonly_cli_retry()`：live 期只读 ROS CLI（rosparam 等）带 3 次退避重试 + 50 s
+   wall cap，替代单次 `subprocess.run`，缓解 ROS master 偶发拥塞导致的误判；
+3. `runtime_value_matches()`：rosparam 输出数值归一比较（`0.1` == `0.10`），
+   修正字符串字面比较误报；
+4. `resource_profile_schema_valid()`：live 检查新增 `resource_usage.jsonl` 首样本
+   schema 校验；
+5. watchdog 契约补强 `occupancy_contract` / `coverage_coalesce_sim_s` /
+   `resource_*` 门限检查。
+
+以上均为只读/校验层增强，不改变安全门阈值语义，self-test 全覆盖。
+
+2-UAV 向后兼容核对：`process_specs`/`make_runroot`/`start_stack`/metrics 汇总键/
+preflight 校验路径在 uav_count=2 时逐一与原实现一致。
+
+### 52.3 新 hash（D5）
+
+```text
+runner:    1ca6f9c5833de66b53c1f621180c7e66d2ba3c44809877c21482b7918e83d636
+collector: 20a1832b89c6c6425d15ef948423e38e020f29da82ee32d5fb5a72f7629806b2
+preflight: 41f0c76913532c4d184162d787055ec49155d9ba6272690c96d687b0c52be1aa
+```
+
+### 52.4 残余风险
+
+- 三机启动本身需要 D6 的 `config/3uav_*.yaml`、`launch/3uav_*.launch`、3uav 世界与
+  source hash manifest 就位后才能实证；本阶段只保证脚本层参数化与 self-test 覆盖。
+- 3-UAV 时 fleet 的 `overlap_ratio`/`map_consistency_jaccard` 取最小 pairwise 值，语义与
+  2-UAV 的「单对」一致且更保守；若后续需要全对报告可在 D6 扩展。
+
 

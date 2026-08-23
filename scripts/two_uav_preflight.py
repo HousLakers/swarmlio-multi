@@ -9,6 +9,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import time
 import xml.etree.ElementTree as ET
 
 import yaml
@@ -17,9 +18,11 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 PLACEHOLDER = "REPLACE_WITH_VERIFIED_2UAV_LAUNCH_COMMAND"
 FROZEN_RUNTIME = {
+    "sdf_map/resolution": "0.10",
     "sdf_map/obstacles_inflation": "0.35",
     "sdf_map/max_ray_length": "20.0",
     "map_ros/depth_filter_maxdist": "20.5",
+    "map_ros/all_map_publish_period": "2.0",
     "planner_escape/v2_progress_guard_enabled": "false",
     "trajectory_safety/global_postplan_guard_enabled": "false",
     "trajectory_safety/reject_unknown": "false",
@@ -35,6 +38,10 @@ ENVIRONMENT_RUNTIME = {
     "sdf_map/box_max_y": "24.5",
 }
 EXPECTED_RUNTIME = {**FROZEN_RUNTIME, **ENVIRONMENT_RUNTIME}
+LIVE_CLI_TIMEOUT_S = 15
+LIVE_CLI_ATTEMPTS = 3
+LIVE_CLI_BACKOFF_S = 0.5
+LIVE_CLI_WALL_CAP_S = 50.0
 
 
 def load_yaml(path):
@@ -60,6 +67,14 @@ def check(condition, name, detail, checks):
     checks.append({"name": name, "ok": bool(condition), "detail": str(detail)})
 
 
+def runtime_value_matches(actual, expected):
+    """rosparam normalizes YAML numeric output (0.10 -> 0.1); compare numerically."""
+    try:
+        return float(actual) == float(expected)
+    except (TypeError, ValueError):
+        return actual.strip().lower() == expected.strip().lower()
+
+
 def unique(values):
     return len(values) == len(set(values))
 
@@ -81,9 +96,12 @@ def static_checks(config_path, manifest_path):
     config = load_yaml(config_path)
     manifest = load_yaml(manifest_path)
     checks = []
-    check(config.get("uav_count") == 2, "contract.uav_count", config.get("uav_count"), checks)
+    uav_count = config.get("uav_count")
     vehicles = config.get("vehicles", [])
-    check(len(vehicles) == 2, "contract.vehicle_count", len(vehicles), checks)
+    check(isinstance(uav_count, int) and not isinstance(uav_count, bool) and
+          uav_count >= 2 and uav_count == len(vehicles),
+          "contract.uav_count", {"uav_count": uav_count, "vehicles": len(vehicles)}, checks)
+    launch_prefix = "%duav" % uav_count
     for field in ("namespace", "racer_id", "mavlink_system_id", "initial_position",
                   "log_subdir"):
         values = [json.dumps(v.get(field), sort_keys=True) for v in vehicles]
@@ -177,8 +195,9 @@ def static_checks(config_path, manifest_path):
     except (OSError, ET.ParseError) as exc:
         check(False, "frozen_param.planner_xml", exc, checks)
 
-    for relpath in ("launch/2uav_px4_sitl.launch", "launch/2uav_bridges.launch",
-                    "launch/2uav_racer.launch"):
+    for relpath in ("launch/%s_px4_sitl.launch" % launch_prefix,
+                    "launch/%s_bridges.launch" % launch_prefix,
+                    "launch/%s_racer.launch" % launch_prefix):
         path = ROOT / relpath
         try:
             ET.parse(path)
@@ -186,13 +205,13 @@ def static_checks(config_path, manifest_path):
         except (OSError, ET.ParseError) as exc:
             check(False, "launch.xml." + relpath, exc, checks)
     try:
-        bridge_root = ET.parse(ROOT / "launch/2uav_bridges.launch").getroot()
+        bridge_root = ET.parse(ROOT / ("launch/%s_bridges.launch" % launch_prefix)).getroot()
         bridge_nodes = {node.attrib["name"]: named_values(node, "param")
                         for node in bridge_root.findall("node")}
-        racer_root = ET.parse(ROOT / "launch/2uav_racer.launch").getroot()
+        racer_root = ET.parse(ROOT / ("launch/%s_racer.launch" % launch_prefix)).getroot()
         racer_includes = [named_values(node, "arg")
                           for node in racer_root.findall("include")]
-        px4_root = ET.parse(ROOT / "launch/2uav_px4_sitl.launch").getroot()
+        px4_root = ET.parse(ROOT / ("launch/%s_px4_sitl.launch" % launch_prefix)).getroot()
         px4_world = px4_root.find("arg[@name='world']")
         check(px4_world is not None and px4_world.attrib.get("default") == str(world_path),
               "environment.px4_world", None if px4_world is None else
@@ -204,8 +223,8 @@ def static_checks(config_path, manifest_path):
               "environment.racer_map_size", racer_args, checks)
         racer_params = named_values(racer_root, "param")
         expected_bounds = {
-            "/exploration_node_%d/sdf_map/%s" % (drone_id, bound): value
-            for drone_id in (1, 2)
+            "/exploration_node_%s/sdf_map/%s" % (spec["racer_id"], bound): value
+            for spec in vehicles
             for bound, value in (("box_min_x", "-24.5"),
                                  ("box_min_y", "-24.5"),
                                  ("box_max_x", "24.5"),
@@ -229,7 +248,7 @@ def static_checks(config_path, manifest_path):
                   "wiring.%s_bridge" % spec["name"], bridge, checks)
             racer = next((item for item in racer_includes
                           if item.get("drone_id") == racer_id), {})
-            check(racer.get("drone_num") == "2",
+            check(racer.get("drone_num") == str(uav_count),
                   "wiring.%s_racer" % spec["name"], racer, checks)
             px4 = px4_groups.get(spec["name"], {})
             expected_system_index = str(spec["mavlink_system_id"] - 1)
@@ -255,7 +274,8 @@ def static_checks(config_path, manifest_path):
     try:
         approval_contract = load_yaml(approval_contract_path)
         check(approval_contract.get("schema_version") == 1 and
-              approval_contract.get("approval_package") == "state/2uav_approval.yaml" and
+              approval_contract.get("approval_package") ==
+              ("state/%s_approval.yaml" % launch_prefix) and
               approval_contract.get("manifest_status_must_remain") ==
               "blocked_pending_verified_launch_and_preflight" and
               approval_contract.get("issued_by_must_be") == "sol" and
@@ -274,12 +294,19 @@ def static_checks(config_path, manifest_path):
     check(telemetry_contract.get("preflight_soak_s", 0) >=
           telemetry_contract.get("startup_grace_s", 0) and
           telemetry_contract.get("tf_freshness_s", 0) > 0 and
+          telemetry_contract.get("occupancy_contract") == "startup_presence" and
           metrics_contract.get("coverage_missing_policy") ==
-          "abort_after_startup_grace",
+          "abort_after_startup_grace" and
+          metrics_contract.get("coverage_coalesce_sim_s") == 2.0 and
+          metrics_contract.get("resource_sample_wall_s") == 1.0 and
+          metrics_contract.get("resource_startup_mem_available_gib") == 8 and
+          metrics_contract.get("resource_running_mem_available_gib") == 3 and
+          metrics_contract.get("resource_startup_load1_max") == 10.0 and
+          metrics_contract.get("resource_swap_activity") == "abort",
           "safety.watchdog_contract", {"telemetry": telemetry_contract,
                                          "metrics": metrics_contract}, checks)
 
-    source_manifest = ROOT / "config/2uav_source_hashes.sha256"
+    source_manifest = ROOT / ("config/%s_source_hashes.sha256" % launch_prefix)
     source_manifest_mismatches = []
     if source_manifest.is_file():
         for raw_line in source_manifest.read_text(encoding="utf-8").splitlines():
@@ -299,18 +326,18 @@ def static_checks(config_path, manifest_path):
           source_manifest_mismatches or "all entries match", checks)
 
     source_files = [
-        ROOT / "config/2uav_static.yaml",
-        ROOT / "config/2uav_approval_contract.yaml",
-        ROOT / "launch/2uav_px4_sitl.launch",
-        ROOT / "launch/2uav_bridges.launch",
-        ROOT / "launch/2uav_racer.launch",
+        ROOT / ("config/%s_static.yaml" % launch_prefix),
+        ROOT / ("config/%s_approval_contract.yaml" % launch_prefix),
+        ROOT / ("launch/%s_px4_sitl.launch" % launch_prefix),
+        ROOT / ("launch/%s_bridges.launch" % launch_prefix),
+        ROOT / ("launch/%s_racer.launch" % launch_prefix),
         ROOT / "scripts/two_uav_gt_mapper.py",
         ROOT / "scripts/two_uav_preflight.py",
         ROOT / "scripts/two_uav_collector.py",
         ROOT / "scripts/two_uav_runner.py",
-        ROOT / "scripts/validate_2uav_outdoor_world.py",
-        ROOT / "worlds/2uav_outdoor_50x50_v1.world",
-        ROOT / "config/2uav_source_hashes.sha256",
+        ROOT / ("scripts/validate_%s_outdoor_world.py" % launch_prefix),
+        ROOT / ("worlds/%s_outdoor_50x50_v1.world" % launch_prefix),
+        ROOT / ("config/%s_source_hashes.sha256" % launch_prefix),
         Path(manifest_path),
     ]
     hashes = {str(path.relative_to(ROOT)): sha256(path)
@@ -318,9 +345,37 @@ def static_checks(config_path, manifest_path):
     return checks, hashes
 
 
+def readonly_cli_retry(argv, execute=subprocess.run, monotonic=time.monotonic,
+                       sleep=time.sleep):
+    """Run a fixed read-only ROS CLI argv with bounded, auditable retries."""
+    started = monotonic()
+    attempts = []
+    for number in range(1, LIVE_CLI_ATTEMPTS + 1):
+        if monotonic() - started >= LIVE_CLI_WALL_CAP_S:
+            break
+        try:
+            result = execute(argv, check=False, text=True, stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE, timeout=LIVE_CLI_TIMEOUT_S)
+        except subprocess.TimeoutExpired:
+            attempts.append({"attempt": number, "status": "timeout"})
+        else:
+            if result.returncode == 0:
+                attempts.append({"attempt": number, "status": "success"})
+                return {"ok": True, "argv": list(argv), "stdout": result.stdout.strip(),
+                        "attempts": attempts}
+            attempts.append({"attempt": number, "status": "error",
+                             "returncode": result.returncode,
+                             "stderr": result.stderr.strip()})
+        if number < LIVE_CLI_ATTEMPTS and monotonic() - started < LIVE_CLI_WALL_CAP_S:
+            sleep(LIVE_CLI_BACKOFF_S)
+    return {"ok": False, "argv": list(argv), "stdout": "", "attempts": attempts}
+
+
 def ros_output(*argv):
-    return subprocess.run(argv, check=True, text=True, stdout=subprocess.PIPE,
-                          stderr=subprocess.PIPE, timeout=15).stdout.strip()
+    result = readonly_cli_retry(list(argv))
+    if not result["ok"]:
+        raise RuntimeError("live CLI failed: " + json.dumps(result, sort_keys=True))
+    return result["stdout"]
 
 
 def tf_echo_argv():
@@ -411,16 +466,78 @@ def live_checks(config_path, runroot):
         node = "/exploration_node_%s" % vehicle["racer_id"]
         for name, expected in EXPECTED_RUNTIME.items():
             actual = ros_output("rosparam", "get", node + "/" + name)
-            check(actual.lower() == expected, "readback.%s.%s" % (vehicle["name"], name),
-                  actual, checks)
+            check(runtime_value_matches(actual, expected), "readback.%s.%s"
+                  % (vehicle["name"], name), actual, checks)
         logdir = Path(runroot) / vehicle["log_subdir"]
         check(logdir.is_dir(), "logdir.%s" % vehicle["name"], logdir, checks)
     check((Path(runroot) / config["fleet"]["log_subdir"]).is_dir(),
           "logdir.fleet", Path(runroot) / config["fleet"]["log_subdir"], checks)
+    profile = Path(runroot) / "resource_usage.jsonl"
+    try:
+        sample = json.loads(profile.read_text(encoding="utf-8").splitlines()[0])
+        profile_ok = resource_profile_schema_valid(sample)
+        profile_detail = "schema complete" if profile_ok else "schema incomplete"
+    except (OSError, ValueError, json.JSONDecodeError, IndexError):
+        profile_ok, profile_detail = False, "resource profile missing or unreadable"
+    check(profile_ok, "live.resource_profile", profile_detail, checks)
     return checks
 
 
+def resource_profile_schema_valid(sample):
+    return (isinstance(sample, dict) and
+            isinstance(sample.get("wall_monotonic_s"), (int, float)) and
+            "wall_delta_s" in sample and "sim_s" in sample and
+            isinstance(sample.get("sim_evidence_missing"), bool) and
+            isinstance(sample.get("clk_tck"), int) and sample["clk_tck"] > 0 and
+            isinstance(sample.get("roles"), dict) and isinstance(sample.get("system"), dict) and
+            (sample["sim_s"] is not None or sample["sim_evidence_missing"]))
+
+
 def self_test():
+    assert runtime_value_matches("0.1", "0.10")
+    assert runtime_value_matches("20", "20.0")
+    assert runtime_value_matches("omnidirectional", "omnidirectional")
+    assert runtime_value_matches("TRUE", "true")
+    assert not runtime_value_matches("0.2", "0.10")
+    assert not runtime_value_matches("omni", "omnidirectional")
+
+    class Result:
+        def __init__(self, returncode=0, stdout="", stderr=""):
+            self.returncode, self.stdout, self.stderr = returncode, stdout, stderr
+
+    def scripted(outcomes):
+        queue = list(outcomes)
+        def execute(_argv, **_kwargs):
+            item = queue.pop(0)
+            if item == "timeout":
+                raise subprocess.TimeoutExpired("rosparam", LIVE_CLI_TIMEOUT_S)
+            return item
+        return execute
+
+    argv = ["rosparam", "get", "/uav0/sdf_map/obstacles_inflation"]
+    timeout_then_success = readonly_cli_retry(
+        argv, execute=scripted(["timeout", Result(stdout="0.35\n")]), sleep=lambda _: None)
+    assert timeout_then_success["ok"] and [item["status"] for item in
+                                             timeout_then_success["attempts"]] == ["timeout", "success"]
+    error_then_success = readonly_cli_retry(
+        argv, execute=scripted([Result(1, stderr="busy"), Result(stdout="0.35\n")]),
+        sleep=lambda _: None)
+    assert error_then_success["ok"] and error_then_success["attempts"][0]["status"] == "error"
+    all_timeout = readonly_cli_retry(argv, execute=scripted(["timeout"] * LIVE_CLI_ATTEMPTS),
+                                     sleep=lambda _: None)
+    assert not all_timeout["ok"] and {item["status"] for item in all_timeout["attempts"]} == {"timeout"}
+    all_error = readonly_cli_retry(argv, execute=scripted([Result(2, stderr="down")] * LIVE_CLI_ATTEMPTS),
+                                   sleep=lambda _: None)
+    assert not all_error["ok"] and {item["status"] for item in all_error["attempts"]} == {"error"}
+    assert timeout_then_success["stdout"] == "0.35"
+    assert timeout_then_success["stdout"] != "0.40"
+    clock = [0.0]
+    def wall_clock(): return clock[0]
+    def advance(_argv, **_kwargs):
+        clock[0] += LIVE_CLI_WALL_CAP_S
+        return Result(1, stderr="late")
+    capped = readonly_cli_retry(argv, execute=advance, monotonic=wall_clock, sleep=lambda _: None)
+    assert not capped["ok"] and len(capped["attempts"]) == 1
     vehicles = [
         {"frames": {"parent": "world", "child": "uav0/base_link"}},
         {"frames": {"parent": "world", "child": "uav1/base_link"}},
@@ -467,10 +584,37 @@ def self_test():
 """)
     assert multi_parent["uav0/base_link"] == {"world", "map"}
     assert not expected_tf_contract(multi_parent, vehicles)[0]
+    # D5: TF contract and parse are vehicle-list driven (uav_count=3 coverage).
+    three_vehicles = [{"frames": {"parent": "world", "child": "uav0/base_link"}},
+                      {"frames": {"parent": "world", "child": "uav1/base_link"}},
+                      {"frames": {"parent": "world", "child": "uav2/base_link"}}]
+    three_fixture = tf_fixture + """transforms:
+- header:
+    seq: 3
+    stamp: {secs: 1, nsecs: 0}
+    frame_id: world
+  child_frame_id: uav2/base_link
+  transform: {}
+---
+"""
+    parsed_three = parse_tf_parent_sets(three_fixture)
+    assert parsed_three == {"uav0/base_link": {"world"},
+                            "uav1/base_link": {"world"},
+                            "uav2/base_link": {"world"}}
+    assert expected_tf_contract(parsed_three, three_vehicles)[0]
+    assert not expected_tf_contract(
+        {"uav0/base_link": {"world"}, "uav1/base_link": {"world"}},
+        three_vehicles)[0]
     assert tf_echo_argv()[-1] == "/tf"
     assert "--noarr" not in tf_echo_argv()
     assert payload_observed(0, "header: {}\n")[0]
     assert not payload_observed(0, "", "topic registered but silent")[0]
+    profile_sample = {"wall_monotonic_s": 1.0, "wall_delta_s": None, "sim_s": None,
+                      "sim_evidence_missing": True, "clk_tck": 100,
+                      "roles": {}, "system": {}}
+    assert resource_profile_schema_valid(profile_sample)
+    assert not resource_profile_schema_valid(dict(profile_sample, clk_tck=0))
+    assert not resource_profile_schema_valid(dict(profile_sample, sim_evidence_missing=False))
     print("two_uav_preflight self-test: PASS")
 
 

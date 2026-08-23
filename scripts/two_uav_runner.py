@@ -232,6 +232,26 @@ def load_yaml(path):
         return yaml.safe_load(stream)
 
 
+def config_vehicle_names(config=None):
+    """Ordered UAV names (uav0, uav1, ...) derived from the static contract."""
+    config = config or load_yaml(CONFIG)
+    return [vehicle["name"] for vehicle in config["vehicles"]]
+
+
+def config_bridge_nodes(config=None):
+    """Ordered px4_bridge node names for every configured vehicle."""
+    config = config or load_yaml(CONFIG)
+    return tuple("/px4_bridge_%d" % vehicle["racer_id"]
+                 for vehicle in config["vehicles"])
+
+
+def vehicle_metrics_summary(runroot, names):
+    """Per-vehicle metrics.json presence keys (uav0_metrics, uav1_metrics, ...)."""
+    runroot = Path(runroot)
+    return {"%s_metrics" % name: (runroot / name / "metrics.json").is_file()
+            for name in names}
+
+
 DROPOUT_MODES = ("control_chain", "communication", "node_level")
 
 
@@ -552,6 +572,9 @@ def ros_runtime_prefix(runroot):
 
 
 def process_specs(runroot):
+    config = load_yaml(CONFIG)
+    uav_count = int(config["uav_count"])
+    launch_prefix = "%duav" % uav_count
     env_prefix = ros_runtime_prefix(runroot)
     gazebo_env = (
         env_prefix +
@@ -565,14 +588,14 @@ def process_specs(runroot):
         "/home/houslakers/PX4-Autopilot/Tools/simulation/gazebo-classic/sitl_gazebo-classic; ")
     return [
         ("gazebo", shell(gazebo_env + "exec roslaunch " +
-                         str(ROOT / "launch/2uav_px4_sitl.launch"))),
+                         str(ROOT / ("launch/%s_px4_sitl.launch" % launch_prefix)))),
         ("gt_mapper", shell(env_prefix + "exec python3 " +
                             str(ROOT / "scripts/two_uav_gt_mapper.py") +
                             " --config " + str(CONFIG))),
         ("bridges", shell(env_prefix + "exec roslaunch " +
-                          str(ROOT / "launch/2uav_bridges.launch"))),
+                          str(ROOT / ("launch/%s_bridges.launch" % launch_prefix)))),
         ("racer", shell(env_prefix + "exec roslaunch " +
-                        str(ROOT / "launch/2uav_racer.launch"))),
+                        str(ROOT / ("launch/%s_racer.launch" % launch_prefix)))),
         ("collector", shell(env_prefix + "exec python3 " +
                             str(ROOT / "scripts/two_uav_collector.py") +
                             " --config " + str(CONFIG) + " --runroot " + str(runroot))),
@@ -768,10 +791,11 @@ def verify_workspace_environment(runroot):
 
 
 def make_runroot(kind, manifest_path, approval_bytes):
+    config = load_yaml(CONFIG)
     stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    runroot = ROOT / "results" / ("RUN-%s-2uav-%s" % (stamp, kind))
+    runroot = ROOT / "results" / ("RUN-%s-%duav-%s" % (stamp, config["uav_count"], kind))
     runroot.mkdir(parents=True, exist_ok=False)
-    for name in ("uav0", "uav1", "fleet", "logs"):
+    for name in config_vehicle_names(config) + ["fleet", "logs"]:
         (runroot / name).mkdir()
     prepare_runroot_ros_environment(runroot)
     shutil.copy2(manifest_path, runroot / "manifest.yaml")
@@ -781,6 +805,7 @@ def make_runroot(kind, manifest_path, approval_bytes):
 
 
 def start_stack(runroot, manifest_path):
+    config = load_yaml(CONFIG)
     startup_capacity = system_capacity()
     startup_ok, startup_detail = capacity_gate(startup_capacity, "startup")
     (Path(runroot) / "resource_capacity_startup.json").write_text(
@@ -819,7 +844,6 @@ def start_stack(runroot, manifest_path):
                                lambda: topic_payload_seen(runroot, "/clock"),
                                profile_sample=profile_sample)
             elif name == "gt_mapper":
-                config = load_yaml(CONFIG)
                 for vehicle in config["vehicles"]:
                     for key in ("raw_cloud", "mavros_odom", "registered_cloud", "registered_odom"):
                         wait_readiness(
@@ -828,14 +852,14 @@ def start_stack(runroot, manifest_path):
                             profile_sample=profile_sample)
             elif name == "bridges":
                 wait_readiness(runroot, "bridges", 60, live_processes, lambda: True,
-                               required_nodes=("/px4_bridge_1", "/px4_bridge_2"),
+                               required_nodes=config_bridge_nodes(config),
                                profile_sample=profile_sample)
             elif name == "racer":
-                for vehicle in load_yaml(CONFIG)["vehicles"]:
+                for vehicle in config["vehicles"]:
                     wait_frontier_readiness(
                         runroot, "%s:frontier" % vehicle["name"], live_processes,
                         lambda topic=vehicle["topics"]["frontier"]: topic_payload_seen(runroot, topic),
-                        required_nodes=("/px4_bridge_1", "/px4_bridge_2"),
+                        required_nodes=config_bridge_nodes(config),
                         profile_sample=profile_sample)
     except Exception:
         stop_active({"runroot": str(runroot), "processes": processes,
@@ -1052,7 +1076,7 @@ def watchdog_evidence(runroot):
     try:
         fleet = last_jsonl(runroot / "fleet" / "telemetry.jsonl")
         vehicles = [last_jsonl(runroot / name / "telemetry.jsonl")
-                    for name in ("uav0", "uav1")]
+                    for name in config_vehicle_names()]
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         return False, "missing watchdog telemetry: %s" % exc
     if not fleet.get("telemetry_completeness"):
@@ -1098,7 +1122,8 @@ def watchdog_soak(runroot, seconds):
 
 
 def wait_final_metrics(runroot, timeout_s=10):
-    paths = [Path(runroot) / name / "metrics.json" for name in ("uav0", "uav1", "fleet")]
+    paths = [Path(runroot) / name / "metrics.json"
+             for name in config_vehicle_names() + ["fleet"]]
     deadline = time.monotonic() + timeout_s
     while time.monotonic() < deadline:
         if all(path.is_file() for path in paths):
@@ -1111,10 +1136,11 @@ def final_safety_result(runroot, require_command_chain=False):
     runroot = Path(runroot)
     if (runroot / "fleet" / "abort.request").is_file():
         return False, "abort.request exists"
+    names = config_vehicle_names()
     try:
         fleet = json.loads((runroot / "fleet" / "metrics.json").read_text(encoding="utf-8"))
         vehicles = [json.loads((runroot / name / "metrics.json").read_text(
-            encoding="utf-8")) for name in ("uav0", "uav1")]
+            encoding="utf-8")) for name in names]
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         return False, "missing final metrics: %s" % exc
     safe, detail = final_metrics_valid(fleet, vehicles)
@@ -1123,7 +1149,7 @@ def final_safety_result(runroot, require_command_chain=False):
         return False, "resource profile missing or incomplete"
     if not safe or not require_command_chain:
         return safe, detail
-    return smoke_command_chain_valid(vehicles)
+    return smoke_command_chain_valid(vehicles, expected_names=names)
 
 
 def final_metrics_valid(fleet, vehicles):
@@ -1135,12 +1161,17 @@ def final_metrics_valid(fleet, vehicles):
     return True, "final safety metrics complete"
 
 
-def smoke_command_chain_valid(vehicles):
-    """Require both vehicles to have entered the post-goal command loop."""
-    if not isinstance(vehicles, (list, tuple)) or len(vehicles) != 2:
-        return False, "smoke command chain requires exactly uav0 and uav1 metrics"
+def smoke_command_chain_valid(vehicles, expected_names=("uav0", "uav1")):
+    """Require every vehicle to have entered the post-goal command loop.
+
+    expected_names is derived from config.vehicles by the runner; the default
+    keeps the pre-D5 two-UAV contract for existing callers and self-tests.
+    """
+    if not isinstance(vehicles, (list, tuple)) or len(vehicles) != len(expected_names):
+        return False, "smoke command chain requires exactly %d vehicle metrics" % (
+            len(expected_names))
     failures = []
-    for name, report in zip(("uav0", "uav1"), vehicles):
+    for name, report in zip(expected_names, vehicles):
         if not isinstance(report, dict):
             failures.append("%s metrics missing" % name)
             continue
@@ -1253,12 +1284,12 @@ def action_launch(manifest_path):
     metrics_ready = wait_final_metrics(runroot)
     safe, safety_detail = final_safety_result(runroot, require_command_chain=True) if metrics_ready else (
         False, "final metrics timeout")
+    names = config_vehicle_names()
     summary = {
         "runroot": str(runroot),
         "exit_reason": reason,
         "stop": outcomes,
-        "uav0_metrics": (runroot / "uav0/metrics.json").is_file(),
-        "uav1_metrics": (runroot / "uav1/metrics.json").is_file(),
+        **vehicle_metrics_summary(runroot, names),
         "fleet_metrics": (runroot / "fleet/metrics.json").is_file(),
         "final_safety_passed": safe,
         "final_safety_detail": safety_detail,
@@ -1267,8 +1298,8 @@ def action_launch(manifest_path):
     (runroot / "execution_result.json").write_text(
         json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps(summary, indent=2, sort_keys=True))
-    return 0 if reason == "duration_complete" and safe and all(summary[key] for key in (
-        "uav0_metrics", "uav1_metrics", "fleet_metrics")) else 2
+    return 0 if reason == "duration_complete" and safe and all(
+        summary["%s_metrics" % name] for name in names) and summary["fleet_metrics"] else 2
 
 
 def action_monitor():
@@ -1303,15 +1334,15 @@ def action_collect():
     active = load_active()
     runroot = Path(active["runroot"])
     result = action_monitor()
+    names = config_vehicle_names()
     summary = {"runroot": str(runroot), "monitor_exit": result,
-               "uav0_metrics": (runroot / "uav0/metrics.json").is_file(),
-               "uav1_metrics": (runroot / "uav1/metrics.json").is_file(),
+               **vehicle_metrics_summary(runroot, names),
                "fleet_metrics": (runroot / "fleet/metrics.json").is_file()}
     (runroot / "collection_result.json").write_text(
         json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps(summary, indent=2, sort_keys=True))
-    return 0 if all(summary[key] for key in (
-        "uav0_metrics", "uav1_metrics", "fleet_metrics")) else 2
+    return 0 if all(summary["%s_metrics" % name] for name in names) and summary[
+        "fleet_metrics"] else 2
 
 
 def self_test():
@@ -1524,9 +1555,35 @@ def self_test():
     assert not smoke_command_chain_valid([good_vehicle])[0]
     assert not smoke_command_chain_valid([good_vehicle, good_vehicle, good_vehicle])[0]
     assert not smoke_command_chain_valid({"uav0": good_vehicle, "uav1": good_vehicle})[0]
+    # D5: uav_count=3 coverage for the N-vehicle command-chain validator.
+    assert smoke_command_chain_valid(
+        [good_vehicle, good_vehicle, good_vehicle],
+        expected_names=("uav0", "uav1", "uav2"))[0]
+    assert not smoke_command_chain_valid(
+        [good_vehicle, good_vehicle],
+        expected_names=("uav0", "uav1", "uav2"))[0]
+    assert not smoke_command_chain_valid(
+        [good_vehicle, good_vehicle, good_vehicle])[0]
     assert final_metrics_valid({"abort_reasons": [], "telemetry_completeness": True},
                                [dict(good_vehicle, telemetry={}), dict(good_vehicle, telemetry={})])[0]
     config = load_yaml(CONFIG)
+    # D5: config-driven helpers must derive names/nodes from config.vehicles.
+    assert config_vehicle_names(config) == ["uav0", "uav1"]
+    assert config_bridge_nodes(config) == ("/px4_bridge_1", "/px4_bridge_2")
+    with tempfile.TemporaryDirectory() as tempdir:
+        summary_root = Path(tempdir)
+        (summary_root / "uav0").mkdir()
+        (summary_root / "uav0" / "metrics.json").write_text("{}", encoding="utf-8")
+        summary = vehicle_metrics_summary(summary_root, ["uav0", "uav1"])
+        assert summary == {"uav0_metrics": True, "uav1_metrics": False}
+    three_vehicle_config = dict(config, uav_count=3, vehicles=[
+        dict(config["vehicles"][0], name="uav0"),
+        dict(config["vehicles"][1], name="uav1"),
+        dict(config["vehicles"][1], name="uav2", racer_id=3),
+    ])
+    assert config_vehicle_names(three_vehicle_config) == ["uav0", "uav1", "uav2"]
+    assert config_bridge_nodes(three_vehicle_config) == (
+        "/px4_bridge_1", "/px4_bridge_2", "/px4_bridge_3")
     topic_owners = {topic: ["/owner"] for vehicle in config["vehicles"]
                     for topic in vehicle["topics"].values()}
     tf_last_wall_s = {vehicle["frames"]["child"]: 1.0 for vehicle in config["vehicles"]}
