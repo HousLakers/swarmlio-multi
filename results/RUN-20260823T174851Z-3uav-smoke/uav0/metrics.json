@@ -1,0 +1,87 @@
+{
+  "ack_count": 3040,
+  "ack_timeout": {
+    "count": 0,
+    "recovered_count": 0,
+    "recovered_trajectory_ids": [],
+    "threshold_s": 1.0,
+    "trajectory_ids": []
+  },
+  "completion": {
+    "marker": "finish exploration.",
+    "observed": false,
+    "source": "/rosout",
+    "wall_s": null
+  },
+  "contact": {
+    "ground": 0,
+    "inter_uav": 0,
+    "obstacle": 0
+  },
+  "coverage": {
+    "available": true,
+    "callback_wall_duration_s": [
+      4.86899989482481e-06,
+      6.274000043049455e-06,
+      5.104999218019657e-06,
+      5.640000381390564e-06,
+      4.034000085084699e-06,
+      7.72500061430037e-06,
+      7.769000148982741e-06,
+      8.88800059328787e-06,
+      3.4929998946608976e-06,
+      7.147000360419042e-06,
+      5.384999894886278e-06
+    ],
+    "coalesced": 1,
+    "denominator_voxels": 268912,
+    "last_message_wall_s": 14679.857494437,
+    "last_processed_sim_s": null,
+    "last_processed_wall_s": 14686.583059326,
+    "message_age_s": 34.731986601000244,
+    "missing_policy": "abort_after_startup_grace",
+    "observed_voxels": 6458,
+    "processed": 10,
+    "processed_age_s": 28.006421711999792,
+    "processing_wall_duration_s": [
+      3.0238999897846952e-05,
+      5.947799945715815e-05,
+      2.272999881824944e-05,
+      0.0008253470005001873,
+      0.0022999880002316786,
+      0.005051710000770981,
+      0.0075480460000108,
+      0.004923147998852073,
+      0.014333388999148156,
+      0.00890829499985557
+    ],
+    "ratio": 0.024015291247694415,
+    "received": 11
+  },
+  "crash": false,
+  "dropout": false,
+  "dropout_classification": "none",
+  "freeze": false,
+  "hold_at_goal": true,
+  "last_ack_id": 5,
+  "path_length_m": 15.522242972898553,
+  "position": [
+    -4.460531711578369,
+    -0.2724425196647644,
+    1.898193359375
+  ],
+  "telemetry": {
+    "ack": 3040,
+    "cloud": 785,
+    "frontier": 2166,
+    "health": 79,
+    "occupancy": 10,
+    "odometry": 785,
+    "pos_cmd": 3040,
+    "trajectory": 5
+  },
+  "telemetry_complete": true,
+  "telemetry_expected": false,
+  "telemetry_missing_channels": [],
+  "telemetry_stale_channels": []
+}

@@ -1,0 +1,19 @@
+{
+  "cleanup_policy": "stop_active_reclaim",
+  "killed_nodes": [
+    "/exploration_node_2",
+    "/traj_server_2"
+  ],
+  "missing_nodes": [],
+  "mode": "control_chain",
+  "pids": {
+    "/exploration_node_2": 115494,
+    "/traj_server_2": 115502
+  },
+  "reason": "intentional_dropout",
+  "record": "fleet/dropout.json",
+  "sim_s": 86.297,
+  "trigger_sim_s": 60,
+  "vehicle": "uav1",
+  "wall_s": 14708.682958192
+}

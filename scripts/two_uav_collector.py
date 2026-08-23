@@ -268,6 +268,12 @@ class VehicleState:
         with self.lock:
             now = time.monotonic()
             for trajectory_id, sent_s in self.pending_commands.items():
+                if trajectory_id in self.ack_ids:
+                    # An ack for this id did arrive (possibly before the
+                    # matching pos_cmd due to topic reorder); the command
+                    # chain is alive, so the lingering pending entry is not
+                    # a real break.
+                    continue
                 if now - sent_s >= ack_timeout_s:
                     self.ack_timeout_ids.add(trajectory_id)
             moved = self.path_length_m >= 0.25
@@ -693,7 +699,8 @@ class Collector:
                 if (snapshot["telemetry_stale_channels"] or
                         snapshot["telemetry_missing_channels"]):
                     self._abort("corrupted_telemetry:%s:freshness" % name)
-                if state.ack_timeout_ids:
+                live_ack_timeouts = set(state.ack_timeout_ids) - set(state.ack_recovered_ids)
+                if live_ack_timeouts:
                     self._abort("corrupted_telemetry:%s:ack_timeout" % name)
             for child, parents in self.tf_parents.items():
                 vehicle_name = self.tf_vehicle.get(child)

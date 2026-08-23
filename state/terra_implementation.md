@@ -3262,6 +3262,59 @@ overlay_installer:    8cabae8d6c8019cf49e4f3f6d836ac9c0fa7d26d6926e1140af8cc87c4
 - spawn (-3,-3) 与 (0,0)/(1.5,0) 距离增大，机架互扫概率下降，与源码修复叠加后
   预期 uav2 全程存活
 
+## 54.14 D9r 验证闭环（高终端）
+
+### ack_timeout 误杀根因（第二次排查）
+
+- 修复 uav2 解冻后，连续 3 次 smoke 重跑均被 collector 以
+  `corrupted_telemetry:*:ack_timeout` 误杀（uav2 trajectory 11/18、uav0 trajectory 15）
+- 真因：**pos_cmd 与 ack 的 topic 到达顺序竞态**
+  - exploration_node 在 EXEC_TRAJ 期间持续发布同一 trajectory_id 的 pos_cmd
+  - 若 ack 先到（`pending_commands.pop` 返回 None），后续同 id 的 pos_cmd 经
+    `setdefault` 重新插入 pending，而该 id 的 ack 已消费不再来 → pending 泄漏
+  - watchdog 判定泄漏的 pending 超时 → fail_closed abort（尽管链路完全正常）
+
+### collector 修复（two_uav_collector.py，已自测 PASS）
+
+1. watchdog 对 ack_timeout 改为**只对未恢复的实时超时** fail-closed
+   （`ack_timeout_ids - ack_recovered_ids` 非空才 abort）
+2. `snapshot()` 中 pending 判定跳过**已收到过 ack 的 id**
+   （`trajectory_id in ack_ids` → 链路存活，pending 残留不算断裂）
+3. `command_ack_timeout_s` 1.0 → 6.0（wall，双 static 同步）
+
+### 最终验证（RUN-20260823T181608Z-3uav-smoke）
+
+- `exit_reason: duration_complete`，`final_safety_passed: true`，无 abort
+- 掉线实验完整执行：uav1 于 sim 86.2s 注入 control_chain 掉线
+  （exploration_node_2 + traj_server_2 被杀），分类 intentional_dropout
+- 存活机继续：uav0 +5784、uav2 +12649 voxels（post-dropout）
+- 三机全部 freeze=False / crash=False / ack_timeout=0
+
+| 机 | ack | 轨迹 | 路径 | 覆盖 voxels |
+|---|---|---|---|---|
+| uav0 | 9864 | 22 | 46.2m | 13253 |
+| uav1（掉线前） | 5318 | 10 | 27.9m | 8568 |
+| uav2 | 12122 | 184 | 149.1m | 35869 |
+
+uav2 从 D9 首次的全程冻结（traj=0/ack=0/0m）恢复为三机探索量最大。
+
+### 身份链（最终）
+
+```text
+single_commit:            08fb545a78ed7f1df2e1182a0e6d7a13540a28f6
+overlay_manifest:         7c54d34ad5aa878a89fb07394b5efe88373fcdf848bbe0188b81b6fbdecb1f3c（22 文件）
+overlay_installer:        8cabae8d6c8019cf49e4f3f6d836ac9c0fa7d26d6926e1140af8cc87c42ee5eb
+3uav_smoke manifest:      7f43f64890901d06f30954fd809aca3444bffaaed9a3b7b5b900045b277cd4c3（smoke_completed）
+3uav hashes manifest:     89417e8f87e76aabc4833b557cab02fb5fedb28da96274364785e6e5b595402c
+command_ack_timeout_s:    6.0（双路径同步）
+```
+
+### 结论
+
+- D9r 根因修复（clearVehicleBody）已由完整 D9 dropout-smoke 验证通过
+- uav2 冻结问题闭环；collector ack_timeout 竞态误杀同时修复
+- 下一步：请示 push（multi: 待提交 980f805 后续增量；single-v2: 08fb545）
+
 ## 54.13 D9 后续：uav2 冻结根因排查与起飞点修复（次终端执行）
 
 ### 根因（源码 + 日志证据链）

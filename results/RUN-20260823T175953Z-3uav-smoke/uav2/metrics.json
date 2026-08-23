@@ -1,0 +1,92 @@
+{
+  "ack_count": 983,
+  "ack_timeout": {
+    "count": 1,
+    "recovered_count": 0,
+    "recovered_trajectory_ids": [],
+    "threshold_s": 3.0,
+    "trajectory_ids": [
+      11
+    ]
+  },
+  "completion": {
+    "marker": "finish exploration.",
+    "observed": false,
+    "source": "/rosout",
+    "wall_s": null
+  },
+  "contact": {
+    "ground": 0,
+    "inter_uav": 0,
+    "obstacle": 0
+  },
+  "coverage": {
+    "available": true,
+    "callback_wall_duration_s": [
+      1.402999259880744e-06,
+      4.062998414156027e-06,
+      6.849000783404335e-06,
+      5.797000994789414e-06,
+      5.042998964199796e-06,
+      5.035999492974952e-06,
+      6.254000254557468e-06,
+      7.700999049120583e-06,
+      7.966000339365564e-06,
+      6.407000910257921e-06,
+      6.148000466055237e-06,
+      3.781000486924313e-06
+    ],
+    "coalesced": 0,
+    "denominator_voxels": 268912,
+    "last_message_wall_s": 15180.407558601,
+    "last_processed_sim_s": null,
+    "last_processed_wall_s": 15182.290809155,
+    "message_age_s": 1.8956092789994727,
+    "missing_policy": "abort_after_startup_grace",
+    "observed_voxels": 6050,
+    "processed": 12,
+    "processed_age_s": 0.012358725000012782,
+    "processing_wall_duration_s": [
+      2.9349994292715564e-06,
+      4.457999239093624e-06,
+      0.0024868799991963897,
+      0.003376438999111997,
+      0.0039423039997927845,
+      0.004818576000616304,
+      0.004765256999235135,
+      0.006447694000598858,
+      0.008299192999402294,
+      0.007049252999422606,
+      0.0064983769989339635,
+      0.0061957950001669815
+    ],
+    "ratio": 0.02249806628190635,
+    "received": 12
+  },
+  "crash": false,
+  "dropout": false,
+  "dropout_classification": "none",
+  "freeze": false,
+  "hold_at_goal": false,
+  "last_ack_id": 16,
+  "path_length_m": 9.256170401039062,
+  "position": [
+    -6.9697301387786865,
+    0.7610533237457275,
+    1.732574462890625
+  ],
+  "telemetry": {
+    "ack": 983,
+    "cloud": 238,
+    "frontier": 3874,
+    "health": 25,
+    "occupancy": 12,
+    "odometry": 238,
+    "pos_cmd": 983,
+    "trajectory": 16
+  },
+  "telemetry_complete": true,
+  "telemetry_expected": false,
+  "telemetry_missing_channels": [],
+  "telemetry_stale_channels": []
+}

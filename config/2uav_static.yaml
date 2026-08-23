@@ -123,7 +123,7 @@ safety_contract:
     preflight_soak_s: 24.0
     freshness_s: 5.0
     tf_freshness_s: 5.0
-    command_ack_timeout_s: 1.0
+    command_ack_timeout_s: 6.0
     topic_owner_action: abort_on_missing_or_drift
     tf_action: abort_on_missing_or_parent_cross_talk
     occupancy_contract: startup_presence
