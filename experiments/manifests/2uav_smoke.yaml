@@ -29,7 +29,7 @@ baseline_runtime:
   obstacles_inflation: 0.35
   sdf_resolution_m: 0.10
   all_map_publish_period_s: 2.0
-  progress_guard_enabled: false
+  progress_guard_enabled: true
   global_trajectory_guard_enabled: false
   global_trajectory_reject_unknown: false
   registration_source: gt
