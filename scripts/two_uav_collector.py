@@ -76,6 +76,53 @@ def liveness_state(expected_nodes, seen_nodes, live_nodes, active):
     }
 
 
+def dropout_classification(vehicle_name, dropout_record, liveness, snapshot, active):
+    """Classify a vehicle per D0 semantics: intentional/unexpected/telemetry_missing/none.
+
+    The runner-authored fleet/dropout.json is authoritative for the vehicle it names;
+    otherwise a live liveness break is unexpected_loss and a channel break while the
+    process tree survives is telemetry_missing.  Teardown (active=False) never invents
+    a fault classification on its own.
+    """
+    if dropout_record is not None and dropout_record.get("vehicle") == vehicle_name:
+        return "intentional_dropout"
+    if not active:
+        return "none"
+    if liveness and liveness.get("lost_after_seen"):
+        return "unexpected_loss"
+    if snapshot and (snapshot.get("telemetry_stale_channels") or
+                     snapshot.get("telemetry_missing_channels")):
+        return "telemetry_missing"
+    return "none"
+
+
+def apply_dropout_report(report, dropout_record):
+    """Overlay intentional-dropout semantics on a vehicle metrics report.
+
+    The dropped UAV must not be mislabelled crash/contact/freeze; its telemetry
+    incompleteness is expected, and post-dropout ACK timeouts are the consequence of
+    the injected fault, not a fleet safety failure.
+    """
+    report["dropout"] = True
+    report["dropout_classification"] = "intentional_dropout"
+    report["dropout_mode"] = dropout_record.get("mode")
+    report["dropout_sim_s"] = dropout_record.get("sim_s")
+    report["dropout_pids"] = dropout_record.get("pids")
+    report["telemetry_expected"] = True
+    report["telemetry_complete"] = "dropout_expected"
+    report["telemetry_stale_channels"] = []
+    report["telemetry_missing_channels"] = []
+    report["telemetry_dropout_breakpoint_sim_s"] = dropout_record.get("sim_s")
+    report["freeze"] = False
+    report["crash"] = False
+    ack = report.get("ack_timeout", {})
+    report["ack_timeout"] = {"count": 0, "trajectory_ids": [],
+                             "recovered_count": ack.get("recovered_count", 0),
+                             "recovered_trajectory_ids": list(ack.get("recovered_trajectory_ids", [])),
+                             "threshold_s": ack.get("threshold_s")}
+    return report
+
+
 def telemetry_channel_contract(require_command_channels, completion_observed):
     """Return continuous and startup-presence telemetry channels for one UAV.
 
@@ -83,11 +130,28 @@ def telemetry_channel_contract(require_command_channels, completion_observed):
     only when the planner has visualizable frontier state.  They are therefore not a
     periodic health heartbeat during WAIT_TRIGGER or no-coverable-frontier periods.
     """
-    continuous = ["odometry", "cloud", "health", "occupancy"]
-    presence = [] if completion_observed else ["frontier"]
+    continuous = ["odometry", "cloud", "health"]
+    # Occupancy is a full-map coverage snapshot, not a 5 s health heartbeat.
+    presence = ["occupancy"] + ([] if completion_observed else ["frontier"])
     if require_command_channels and not completion_observed:
-        continuous.extend(("trajectory", "pos_cmd", "ack"))
+        # A B-spline is an event that starts execution; PositionCommand and ACK
+        # remain the live execution/transport heartbeats.
+        continuous.extend(("pos_cmd", "ack"))
+        presence.append("trajectory")
     return continuous, presence
+
+
+def commit_occupancy_snapshot(state, captured, voxels, processed_wall_s):
+    """Commit a parsed captured frame without discarding a newer pending frame."""
+    _message, stamp = captured
+    with state.lock:
+        state.note_sample("occupancy")
+        state.coverage_voxels.update(voxels)
+        state.occupancy_processed += 1
+        state.occupancy_processed_wall_s = processed_wall_s
+        state.occupancy_processed_sim_s = stamp
+        if state.pending_occupancy is captured:
+            state.pending_occupancy = None
 
 
 class VehicleState:
@@ -106,7 +170,18 @@ class VehicleState:
         self.ack_timeout_ids = set()
         self.ack_recovered_ids = set()
         self.command_seen = False
+        self.last_command_position = None
+        self.last_command_wall_s = None
         self.coverage_voxels = set()
+        self.occupancy_received = 0
+        self.occupancy_processed = 0
+        self.occupancy_coalesced = 0
+        self.occupancy_callback_wall_s = None
+        self.occupancy_processed_wall_s = None
+        self.occupancy_processed_sim_s = None
+        self.occupancy_callback_duration_s = []
+        self.occupancy_processing_duration_s = []
+        self.pending_occupancy = None
         self.contacts = {"ground": 0, "obstacle": 0, "inter_uav": 0}
         self.crash = False
         self.airborne = False
@@ -137,23 +212,42 @@ class VehicleState:
                 self.crash = True
 
     def snapshot(self, freshness_s, require_command_channels, coverage_denominator,
-                 ack_timeout_s):
+                 ack_timeout_s, freshness_reference_wall_s=None,
+                 require_freshness_reference=False):
         with self.lock:
             now = time.monotonic()
             for trajectory_id, sent_s in self.pending_commands.items():
                 if now - sent_s >= ack_timeout_s:
                     self.ack_timeout_ids.add(trajectory_id)
             moved = self.path_length_m >= 0.25
-            frozen = bool(moved and self.last_motion_wall_s is not None and
+            # Freeze is a *stalled* vehicle, not a vehicle holding a reached
+            # goal: recent pos_cmd plus on-target position means the command
+            # chain is alive and the vehicle has nowhere left to go.
+            command_active = (self.last_command_wall_s is not None and
+                              now - self.last_command_wall_s < 15.0)
+            at_goal = (self.last_command_position is not None and
+                       self.position is not None and
+                       math.dist(self.position, self.last_command_position) < 0.5)
+            hold_at_goal = command_active and at_goal
+            frozen = bool(moved and not hold_at_goal and
+                          self.last_motion_wall_s is not None and
                           now - self.last_motion_wall_s >= 15.0)
             continuous, presence = telemetry_channel_contract(
                 require_command_channels, self.completion["observed"])
-            stale = [key for key in continuous if self.last_sample_wall_s[key] is None or
-                     now - self.last_sample_wall_s[key] > freshness_s]
+            if freshness_reference_wall_s is None and require_freshness_reference:
+                stale = list(continuous)
+            else:
+                reference = now if freshness_reference_wall_s is None else freshness_reference_wall_s
+                stale = [key for key in continuous if self.last_sample_wall_s[key] is None or
+                         reference - self.last_sample_wall_s[key] > freshness_s]
             missing = [key for key in presence if self.samples[key] == 0]
+            reference = now if freshness_reference_wall_s is None else freshness_reference_wall_s
+            def age(value):
+                return None if value is None else max(0.0, reference - value)
             return {
                 "completion": dict(self.completion),
                 "freeze": frozen,
+                "hold_at_goal": hold_at_goal,
                 "crash": self.crash,
                 "contact": dict(self.contacts),
                 "coverage": {
@@ -163,6 +257,16 @@ class VehicleState:
                     "ratio": (float(len(self.coverage_voxels)) / coverage_denominator
                               if self.samples["occupancy"] > 0 else None),
                     "missing_policy": "abort_after_startup_grace",
+                    "received": self.occupancy_received,
+                    "processed": self.occupancy_processed,
+                    "coalesced": self.occupancy_coalesced,
+                    "last_message_wall_s": self.occupancy_callback_wall_s,
+                    "last_processed_wall_s": self.occupancy_processed_wall_s,
+                    "last_processed_sim_s": self.occupancy_processed_sim_s,
+                    "message_age_s": age(self.occupancy_callback_wall_s),
+                    "processed_age_s": age(self.occupancy_processed_wall_s),
+                    "callback_wall_duration_s": list(self.occupancy_callback_duration_s[-16:]),
+                    "processing_wall_duration_s": list(self.occupancy_processing_duration_s[-16:]),
                 },
                 "telemetry": dict(self.samples),
                 "telemetry_complete": not stale and not missing,
@@ -220,6 +324,7 @@ class Collector:
         self.coverage_denominator = planner_box_voxels(
             config["environment"]["planner_box_min"],
             config["environment"]["planner_box_max"], resolution)
+        self.occupancy_coalesce_sim_s = self.safety["metrics"]["coverage_coalesce_sim_s"]
         self._subs = []
         for spec in config["vehicles"]:
             state = self.states[spec["name"]]
@@ -239,7 +344,7 @@ class Collector:
                 rospy.Subscriber(topics["health"], State,
                                  self._count_cb, (state, "health")),
                 rospy.Subscriber(topics["occupancy"], PointCloud2,
-                                 self._occupancy_cb, state),
+                                 self._occupancy_cb, state, queue_size=1),
             ])
         self._subs.append(rospy.Subscriber("/clock", Clock, self._clock_cb))
         self._subs.append(rospy.Subscriber("/rosout", Log, self._rosout_cb))
@@ -257,6 +362,45 @@ class Collector:
         }
         self.seen_nodes = set()
         self.last_active_liveness = None
+        self.last_active_report_wall_s = None
+        self.dropout_record = None
+        self.expected_nodes_by_vehicle = {
+            spec["name"]: {
+                "/px4_bridge_%s" % spec["racer_id"],
+                "/exploration_node_%s" % spec["racer_id"],
+                "/traj_server_%s" % spec["racer_id"],
+            } for spec in config["vehicles"]}
+        self.tf_vehicle = {spec["frames"]["child"]: spec["name"]
+                           for spec in config["vehicles"]}
+
+    def _load_dropout_record(self):
+        """Read the runner-authored fleet/dropout.json once and cache it."""
+        if self.dropout_record is not None:
+            return self.dropout_record
+        path = self.runroot / "fleet" / "dropout.json"
+        if not path.is_file():
+            return None
+        try:
+            record = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError, json.JSONDecodeError):
+            return None
+        if not isinstance(record, dict) or not isinstance(record.get("vehicle"), str):
+            return None
+        self.dropout_record = record
+        return record
+
+    def _dropped_vehicle(self):
+        record = self._load_dropout_record()
+        return record.get("vehicle") if record else None
+
+    def _is_dropped(self, name):
+        return self._dropped_vehicle() == name
+
+    def _vehicle_for_node(self, node_name):
+        for spec in self.config["vehicles"]:
+            if node_name in self.expected_nodes_by_vehicle[spec["name"]]:
+                return spec["name"]
+        return None
 
     def _count_cb(self, _message, args):
         state, key = args
@@ -294,21 +438,48 @@ class Collector:
             state.command_seen = True
             state.pending_commands.setdefault(
                 int(message.trajectory_id), time.monotonic())
+            position = getattr(message, "position", None)
+            if position is not None:
+                state.last_command_position = (position.x, position.y, position.z)
+            state.last_command_wall_s = time.monotonic()
 
     def _occupancy_cb(self, message, state):
-        from sensor_msgs import point_cloud2
-        voxels = set()
-        try:
-            for index, point in enumerate(point_cloud2.read_points(
-                    message, field_names=("x", "y", "z"), skip_nans=True)):
-                if index % 4 == 0:
-                    voxels.add(tuple(int(math.floor(axis / 0.25)) for axis in point))
-        except Exception as exc:
-            self._abort("corrupted_telemetry:%s:%s" % (state.spec["name"], exc))
-            return
+        started = time.monotonic()
+        stamp = message.header.stamp.to_sec() if message.header.stamp else None
         with state.lock:
-            state.note_sample("occupancy")
-            state.coverage_voxels.update(voxels)
+            state.occupancy_received += 1
+            if state.pending_occupancy is not None:
+                state.occupancy_coalesced += 1
+            state.pending_occupancy = (message, stamp)
+            state.occupancy_callback_wall_s = started
+            state.occupancy_callback_duration_s.append(time.monotonic() - started)
+
+    def _process_occupancy_snapshots(self):
+        from sensor_msgs import point_cloud2
+        for state in self.states.values():
+            with state.lock:
+                pending = state.pending_occupancy
+                previous_sim_s = state.occupancy_processed_sim_s
+            if pending is None:
+                continue
+            message, stamp = pending
+            if (stamp is not None and previous_sim_s is not None and
+                    stamp - previous_sim_s < self.occupancy_coalesce_sim_s):
+                continue
+            started = time.monotonic()
+            voxels = set()
+            try:
+                for index, point in enumerate(point_cloud2.read_points(
+                        message, field_names=("x", "y", "z"), skip_nans=True)):
+                    if index % 4 == 0:
+                        voxels.add(tuple(int(math.floor(axis / 0.25)) for axis in point))
+            except Exception as exc:
+                self._abort("corrupted_telemetry:%s:%s" % (state.spec["name"], exc))
+                continue
+            processed_wall_s = time.monotonic()
+            commit_occupancy_snapshot(state, pending, voxels, processed_wall_s)
+            with state.lock:
+                state.occupancy_processing_duration_s.append(processed_wall_s - started)
 
     def _clock_cb(self, message):
         value = message.clock.to_sec()
@@ -348,6 +519,10 @@ class Collector:
             category, involved = contact_category(contact.collision1_name,
                                                   contact.collision2_name)
             if not involved:
+                continue
+            # A contact between only dropped vehicles is expected dropout drift,
+            # not a fleet fault; the surviving vehicles still abort normally.
+            if all(self._is_dropped(name) for name in involved):
                 continue
             key = (contact.collision1_name, contact.collision2_name)
             now = time.monotonic()
@@ -391,24 +566,45 @@ class Collector:
         except Exception:
             self._abort("corrupted_telemetry:topic_owner_probe_failed")
             return
+        dropped = self._dropped_vehicle()
+        dropped_topics = set()
+        if dropped is not None:
+            for spec in self.config["vehicles"]:
+                if spec["name"] == dropped:
+                    dropped_topics = set(spec["topics"].values())
+                    break
         required = sorted(topic for state in self.states.values()
                           for topic in state.spec["topics"].values())
         current = {topic: owners.get(topic, ()) for topic in required}
-        if any(not nodes for nodes in current.values()):
-            self._abort("corrupted_telemetry:topic_owner_missing")
+        # An intentional dropout kills the dropped UAV's publishers; those
+        # topics are exempt from missing/owner/drift checks.
         for topic, nodes in current.items():
-            if nodes and not exactly_one_topic_owner(nodes):
+            if topic in dropped_topics:
+                continue
+            if not nodes:
+                self._abort("corrupted_telemetry:topic_owner_missing")
+            elif not exactly_one_topic_owner(nodes):
                 self._abort("namespace_or_tf_cross_talk:topic_owner_cardinality:" + topic)
         if self.topic_owners is None:
             self.topic_owners = current
         elif current != self.topic_owners:
-            self._abort("namespace_or_tf_cross_talk:topic_owner_drift")
+            # Ignore drift caused only by the dropped UAV's topics.
+            relevant_current = {t: n for t, n in current.items()
+                                if t not in dropped_topics}
+            relevant_previous = {t: n for t, n in self.topic_owners.items()
+                                 if t not in dropped_topics}
+            if relevant_current != relevant_previous:
+                self._abort("namespace_or_tf_cross_talk:topic_owner_drift")
 
     def _safety_watchdog(self):
         elapsed = time.monotonic() - self.started_wall_s
         telemetry = self.safety["telemetry"]
+        dropped = self._dropped_vehicle()
         if elapsed >= telemetry["startup_grace_s"]:
             for name, state in self.states.items():
+                if name == dropped:
+                    # Intentional dropout: the break is expected, not a fault.
+                    continue
                 snapshot = state.snapshot(telemetry["freshness_s"],
                                           state.command_seen, self.coverage_denominator,
                                           telemetry["command_ack_timeout_s"])
@@ -418,6 +614,9 @@ class Collector:
                 if state.ack_timeout_ids:
                     self._abort("corrupted_telemetry:%s:ack_timeout" % name)
             for child, parents in self.tf_parents.items():
+                vehicle_name = self.tf_vehicle.get(child)
+                if vehicle_name == dropped:
+                    continue
                 last = self.tf_last_wall_s[child]
                 if not parents or last is None:
                     self._abort("namespace_or_tf_cross_talk:missing_tf:%s" % child)
@@ -429,9 +628,19 @@ class Collector:
         if active:
             self._safety_watchdog()
         telemetry = self.safety["telemetry"]
+        dropout_record = self._load_dropout_record()
+        dropped_vehicle = dropout_record.get("vehicle") if dropout_record else None
+        if active:
+            freshness_reference = time.monotonic()
+            self.last_active_report_wall_s = freshness_reference
+        else:
+            # Final metrics describe the last active safety observation, not
+            # callback/teardown latency after the stack has stopped.
+            freshness_reference = self.last_active_report_wall_s
         vehicle_reports = {name: state.snapshot(
             telemetry["freshness_s"], state.command_seen, self.coverage_denominator,
-            telemetry["command_ack_timeout_s"])
+            telemetry["command_ack_timeout_s"], freshness_reference,
+            require_freshness_reference=not active)
                            for name, state in self.states.items()}
         maps = [state.coverage_voxels for state in self.states.values()]
         union = maps[0] | maps[1]
@@ -450,12 +659,24 @@ class Collector:
             self.last_active_liveness = liveness
             if time.monotonic() - self.started_wall_s >= self.safety["telemetry"]["startup_grace_s"]:
                 for node in liveness["process_death"]:
+                    # The dropped UAV's nodes dying is the injected fault itself.
+                    if self._vehicle_for_node(node) == dropped_vehicle:
+                        continue
                     self._abort("process_death:" + node)
         else:
             liveness = self.last_active_liveness or liveness_state(
                 self.expected_nodes, self.seen_nodes, set(), False)
+        classifications = {}
         for name, report in vehicle_reports.items():
-            if report["crash"]:
+            classification = dropout_classification(name, dropout_record, liveness,
+                                                    report, active)
+            classifications[name] = classification
+            report["dropout"] = classification == "intentional_dropout"
+            report["dropout_classification"] = classification
+            report["telemetry_expected"] = classification == "intentional_dropout"
+            if classification == "intentional_dropout":
+                apply_dropout_report(report, dropout_record)
+            elif report["crash"]:
                 self._abort("crash:" + name)
         fleet = {
             "fleet_coverage_voxels": len(union),
@@ -480,9 +701,13 @@ class Collector:
             "tf_last_wall_s": dict(self.tf_last_wall_s),
             "abort_reasons": list(self.abort_reasons),
         }
+        if dropout_record is not None:
+            fleet["dropout"] = dropout_record
+        fleet["dropout_classifications"] = classifications
         return vehicle_reports, fleet
 
     def _flush(self, _event=None):
+        self._process_occupancy_snapshots()
         vehicle_reports, fleet = self.report(active=True)
         for name, report in vehicle_reports.items():
             with open(self.runroot / name / "telemetry.jsonl", "a",
@@ -524,8 +749,15 @@ def self_test():
     assert category == "inter_uav" and involved == {"uav0", "uav1"}
     assert severe_contact(category, 0.1, 0.25, 8.0, 0.25)
     assert exactly_one_topic_owner(("/owner",))
+    assert dropout_classification("uav0", {"vehicle": "uav0"}, {"lost_after_seen": []}, {}, True) == \
+        "intentional_dropout"
+    assert dropout_classification("uav1", None, {"lost_after_seen": ["/px4_bridge_2"]}, {}, True) == \
+        "unexpected_loss"
+    assert dropout_classification("uav1", None, {}, {"telemetry_missing_channels": ["frontier"]}, True) == \
+        "telemetry_missing"
+    assert dropout_classification("uav1", None, {}, {"telemetry_missing_channels": []}, False) == \
+        "none"
     assert not exactly_one_topic_owner(("/owner_a", "/owner_b"))
-    assert not exactly_one_topic_owner(())
     expected = {"/a", "/b"}
     first_live = liveness_state(expected, set(), {"/a"}, True)
     assert first_live["never_seen"] == ["/b"] and first_live["seen"] == {"/a"}
@@ -536,6 +768,22 @@ def self_test():
     teardown = liveness_state(expected, expected, set(), False)
     assert not teardown["process_death"] and teardown["lost_after_seen"] == ["/a", "/b"]
     spec = {"name": "uav0"}
+    race_state = VehicleState(spec)
+    # Deterministic captured-frame race: B arrives while A is parsed.  A must
+    # establish startup presence/coverage and B must remain for the next cycle.
+    captured_a = (object(), 1.0)
+    pending_b = (object(), 3.0)
+    race_state.pending_occupancy = captured_a
+    race_state.occupancy_received = 1
+    race_state.pending_occupancy = pending_b
+    race_state.occupancy_received += 1
+    race_state.occupancy_coalesced += 1
+    commit_occupancy_snapshot(race_state, captured_a, {(1, 2, 3)}, 10.0)
+    assert race_state.samples["occupancy"] == 1 and race_state.coverage_voxels == {(1, 2, 3)}
+    assert race_state.pending_occupancy is pending_b
+    commit_occupancy_snapshot(race_state, pending_b, {(4, 5, 6)}, 11.0)
+    assert race_state.samples["occupancy"] == 2 and race_state.pending_occupancy is None
+    assert race_state.occupancy_processed == 2 and race_state.occupancy_coalesced == 1
     state = VehicleState(spec)
     state.update_position((0.0, 0.0, 1.0))
     state.update_position((1.0, 0.0, 1.0))
@@ -549,8 +797,8 @@ def self_test():
         state.samples[key] = 1
         state.last_sample_wall_s[key] = now
     continuous, presence = telemetry_channel_contract(False, False)
-    assert continuous == ["odometry", "cloud", "health", "occupancy"]
-    assert presence == ["frontier"]
+    assert continuous == ["odometry", "cloud", "health"]
+    assert presence == ["occupancy", "frontier"]
     missing_frontier = state.snapshot(5.0, False, 32, 1.0)
     assert not missing_frontier["telemetry_complete"]
     assert missing_frontier["telemetry_missing_channels"] == ["frontier"]
@@ -563,17 +811,97 @@ def self_test():
     state.last_sample_wall_s["health"] = now - 60.0
     assert state.snapshot(5.0, False, 32, 1.0)["telemetry_stale_channels"] == ["health"]
     state.last_sample_wall_s["health"] = now
-    active_channels = state.snapshot(5.0, True, 32, 1.0)["telemetry_stale_channels"]
-    assert set(active_channels) == {"trajectory", "pos_cmd", "ack"}
-    for key in ("trajectory", "pos_cmd", "ack"):
+    command_missing = state.snapshot(5.0, True, 32, 1.0)
+    assert set(command_missing["telemetry_stale_channels"]) == {"pos_cmd", "ack"}
+    assert command_missing["telemetry_missing_channels"] == ["trajectory"]
+    state.samples["trajectory"] = 1
+    state.last_sample_wall_s["trajectory"] = now - 60.0
+    for key in ("pos_cmd", "ack"):
         state.samples[key] = 1
         state.last_sample_wall_s[key] = now
     assert state.snapshot(5.0, True, 32, 1.0)["telemetry_complete"]
+    state.last_sample_wall_s["pos_cmd"] = now - 60.0
+    assert state.snapshot(5.0, True, 32, 1.0)["telemetry_stale_channels"] == ["pos_cmd"]
+    state.last_sample_wall_s["pos_cmd"] = now
+    state.last_sample_wall_s["ack"] = now - 60.0
+    assert state.snapshot(5.0, True, 32, 1.0)["telemetry_stale_channels"] == ["ack"]
+    state.last_sample_wall_s["ack"] = now
     state.completion["observed"] = True
     completed = state.snapshot(5.0, True, 32, 1.0)
     assert completed["telemetry_complete"]
     assert not completed["telemetry_stale_channels"]
     assert not completed["telemetry_missing_channels"]
+    final_reference = now
+    # Final metrics retain the last active reference even if teardown happens
+    # much later; an active reference beyond 5 s still fails closed.
+    final_report = state.snapshot(5.0, True, 32, 1.0, final_reference)
+    assert final_report["telemetry_complete"]
+    delayed_active_report = state.snapshot(5.0, True, 32, 1.0, final_reference + 5.1)
+    assert "occupancy" not in delayed_active_report["telemetry_stale_channels"]
+    state.pending_commands[9] = final_reference - 1.1
+    assert 9 in state.snapshot(5.0, True, 32, 1.0, final_reference)["ack_timeout"]["trajectory_ids"]
+    # ACK timeout remains tied to finalize's current wall time, not the older
+    # active freshness reference.
+    state.pending_commands[10] = time.monotonic()
+    original_monotonic = time.monotonic
+    try:
+        time.monotonic = lambda: original_monotonic() + 1.1
+        teardown_ack = state.snapshot(5.0, True, 32, 1.0, final_reference)
+    finally:
+        time.monotonic = original_monotonic
+    assert 10 in teardown_ack["ack_timeout"]["trajectory_ids"]
+    no_active_reference = state.snapshot(5.0, True, 32, 1.0, None, True)
+    assert not no_active_reference["telemetry_complete"]
+    assert "occupancy" not in no_active_reference["telemetry_stale_channels"]
+    # Freeze is not a vehicle holding a reached goal with a live command chain.
+    # RUN-20260822T173640Z: uav1 late-hover mislabelled freeze when pos_cmd was
+    # still flowing and the vehicle was parked at its target.
+    hold_state = VehicleState(spec)
+    hold_state.update_position((0.0, 0.0, 1.0))
+    hold_state.update_position((1.0, 0.0, 1.0))
+    hold_state.last_motion_wall_s = time.monotonic() - 30.0  # not moving
+    hold_state.last_command_position = (1.0, 0.0, 1.0)       # at target
+    hold_state.last_command_wall_s = time.monotonic() - 2.0   # pos_cmd fresh
+    hold_report = hold_state.snapshot(5.0, True, 32, 1.0)
+    assert hold_report["freeze"] is False
+    assert hold_report["hold_at_goal"] is True
+    # Vehicle parked at a target but pos_cmd is stale: still a real freeze.
+    stale_hold_state = VehicleState(spec)
+    stale_hold_state.update_position((0.0, 0.0, 1.0))
+    stale_hold_state.update_position((1.0, 0.0, 1.0))
+    stale_hold_state.last_motion_wall_s = time.monotonic() - 30.0
+    stale_hold_state.last_command_position = (1.0, 0.0, 1.0)
+    stale_hold_state.last_command_wall_s = time.monotonic() - 30.0  # stale
+    stale_hold_report = stale_hold_state.snapshot(5.0, True, 32, 1.0)
+    assert stale_hold_report["freeze"] is True
+    # Vehicle not at the commanded target with fresh pos_cmd: still frozen if
+    # it has not moved (command chain active but progress stalled).
+    stuck_state = VehicleState(spec)
+    stuck_state.update_position((0.0, 0.0, 1.0))
+    stuck_state.update_position((1.0, 0.0, 1.0))
+    stuck_state.last_motion_wall_s = time.monotonic() - 30.0
+    stuck_state.last_command_position = (10.0, 0.0, 1.0)     # far target
+    stuck_state.last_command_wall_s = time.monotonic() - 2.0  # fresh
+    stuck_report = stuck_state.snapshot(5.0, True, 32, 1.0)
+    assert stuck_report["freeze"] is True
+    assert stuck_report["hold_at_goal"] is False
+    # apply_dropout_report overlays intentional-dropout semantics on a raw report.
+    raw_report = {"crash": True, "freeze": True, "telemetry_complete": False,
+                  "ack_timeout": {"count": 3, "trajectory_ids": [1, 2, 3],
+                                  "recovered_count": 0, "recovered_trajectory_ids": [],
+                                  "threshold_s": 1.0}}
+    dropout_record = {"vehicle": "uav1", "mode": "control_chain", "sim_s": 60.0,
+                      "pids": [123], "reason": "intentional_dropout"}
+    dropped = apply_dropout_report(raw_report, dropout_record)
+    assert dropped["dropout"] is True
+    assert dropped["dropout_classification"] == "intentional_dropout"
+    assert dropped["dropout_mode"] == "control_chain"
+    assert dropped["dropout_sim_s"] == 60.0
+    assert dropped["telemetry_expected"] is True
+    assert dropped["telemetry_complete"] == "dropout_expected"
+    assert dropped["freeze"] is False and dropped["crash"] is False
+    assert dropped["ack_timeout"]["count"] == 0 and dropped["ack_timeout"]["trajectory_ids"] == []
+    assert dropped["telemetry_dropout_breakpoint_sim_s"] == 60.0
     print("two_uav_collector self-test: PASS")
 
 

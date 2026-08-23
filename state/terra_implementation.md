@@ -2699,3 +2699,74 @@ smoke manifest: ae21426cb3a62761dc8650cebc6d10626a4089802a7e4efb62b100dac37fd4ef
   `missing_nodes` 而不算失败。D1 阶段 manifest 为 `enabled: false`，任何 launch/preflight 都
   不会实际触发 dropout。
 
+## 49. D2 collector dropout classification v1（中终端）
+
+- 日期：2026-08-23
+- 任务来源：`state/sol_plan_dropout.md` 第 4 节
+- 允许写入：`scripts/two_uav_collector.py`、`state/terra_implementation.md`、`state/events.jsonl`（追加）。
+- 实现结论：`D2_COLLECTOR_DROPOUT_CLASSIFICATION_V1`
+
+### 49.1 修改内容
+
+`scripts/two_uav_collector.py`：
+
+1. 新增 `dropout_classification(vehicle_name, dropout_record, liveness, snapshot, active)`：
+   - `intentional_dropout`：runroot 中存在 `fleet/dropout.json` 且 vehicle 名称匹配；
+   - `unexpected_loss`：未见 dropout 记录但 active 期出现 liveness 断裂；
+   - `telemetry_missing`：进程仍 live，但 telemetry/channel 出现 stale/missing；
+   - `none`：无异常或 teardown 期。
+2. 新增 `apply_dropout_report(report, dropout_record)`：将被 drop 的 UAV 标记为
+   `dropout=true`、`dropout_classification=intentional_dropout`、`dropout_mode`、
+   `dropout_sim_s`，并写入 `telemetry_dropout_breakpoint_sim_s`；
+   dropped UAV 的 `freeze/crash` 被清零，`ack_timeout` 视为 fault 结果而非安全故障。
+   `telemetry_complete` 对 dropped UAV 语义化为 `dropout_expected`。
+3. `VehicleState` 扩展：
+   - 记录 `last_command_position` / `last_command_wall_s`；
+   - snapshot 新增 `hold_at_goal`；
+   - 佔位 telemetry 字段扩展为 `occupancy_received/processed/coalesced`、
+     `last_*`、`callback_wall_duration_s`、`processing_wall_duration_s`，以支持掉线后审计。
+4. freeze 判定修复：当 `pos_cmd` 在最近 15 s 仍活跃且 UAV 已停在最近命令位置附近时，
+   不再误标 `freeze`。这直接修复 RUN-20260822T173640Z 中 uav1 晚期悬停误标。
+5. `Collector` 扩展：
+   - 读取 `fleet/dropout.json` 并缓存；
+   - dropped vehicle 的 freshness / ack / tf / topic-owner / contact / crash / freeze 判定跳过；
+   - `contact` 仅对非 dropped vehicle 执行安全判定；
+   - `TF` / topic owner 失效仅对未掉线车辆触发 abort；
+   - `report()` 中为 dropped vehicle 写入掉线分类并在 fleet metrics 中附加 `dropout`
+     与 `dropout_classifications`；
+   - `vehicle_reports` 保持向后兼容。
+
+### 49.2 语义核验
+
+- 读取 `fleet/dropout.json` 作为 intentional dropout 的唯一来源；
+- dropped UAV 维持 `dropout=true` / `dropout_mode` / `dropout_sim_s`，并在 telemetry 中保留
+  `telemetry_dropout_breakpoint_sim_s`，便于后续报告区分 intentional dropout vs unexpected loss；
+- 监视期的 crash/freeze/contact 不再把已掉线车辆误判成安全故障；
+- 其余未掉线车辆仍按原安全门 fail-closed。
+
+### 49.3 验证证据（未启动实验）
+
+```text
+PYTHONPYCACHEPREFIX=/tmp/swarmlio-pyc-d2 python3 -m py_compile scripts/two_uav_collector.py
+py_compile PASS
+PYTHONPYCACHEPREFIX=/tmp/swarmlio-pyc-d2 python3 scripts/two_uav_collector.py --self-test
+self-test PASS（含 intentional_dropout / unexpected_loss / telemetry_missing / none 分类，
+freeze 联合 pos_cmd 活跃判定，apply_dropout_report 覆盖）
+git diff --check scripts/two_uav_collector.py
+PASS（无 trailing whitespace）
+```
+
+### 49.4 新 hash（D2）
+
+```text
+collector: cb2443adfa61d27edd28e4ab8b98222bce9fa920f9570e6890ebad07df42a02c
+```
+
+### 49.5 残余风险
+
+- `telemetry_complete` 对 intentional dropout 语义化为 `dropout_expected`，与原布尔语义不同；
+  该值用于后续 D3/D4 报告，现阶段仍兼容既有 2-UAV 非 dropout metrics。
+- `rosnode` / `rosgraph` 探针在 ROS master 不可达时仍 fail-closed 为 telemetry/owner 相关异常，
+  但 intentional dropout 场景下的掉线机相关 checks 已被隔离，不会误杀 surviving UAV。
+- 当前未运行 D3 rehearsal；因此这些 classification 分支只通过 self-test 和静态 diff 证据验证。
+
