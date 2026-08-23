@@ -3084,4 +3084,31 @@ gt_mapper: ead7324d68fa69b00df6a44d90532be758d91538c1e467d1023d2259c0a8c23c
 - `VehicleMapper` 的 provenance recorder 键（`uav1_hover_voxels` 等）仍为 2-UAV 语义；
   3-UAV 实跑时 provenance 以 peer_names[0] 记录，属已知受限（不影响注册/发布/控制）。
 
+## 54.6 D8 前置返工：runner main() 白名单放开（中终端，经高终端审核）
+
+- 触发：D8 preflight 执行前低终端 fail-closed BLOCKED——`main()` 白名单仍硬编码
+  `experiments/manifests/2uav_smoke.yaml`，3uav manifest 直接被拒。terra 54.1 声称
+  「main() 白名单按 approval_contract 派生或放开」但 D7 未实际实现，为交付缺口。
+- 修改：新增 `manifest_allowed(path)`——仅接受 `experiments/manifests/*.yaml`
+  （resolve 后前缀匹配 + 后缀 + 存在性）；`main()` 白名单改为调用它。approval 层
+  （approval_guard）仍绑定 manifest 自身 approval_contract→approval_package 与
+  manifest/source-hash 双重 hash，外层白名单不弱化安全边界。
+- self-test 新增 6 条断言：2uav/3uav 接受；config/scripts/目录/missing 拒绝。
+
+验证：
+
+```text
+py_compile: PASS
+self-test: PASS（含 manifest_allowed 6 条断言）
+git diff --check: PASS
+runner 新 hash: 735a266b979870b757bbd771a3c09ca23a7b031259bdfb1f542540f2cf5e8f70
+2uav hashes manifest: b83a42c1013492a210cd86175543d9f9d02aba3af4fbbe9316a56077ca21ab3d
+3uav hashes manifest: 494aafa41bc825b700d5d04e023b3ab4609c6d96693b494c9d8f9e4835dc05e4
+（两个 manifest 均已更新 runner 条目并 15/15 校验通过）
+```
+
+3uav preflight approval 已按新 source hash manifest 重签（issuance
+`3uav-preflight-20260823-2`，manifest 2232cb58 / source 494aafa4，digest ee8a97ea），
+旧 issuance `3uav-preflight-20260823-1`（绑定 c3f11e56）因源码漂移作废，未消费、不得复用。
+
 

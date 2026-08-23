@@ -2033,7 +2033,30 @@ def self_test():
                                 sim_time_probe=sim_probe4)
         assert reason4 == "duration_complete"  # no dropout, no crash
 
+    # D8: manifest whitelist accepts any experiments/manifests/*.yaml only.
+    assert manifest_allowed(ROOT / "experiments/manifests/2uav_smoke.yaml")
+    assert manifest_allowed(ROOT / "experiments/manifests/3uav_smoke.yaml")
+    assert not manifest_allowed(ROOT / "config/2uav_static.yaml")
+    assert not manifest_allowed(ROOT / "scripts/two_uav_runner.py")
+    assert not manifest_allowed(ROOT / "experiments/manifests")
+    assert not manifest_allowed(ROOT / "experiments/manifests/missing.yaml")
+
     print("two_uav_runner self-test: PASS")
+
+
+def manifest_allowed(manifest_path):
+    """D8: the runner accepts any manifest under experiments/manifests/.
+
+    The approval_guard still binds the run to the manifest's own
+    approval_contract -> approval_package and to the pinned hashes, so this
+    path check is the outer whitelist only.
+    """
+    path = Path(manifest_path).resolve()
+    try:
+        path.relative_to((ROOT / "experiments" / "manifests").resolve())
+    except ValueError:
+        return False
+    return path.suffix == ".yaml" and path.is_file()
 
 
 def main():
@@ -2050,9 +2073,8 @@ def main():
     if not args.action:
         parser.error("action is required unless --self-test is used")
     manifest_path = Path(args.manifest).resolve()
-    allowed = (ROOT / "experiments/manifests/2uav_smoke.yaml").resolve()
-    if manifest_path != allowed:
-        parser.error("only experiments/manifests/2uav_smoke.yaml is allowed")
+    if not manifest_allowed(manifest_path):
+        parser.error("only experiments/manifests/*.yaml manifests are allowed")
     try:
         if args.action == "preflight":
             return action_preflight(manifest_path)
