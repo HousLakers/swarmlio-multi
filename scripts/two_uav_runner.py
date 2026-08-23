@@ -651,6 +651,12 @@ def process_specs(runroot):
         "/home/houslakers/PX4-Autopilot/build/px4_sitl_default; "
         "export ROS_PACKAGE_PATH=${ROS_PACKAGE_PATH:-}:/home/houslakers/PX4-Autopilot:"
         "/home/houslakers/PX4-Autopilot/Tools/simulation/gazebo-classic/sitl_gazebo-classic; ")
+    expl = config.get("exploration", {})
+    mtsp_objective = expl.get("mtsp_objective", "MINSUM")
+    capacity_factor = expl.get("capacity_factor", 0.75)
+    racer_launch = str(ROOT / ("launch/%s_racer.launch" % launch_prefix))
+    racer_args = (" mtsp_objective:=" + str(mtsp_objective) +
+                  " capacity_factor:=" + str(capacity_factor))
     return [
         ("gazebo", shell(gazebo_env + "exec roslaunch " +
                          str(ROOT / ("launch/%s_px4_sitl.launch" % launch_prefix)))),
@@ -660,7 +666,7 @@ def process_specs(runroot):
         ("bridges", shell(env_prefix + "exec roslaunch " +
                           str(ROOT / ("launch/%s_bridges.launch" % launch_prefix)))),
         ("racer", shell(env_prefix + "exec roslaunch " +
-                        str(ROOT / ("launch/%s_racer.launch" % launch_prefix)))),
+                        racer_launch + racer_args)),
         ("collector", shell(env_prefix + "exec python3 " +
                             str(ROOT / "scripts/two_uav_collector.py") +
                             " --config " + str(config_path) + " --runroot " + str(runroot))),

@@ -2,8 +2,9 @@
 
 ## 当前目标
 
-掉线实验 Route A（D0–D11）已完成并闭环。本交接描述最终状态、身份链和后续边界，
-供下一轮会话直接接续。
+掉线实验 Route A（D0–D11）已完成并闭环。当前进入**多机负载均衡与图标准对齐**阶段：
+先把多机图标准做成和单机一致，再以 300 sim-s 为每组时长，比较 `MINSUM` / `MINMAX`
+以及 `capacity=0.75` / `0.5` 对完整搜图、完成时间和总路径的影响。
 
 ## 已完成事项（本轮）
 
@@ -24,6 +25,8 @@
 - D11 报告与收尾：`state/luna_review.md` 按掉线模板重写；`current_summary.md` 更新；
   固定交付 `grid_path.png` + `point_cloud.png`（collector 收尾自动生成）
   且本次图基于 **无人机真实建图 voxel** 重做。
+- 新增多机负载均衡计划：`MINMAX` 作为 makespan 候选，`capacity=0.5` 作为实验参数；
+  图标准将对齐单机的上下两栏 `coverage.png` 与俯视 `point_cloud.png`。
 
 ## 最终身份链
 
@@ -47,9 +50,27 @@
 
 ## 固定交付约定（新增）
 
-- 每个实验 run 的 collector 收尾自动输出 `grid_path.png`（top-down 栅格路径）与
-  `point_cloud.png`（点云），保存在对应 runroot。
+- 每个实验 run 的 collector 收尾自动输出：
+  - `coverage.png`：上半部分为二维俯视点云 + 轨迹 + 起终点，下半部分为栅格累计增长曲线；
+  - `grid_map.png`：5cm 灰度栅格图；
+  - `point_cloud.png`：二维俯视点云图。
+- 以上图形语义对齐单机旧标准，不再使用 3D 透视点云作为正式交付图。
 - 本次 D10 重跑的图已按“真实建图数据”标准生成并替换旧版本。
+
+## 下一阶段执行顺序
+
+1. 新增 `coverage_seq.json`，记录每架机和 fleet 的累计 unique coverage voxel 随 sim-s 增长。
+2. 重写多机绘图：`coverage.png` 上下两栏、`grid_map.png` 灰度栅格、`point_cloud.png` 二维俯视。
+3. 将 ACVRP 目标和容量参数化，保留历史默认 `MINSUM + 0.75`。
+4. 创建本地实验分支 `experiment/load-balancing`，只在该分支加入 `MINMAX` / `capacity=0.5` 实验改动。
+5. 在第四步“跑实验”之前完成静态检查、self-test、编译和参数回读；每组实验统一 `duration_sim_s=300`。
+6. 暂不启动实验，直到上述代码和版本工作完成并审核通过。
+
+### 预注册实验矩阵（每组 300 sim-s）
+
+- 无掉线：`MINSUM+0.75`、`MINMAX+0.75`、`MINMAX+0.5`。
+- `uav1` 在 `sim_s=60` 进行 `node_level` 掉线：同样三组。
+- 主要指标：完整搜图、makespan、总路径、coverage 增长率、各机负载差、overlap、Jaccard、掉线后 survivor coverage delta。
 
 ## 后续边界
 

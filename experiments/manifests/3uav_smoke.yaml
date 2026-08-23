@@ -2,7 +2,7 @@ experiment_id: three_uav_smoke_v1
 approval_status: blocked_pending_verified_launch_and_preflight
 approval_contract: config/3uav_approval_contract.yaml
 uav_count: 3
-duration_sim_s: 120
+duration_sim_s: 300
 repetitions: 1
 seed: 20260823
 single_uav_baseline: range20m_omnidirectional_v1

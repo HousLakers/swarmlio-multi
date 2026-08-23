@@ -5,11 +5,15 @@ import argparse
 import itertools
 import json
 import math
+import subprocess
+import sys
 from pathlib import Path
 import threading
 import time
 
 import yaml
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def jaccard(left, right):
@@ -232,6 +236,7 @@ class VehicleState:
         self.occupancy_processed_sim_s = None
         self.occupancy_callback_duration_s = []
         self.occupancy_processing_duration_s = []
+        self.coverage_seq = []
         self.pending_occupancy = None
         self.contacts = {"ground": 0, "obstacle": 0, "inter_uav": 0}
         self.crash = False
@@ -340,6 +345,7 @@ class VehicleState:
                 "last_ack_id": self.ack_ids[-1] if self.ack_ids else None,
                 "path_length_m": self.path_length_m,
                 "position": self.position,
+                "coverage_seq": list(self.coverage_seq),
             }
 
 
@@ -566,6 +572,8 @@ class Collector:
             processed_wall_s = time.monotonic()
             commit_occupancy_snapshot(state, pending, voxels, processed_wall_s)
             with state.lock:
+                state.coverage_seq.append([stamp if stamp is not None else processed_wall_s,
+                                           len(state.coverage_voxels)])
                 state.occupancy_processing_duration_s.append(processed_wall_s - started)
 
     def _clock_cb(self, message):
@@ -846,71 +854,14 @@ class Collector:
 
     def _write_visual_artifacts(self, vehicle_reports, fleet):
         try:
-            import matplotlib
-            matplotlib.use("Agg")
-            import matplotlib.pyplot as plt
-            from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
+            import subprocess
+            subprocess.run([
+                sys.executable,
+                str(ROOT / "scripts" / "draw_experiment_artifacts.py"),
+                "--runroot", str(self.runroot),
+            ], check=True)
         except Exception:
             return
-
-        history = self._telemetry_history()
-        colors = ["#1f77b4", "#2ca02c", "#d62728", "#9467bd", "#ff7f0e"]
-        names = list(self.states.keys())
-        env = self.config["environment"]
-        bmin = env.get("planner_box_min", [-25.0, -25.0, 0.0])
-        bmax = env.get("planner_box_max", [25.0, 25.0, 3.0])
-
-        # Top-down grid/path plot.
-        fig, ax = plt.subplots(figsize=(10, 10))
-        ax.add_patch(
-            plt.Rectangle((bmin[0], bmin[1]), bmax[0] - bmin[0], bmax[1] - bmin[1],
-                          fill=False, ec="#111827", lw=1.5))
-        for idx, name in enumerate(names):
-            pts = history.get(name, [])
-            if not pts:
-                continue
-            xs = [p[0] for p in pts]
-            ys = [p[1] for p in pts]
-            color = colors[idx % len(colors)]
-            ax.plot(xs, ys, color=color, lw=1.8, label=name)
-            ax.scatter(xs[0], ys[0], marker="*", s=140, color=color, edgecolor="black", zorder=4)
-            ax.scatter(xs[-1], ys[-1], marker="o", s=52, color=color, edgecolor="black", zorder=4)
-        ax.set_aspect("equal")
-        ax.set_xlim(bmin[0] - 0.5, bmax[0] + 0.5)
-        ax.set_ylim(bmin[1] - 0.5, bmax[1] + 0.5)
-        ax.grid(True, ls=":", alpha=0.4)
-        ax.set_title(f"{self.runroot.name} — grid path")
-        ax.set_xlabel("x (m)")
-        ax.set_ylabel("y (m)")
-        ax.legend(loc="upper right", fontsize=8)
-        fig.tight_layout()
-        fig.savefig(self.runroot / "grid_path.png", dpi=140)
-        plt.close(fig)
-
-        # Point cloud plot from observed coverage voxels.
-        fig = plt.figure(figsize=(10, 8))
-        ax = fig.add_subplot(111, projection="3d")
-        for idx, name in enumerate(names):
-            voxels = sorted(self.states[name].coverage_voxels)
-            if not voxels:
-                continue
-            xs = [(v[0] + 0.5) * 0.25 for v in voxels]
-            ys = [(v[1] + 0.5) * 0.25 for v in voxels]
-            zs = [(v[2] + 0.5) * 0.25 for v in voxels]
-            color = colors[idx % len(colors)]
-            ax.scatter(xs, ys, zs, s=1.0, alpha=0.45, c=color, label=name)
-        ax.set_title(f"{self.runroot.name} — point cloud from observed occupancy voxels")
-        ax.set_xlabel("x (m)")
-        ax.set_ylabel("y (m)")
-        ax.set_zlabel("z (m)")
-        ax.set_xlim(bmin[0], bmax[0])
-        ax.set_ylim(bmin[1], bmax[1])
-        ax.set_zlim(bmin[2], bmax[2])
-        ax.view_init(elev=25, azim=-55)
-        ax.legend(loc="upper right", fontsize=8)
-        fig.tight_layout()
-        fig.savefig(self.runroot / "point_cloud.png", dpi=140)
-        plt.close(fig)
 
     def finalize(self):
         if self.finalized:
@@ -925,6 +876,11 @@ class Collector:
                       encoding="utf-8") as stream:
                 voxels = sorted(self.states[name].coverage_voxels)
                 stream.write(json.dumps({"vehicle": name, "voxels": voxels},
+                                        indent=2, sort_keys=True) + "\n")
+            with open(self.runroot / name / "coverage_seq.json", "x",
+                      encoding="utf-8") as stream:
+                stream.write(json.dumps({"vehicle": name,
+                                        "coverage_seq": list(self.states[name].coverage_seq)},
                                         indent=2, sort_keys=True) + "\n")
         with open(self.runroot / "fleet" / "metrics.json", "x",
                   encoding="utf-8") as stream:

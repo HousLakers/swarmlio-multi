@@ -43,6 +43,12 @@ baseline_runtime:
   global_trajectory_guard_enabled: false
   global_trajectory_reject_unknown: false
   registration_source: gt
+exploration:
+  # Load-balancing experiment switches (2026-08). MINSUM keeps historical
+  # behaviour; MINMAX minimizes makespan. capacity_factor limits per-drone
+  # share of unknown grids (0.75 historical, 0.5 experimental).
+  mtsp_objective: MINSUM
+  capacity_factor: 0.75
 vehicles:
   - name: uav0
     namespace: /uav0

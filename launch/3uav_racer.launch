@@ -4,6 +4,9 @@
   <arg name="map_size_y" default="50.0"/>
   <arg name="map_size_z" default="3.0"/>
   <arg name="simulation" default="px4"/>
+  <!-- Load-balancing switches (2026-08): MINSUM|MINMAX and capacity 0.75|0.5. -->
+  <arg name="mtsp_objective" default="MINSUM"/>
+  <arg name="capacity_factor" default="0.75"/>
   <param name="use_sim_time" value="true"/>
 
   <!-- The included frozen file owns all single-node algorithm parameters. -->
@@ -13,6 +16,8 @@
     <arg name="map_size_x" value="$(arg map_size_x)"/><arg name="map_size_y" value="$(arg map_size_y)"/><arg name="map_size_z" value="$(arg map_size_z)"/>
     <arg name="odom_prefix" value="/lidar_slam/odom"/>
     <arg name="simulation" value="$(arg simulation)"/>
+    <arg name="mtsp_objective" value="$(arg mtsp_objective)"/>
+    <arg name="capacity_factor" value="$(arg capacity_factor)"/>
   </include>
   <include file="$(find exploration_manager)/launch/single_drone_exploration.xml">
     <arg name="drone_id" value="2"/><arg name="drone_num" value="3"/>
@@ -20,6 +25,8 @@
     <arg name="map_size_x" value="$(arg map_size_x)"/><arg name="map_size_y" value="$(arg map_size_y)"/><arg name="map_size_z" value="$(arg map_size_z)"/>
     <arg name="odom_prefix" value="/lidar_slam/odom"/>
     <arg name="simulation" value="$(arg simulation)"/>
+    <arg name="mtsp_objective" value="$(arg mtsp_objective)"/>
+    <arg name="capacity_factor" value="$(arg capacity_factor)"/>
   </include>
   <include file="$(find exploration_manager)/launch/single_drone_exploration.xml">
     <arg name="drone_id" value="3"/><arg name="drone_num" value="3"/>
@@ -27,6 +34,8 @@
     <arg name="map_size_x" value="$(arg map_size_x)"/><arg name="map_size_y" value="$(arg map_size_y)"/><arg name="map_size_z" value="$(arg map_size_z)"/>
     <arg name="odom_prefix" value="/lidar_slam/odom"/>
     <arg name="simulation" value="$(arg simulation)"/>
+    <arg name="mtsp_objective" value="$(arg mtsp_objective)"/>
+    <arg name="capacity_factor" value="$(arg capacity_factor)"/>
   </include>
 
   <!-- Environment-only bounds for the versioned 50x50 public baseline. -->
