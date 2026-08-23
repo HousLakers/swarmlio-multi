@@ -1178,6 +1178,29 @@ git diff --check
 PASS (no output)
 ```
 
+## 33. 第 26 节 final freshness reference 修复（无实验）
+
+仅修改 `scripts/two_uav_collector.py`、对应 source hash 与本记录。每次 active `report()` 现在冻结
+统一的 active wall-time reference；`finalize()` 的 final metrics 使用最近一次 active report reference，
+而非 teardown 之后的 wall clock。因此停栈延迟不会把此前通过的低频 occupancy 误判 stale。
+
+运行期 `_safety_watchdog()` 仍按实时 wall clock 执行原有连续 freshness 门；occupancy 超过 5 s 仍写入
+`corrupted_telemetry:<uav>:freshness`。snapshot 对 pending command 的 ACK timeout 亦仍使用同一 active
+reference，未改变 1 s fail-closed 合同、其它 telemetry、参数或 manifest。
+
+collector self-test 覆盖：active reference 内 final telemetry complete；同一数据以 active reference
+推进超过 5 s 时 `occupancy` 仍 stale；pending ACK 超时仍被记录。未启动 ROS、Gazebo、preflight 或 smoke。
+
+## 34. 第 26 节首次实现复审返工（无实验）
+
+仅修正 collector snapshot 的时钟语义。`now=time.monotonic()` 始终用于 pending ACK timeout 与 freeze，
+包括 finalize 期间；`freshness_reference_wall_s` 仅用于 continuous-channel stale 计算。final report 必须
+提供最近 active reference；若不存在，所有 continuous channel 被标为 stale，final telemetry fail-closed。
+运行期 watchdog 继续省略 override，因而保持当前实时 5 s occupancy freshness 合同。
+
+self-test 新增：teardown 期间才成熟的 ACK timeout 仍被记录；no-active-reference final snapshot 必须失败。
+未修改参数、manifest、其它组件或 approval package，未启动实验。
+
 有效 identity：
 
 ```text
@@ -1192,3 +1215,1487 @@ runner (unchanged): 60bd1a8aa9455139cc4663b53408cc07b64777319a7b4f83b74417e9ebe4
 ROS 运行时的 24 s soak 不会出现其他 abort。`bc75e406…a70713b` 已消费，不得复用；只有
 Sol/lead 复审范围、diff、identity 与离线验证后，才可签发一次新的 preflight package；smoke
 继续禁止。RT ≈0.33 仍是独立的 smoke 前主机负载/ACK wall-time 风险，未用降低安全阈值的方式掩盖。
+
+## 23. 第 20 节 smoke 最小闭环：事件合同、功能门与机体回波诊断（无实验）
+
+按 `state/sol_plan.md` 第 20 节，只修改了 `scripts/two_uav_collector.py`、
+`scripts/two_uav_gt_mapper.py`、`scripts/two_uav_runner.py`、
+`config/2uav_source_hashes.sha256` 与本记录。未修改单机/RACER 源码或参数、
+`config/2uav_static.yaml`、manifest、launch、world、spawn、公共环境 baseline、PX4/Livox
+workspace、freshness/TF/ACK 阈值、preflight live gate、approval package、receipt、旧 runroot、
+`project_state.md`、`state/current_summary.md` 或 `state/SESSION_HANDOFF.md`；未 commit/push；
+未启动 ROS、Gazebo、preflight 或 smoke。
+
+### 变更与安全语义
+
+1. collector 将 command 阶段的 `/planning/bspline_N` 从连续 freshness 改为 presence/event：
+   首次 PositionCommand 后、completion 前必须至少出现一条 trajectory，但一条旧 B-spline 不会
+   因超过 5 s wall 被误判 stale。`pos_cmd` 与 `ack` 仍是 5 s 连续通道，pending command 与
+   ACK 1 s timeout/recovered-ACK/abort 语义未变；`frontier` 的第 17 节 startup-presence 语义
+   也未回退。
+2. runner 分离通用 final safety 和 `smoke_command_chain_valid()`。仅 `action_launch` 的最终结果
+   额外要求 uav0、uav1 各自 `telemetry.trajectory/pos_cmd/ack > 0` 且
+   `ack_timeout.count == 0`；缺字段、错误类型或零计数均 fail-closed 并在 detail 中点名 UAV。
+   preflight 不传该门，保留无 goal 时 command 计数为零的既有语义；没有将 freeze 升格为即时
+   abort，也未改 trigger/duration/monitor/stop/collect。
+3. GT mapper 新增**只读诊断**而非滤波。两个 mapper 以线程安全 pose ledger 共享最新
+   scan-time world pose；每个已注册点云只计数其落入 source-self/peer 机体 collision 包络的
+   candidate，定期在 `logs/gt_mapper.log` 输出稳定 JSON（source、peer、input/output、candidate、
+   pose status 与 geometry identity）。缺失、非有限、时间不可比较或与 scan stamp 相差超过既有
+   `SYNC_SLOP_S=0.05` 的 peer pose 都记为 unavailable/stale，candidate 为零；不会猜测或删除点。
+4. 冻结几何依据是公共 baseline 指向的
+   `/home/houslakers/PX4-Autopilot/Tools/simulation/gazebo-classic/sitl_gazebo-classic/models/iris/iris.sdf.jinja`
+   （SHA-256 `e8ae6d24c7d85124326db2f795aa72286772da3520110419919a897527d73225`）：
+   `base_link_inertia_collision` box `[0.47,0.47,0.11]` at `[0,0,0]`；四个 rotor collision
+   cylinders（radius `0.128`、length `0.005`）的 link centers 分别为
+   `[0.13,-0.22,0.023]`、`[-0.13,0.2,0.023]`、`[0.13,0.22,0.023]`、
+   `[-0.13,-0.2,0.023]`；`link_platform/collision` box `[0.15,0.1,0.1]` at
+   `[0,0,0.05]`。代码使用这组 collision primitive 的并集；未使用 inflation、经验半径或
+   扩张出生点邻域。
+
+`registered_cloud` 的输入过滤、下采样、world registration 与发布调用未改变；诊断未应用
+candidate mask。因此本任务结论为：
+
+```text
+peer_body_hypothesis_status: UNCONFIRMED_DIAGNOSTIC_ONLY
+point_filtering: NOT_IMPLEMENTED
+```
+
+### 离线验证
+
+```text
+PYTHONPYCACHEPREFIX=/tmp/swarmlio_multi_s19_pycache python3 -m py_compile \
+  scripts/two_uav_collector.py scripts/two_uav_gt_mapper.py scripts/two_uav_runner.py
+PASS
+
+python3 scripts/two_uav_collector.py --self-test
+two_uav_collector self-test: PASS
+  command 前不要求 trajectory；command 后 trajectory 缺失失败；旧 trajectory + 新鲜
+  pos_cmd/ack 通过；pos_cmd 或 ack stale 失败；既有 ACK timeout 与 frontier presence probes 通过。
+
+python3 scripts/two_uav_gt_mapper.py --self-test
+two_uav_gt_mapper self-test: PASS
+  identity/90-degree rotation、self/peer 独立 candidate、missing/stale/non-finite pose
+  fail-safe、无 mutation 输出均通过。
+
+python3 scripts/two_uav_runner.py --self-test
+two_uav_runner self-test: PASS
+  双机 command-chain 成功、任一零计数、ACK timeout 和 preflight 无 command 语义均覆盖。
+
+sha256sum -c config/2uav_source_hashes.sha256
+PASS: 12/12
+
+python3 scripts/two_uav_preflight.py --mode static \
+  --config config/2uav_static.yaml \
+  --manifest experiments/manifests/2uav_smoke.yaml
+PASS: 53/53
+
+git diff --check
+PASS (no output)
+```
+
+有效 identity：
+
+```text
+scripts/two_uav_collector.py: 2343f0b9024878ea9a5c58d6e4cb941cd99b3950fd3a4184be355361d134aeb4
+scripts/two_uav_gt_mapper.py: 9e2362f6f6aca47728e51aed151ad852349fa8586279e78fa66caaa073f1cb1d
+scripts/two_uav_runner.py:    ad2fb78376ea71711e2a3f29920bb00118b45b9b3888d0e5e9eea2d3b9e7ef17
+source-hash manifest:         3fd97d52d6e104758f8dee3253a63f4b0ae9188bf8052dcbd2546168b6c806b5
+frozen manifest (unchanged):  75aececfaaa99137ddc1862dd28dbd4b99cb02336580a9b606d3ba391eb81d46
+static contract (unchanged):  415c9961cae6eb999ed18330ee84bac4881150aef5c76b44798090512a9d465e
+```
+
+残余风险：没有运行时机体 candidate 的数量、时空关联或对 uav1 inflated occupancy 的因果证据，
+故不得实施 peer-body 点剔除，也不得据此签发 smoke。Sol/lead 只能先复审本 diff、几何来源及
+离线证据；若合格，下一门至多是一张新的单次 preflight **诊断** package，用不可变新 runroot
+采集上述 JSON 证据。已消费 smoke package
+`3986a46c53dd3c7cfae9dbc03eb388fe80327fc2d2f784b8506a01a8b3988038` 永久不得复用。
+
+## 24. 第 21 节最终门与诊断快照最小返工（无实验）
+
+按 `state/sol_plan.md` 第 21 节，只修改 `scripts/two_uav_runner.py`、
+`scripts/two_uav_gt_mapper.py`、`config/2uav_source_hashes.sha256` 与本记录。未修改
+collector、冻结 iris collision geometry/点分类/registered cloud 发布、manifest、static config、
+参数或阈值、approval package、receipt、旧 runroot、`project_state.md`、
+`state/current_summary.md` 或 `state/SESSION_HANDOFF.md`；未 commit/push；未启动 ROS、Gazebo、
+preflight 或 smoke。
+
+变更：
+
+1. `smoke_command_chain_valid()` 现在只接受长度恰为 2 的 list/tuple，并按固定顺序绑定
+   uav0/uav1；若 metrics 明示 `name`，也必须匹配。每个 command count 只接受非 bool `int > 0`，
+   ACK timeout count 只接受非 bool `int == 0`。因此 `None`、bool、string、任何 float（包括
+   `NaN`/`Inf`）、零和负数，以及空/单机/三机/非序列 fleet 全部 fail-closed，detail 指向
+   cardinality 或相应 UAV/字段。preflight 的通用 final safety 仍不要求 command chain。
+2. mapper 增加纯函数 `body_diagnostic_snapshot()`，用 `copy.deepcopy()` 产生 JSON-ready 的
+   source/peer/geometry identity 深快照。每个 `VehicleMapper` 有独立 `_body_lock`：raw、
+   registered、candidate 及嵌套 pose-status counter 的更新均在锁内；Timer 亦在同一锁内取快照，
+   释放锁后才 JSON 序列化/日志。点分类、包络、candidate 数学和 published registered cloud 未变。
+
+离线验证：
+
+```text
+PYTHONPYCACHEPREFIX=/tmp/swarmlio_multi_s21_pycache python3 -m py_compile \
+  scripts/two_uav_gt_mapper.py scripts/two_uav_runner.py
+PASS
+
+python3 scripts/two_uav_gt_mapper.py --self-test
+two_uav_gt_mapper self-test: PASS
+  深快照后修改原 counter 的顶层和嵌套 status 均不改变快照；uav0/uav1 snapshot 不共享。
+
+python3 scripts/two_uav_runner.py --self-test
+two_uav_runner self-test: PASS
+  正常双机、uav0/uav1 零 command、ACK timeout、所有坏计数类型与空/单机/三机/非序列
+  cardinality 全部覆盖；preflight 无 command 路径保留。
+
+pure negative probes
+runner_bad_counts_and_cardinality=FAIL_CLOSED
+mapper_body_snapshot=DETACHED
+
+sha256sum -c config/2uav_source_hashes.sha256
+PASS: 12/12
+
+python3 scripts/two_uav_preflight.py --mode static \
+  --config config/2uav_static.yaml \
+  --manifest experiments/manifests/2uav_smoke.yaml
+PASS: 53/53
+
+git diff --check
+PASS (no output)
+```
+
+有效 identity：
+
+```text
+scripts/two_uav_collector.py (unchanged): 2343f0b9024878ea9a5c58d6e4cb941cd99b3950fd3a4184be355361d134aeb4
+scripts/two_uav_gt_mapper.py:             38645cdac77388f8546fe94f2c9d4f332d727500260d4ef2329e19d9f818a690
+scripts/two_uav_runner.py:                9e3141efafe8a6f618075d8fe6281b9a41e12f5542cad6d7def25fc377150621
+source-hash manifest:                     a962c13024a4cdbadfc3a667ead557214af249698afbfcbedd69749af69c5f03
+frozen manifest (unchanged):              75aececfaaa99137ddc1862dd28dbd4b99cb02336580a9b606d3ba391eb81d46
+static contract (unchanged):              415c9961cae6eb999ed18330ee84bac4881150aef5c76b44798090512a9d465e
+```
+
+残余风险不变：peer-body hypothesis 仍为 `UNCONFIRMED_DIAGNOSTIC_ONLY`，没有过滤或改变地图。
+只能由 lead 在复审后决定是否签发新的、一次性 diagnostic preflight package；smoke 继续禁止。
+
+## 25. 第 22 节高频 peer pose ledger 与 exact collision-mask 最小返工（无实验）
+
+按 `state/sol_plan.md` 第 22 节，只修改了 `scripts/two_uav_gt_mapper.py`、
+`config/2uav_source_hashes.sha256` 与本记录。未修改 collector、runner、preflight、manifest、
+static 参数、launch/world、RACER/单机源码、公共 baseline、approval package、receipt、旧 runroot、
+`project_state.md`、`state/current_summary.md` 或 `state/SESSION_HANDOFF.md`；未 commit/push；
+未启动 ROS、Gazebo、preflight 或 smoke。
+
+变更与安全语义：
+
+1. 每架 mapper 现在在**每条原始 MAVROS odom**到达时，以 odom header stamp、当前姿态、当前位置
+   加本机冻结 initial offset 写入共享 `PoseLedger`。ledger 拒绝严格更旧的 stamp，故同步
+   scan/odom callback 不再以较旧 scan timestamp 覆盖高频 peer pose。scan callback 仍只以自身
+   scan stamp 和未改动的 `SYNC_SLOP_S=0.05` 查询 peer；缺失、非有限、不可比较或 stale peer
+   pose 一律完整保留点云。
+2. world registration 后、`registered_cloud` 发布前调用纯函数 `peer_body_filter()`。仅当 peer pose
+   available 时，删除当前冻结 `IRIS_COLLISION_PRIMITIVES` 并集精确命中的**peer** mask；self
+   candidate 永不触发删除，包络外点逐点保留。过滤后即使空 cloud，registered odom、pose 和唯一
+   `world -> uavN/base_link` TF 仍照常发布，frame/timestamp/geometry/时间窗均未改变。
+3. 每 source 独立且加锁的深快照计数新增 `published_points`、`peer_removed_points` 与
+   `peer_preserved_unavailable_points`。available 分支恒有
+   `peer_removed_points == peer_candidates` 与
+   `published_points == registered_points - peer_removed_points`；unavailable 分支恒有 removed=0，
+   全部 registered 点计入 preserved。
+
+mapper self-test 覆盖并已通过：冻结 geometry identity/primitive 常量锁定；available peer 的精确
+删除与包络外逐点保持；missing/stale/non-finite peer 全量保留；self 命中不删；90° rotated peer；
+过滤后空输出；不可变输入；ledger 拒绝旧 stamp；uav0/uav1 高频 odom 后两个方向均在既有 0.05 s
+窗内可分类；诊断深快照不共享。没有实现 inflation、半径扩张、整帧删除或静态墙修改。
+
+离线验证：
+
+```text
+PYTHONPYCACHEPREFIX=/tmp/swarmlio_multi_s22_pycache python3 -m py_compile \
+  scripts/two_uav_gt_mapper.py
+PASS
+
+python3 scripts/two_uav_gt_mapper.py --self-test
+two_uav_gt_mapper self-test: PASS
+
+sha256sum -c config/2uav_source_hashes.sha256
+PASS: 12/12
+
+python3 scripts/two_uav_preflight.py --mode static \
+  --config config/2uav_static.yaml \
+  --manifest experiments/manifests/2uav_smoke.yaml
+PASS: 53/53
+
+git diff --check
+PASS (no output)
+```
+
+有效 identity：
+
+```text
+scripts/two_uav_gt_mapper.py: b45cd7de27109515d9d1a63aec0509e6fa826e740bfcf326a84b477ab9ffbddd
+source-hash manifest:         fff0f259ff24e1d2f8812c03ebe25677de96b8f3352c505a76a0abd610a9164b
+frozen manifest (unchanged):  75aececfaaa99137ddc1862dd28dbd4b99cb02336580a9b606d3ba391eb81d46
+static contract (unchanged):  415c9961cae6eb999ed18330ee84bac4881150aef5c76b44798090512a9d465e
+collision geometry (unchanged): iris.sdf.jinja:e8ae6d24c7d85124326db2f795aa72286772da3520110419919a897527d73225
+```
+
+残余风险：这是精确 peer-body 回波的最小缓解，尚无新的运行时证据证明两个方向的 pose 可用率、
+mask 恒等式或 sim≥15 的 `start inside inflated occupancy` 已满足第 22 节门槛。当前没有 approval
+package；已消费 `aef23aefd98998693f57e4328010363bd849dfae794ab7691ff5b1b7baa57079` 永不得复用。
+只能交由 lead 审核本 diff、identity 和离线证据；审核通过后至多签发新的单次 diagnostic preflight
+package，smoke 继续禁止。
+
+## 26. 第 23 节 odom 输入别名最小返工（无实验）
+
+按 `state/sol_plan.md` 第 23 节，只修改了 `scripts/two_uav_gt_mapper.py`、
+`config/2uav_source_hashes.sha256` 与本记录。未修改 collector、runner、preflight、manifest、static
+config、geometry/时间窗/过滤、参数、registered cloud、odom/pose/TF frame 或 timestamp、world/baseline、
+approval package、receipt、旧 runroot、`project_state.md`、`state/current_summary.md` 或
+`state/SESSION_HANDOFF.md`；未 commit/push；未启动 ROS、Gazebo、preflight 或 smoke。
+
+根因是同步 callback 中 `out_odom.pose = odom.pose` 的共享引用：对输出原地加 initial offset 会改写
+同一个原始 MAVROS odom 子对象，而 message_filters 中 synchronizer 可先于 raw odom ledger callback
+运行。修复新增纯 helper `offset_pose_copy()`，先 `copy.deepcopy()` 再仅在 detached 输出上叠加 initial
+offset；`_callback()` 只使用该副本。`_odom_pose_cb()` 仍从原始输入 pose 和 header stamp 构造 ledger
+record，一次且仅一次加入 initial offset。因此 registered odom/pose/TF 的对外数值合同不变，但任意
+callback 顺序都不会令 uav1 的 `(0,*,*)` 累加成 `(3.0,*,*)`。
+
+mapper self-test 已保留第 22 节所有 peer-mask、unavailable、rotated、empty、ledger、双向可分类和
+deep-snapshot 用例，并新增：uav1 local `(0,2,3)` 输出 `(1.5,2,3)` 时输入仍为 `(0,2,3)`；模拟
+“synchronizer callback 先、ledger callback 后”以及连续第二次输出构造，ledger 都保持 `(1.5,2,3)`。
+额外使用真实 `nav_msgs/Odometry` 的离线 probe 验证：input=0.0、两次 output=1.5、ledger=1.5。
+
+离线验证：
+
+```text
+PYTHONPYCACHEPREFIX=/tmp/swarmlio_multi_s23_pycache python3 -m py_compile \
+  scripts/two_uav_gt_mapper.py
+PASS
+
+python3 scripts/two_uav_gt_mapper.py --self-test
+two_uav_gt_mapper self-test: PASS
+
+python3 <offline nav_msgs odom alias regression probe>
+odom_alias_regression_probe: PASS input=0.0 output=1.5 repeat=1.5 ledger=1.5
+
+sha256sum -c config/2uav_source_hashes.sha256
+PASS: 12/12
+
+python3 scripts/two_uav_preflight.py --mode static \
+  --config config/2uav_static.yaml \
+  --manifest experiments/manifests/2uav_smoke.yaml
+PASS: 53/53
+
+git diff --check
+PASS (no output)
+```
+
+有效 identity：
+
+```text
+scripts/two_uav_gt_mapper.py: 2c4ab51bdecc26d03030ef93631f2376ba991178ea915ab787900096bb0df6ff
+source-hash manifest:         2d99a213de37c8228ddbb86a12d748b1b94480289be974d846506fc95efc7788
+frozen manifest (unchanged):  75aececfaaa99137ddc1862dd28dbd4b99cb02336580a9b606d3ba391eb81d46
+static contract (unchanged):  415c9961cae6eb999ed18330ee84bac4881150aef5c76b44798090512a9d465e
+collision geometry (unchanged): iris.sdf.jinja:e8ae6d24c7d85124326db2f795aa72286772da3520110419919a897527d73225
+```
+
+残余风险：本修复证明 mapper 不会将自己的 offset 写回输入消息，但尚无新的运行时证据证明两个方向
+peer pose 可用率、精确 mask 计数恒等式或出生点 occupancy 已达到第 22 节门槛。当前没有 approval
+package；已消费 `aef23aefd98998693f57e4328010363bd849dfae794ab7691ff5b1b7baa57079` 不得复用。仅可交回
+lead 审核；未获新单次 diagnostic preflight 批准前 smoke 继续禁止。
+
+## 27. Gate 5 provenance 只读诊断（无实验）
+
+按本任务包，仅修改 `scripts/two_uav_gt_mapper.py`、对应 source hash 与本记录；未修改 collector、
+runner、参数、mask geometry、manifest、approval package 或任何正式状态文件，未启动 ROS、Gazebo、
+preflight 或 smoke。
+
+新增 mapper `mapper_body_diagnostic` 的只读 provenance 字段：`uav1_hover_voxels` 逐体素记录
+`source_uav`、`point_hits`、`first_sim_time` 与 `recent_sim_time`；hover 邻域固定为 uav1 冻结初始
+world 坐标 `(1.5, 0, 1.5)` 周围 `0.35 m`，以冻结 occupancy `0.25 m` voxel 编码。对于 peer pose
+`stale`，记录只读的 `peer_unavailable_body_candidates` 和
+`peer_unavailable_inflation_candidates`；后者按冻结 iris primitives 的精确点到 primitive 距离与
+既有 `0.35 m` inflation 计算。`missing`/`uncomparable` pose 不猜测位置，计数保持零。
+
+这条新增路径只读取已注册 world points 与 pose snapshot，并只写 diagnostic counter；不向 peer mask
+传递任何新 mask。mapper self-test 证明：输入 point array 不变；执行 provenance 前后的既有
+`peer_body_filter()` published array 与 result 完全相等；stale pose 可产生可审计的 hypothetical
+body/inflation 计数，同时既有 fail-safe published path 保留点。它不改变 published cloud、occupancy、
+参数或控制路径。既有第 22/23 节 peer-mask 行为未在本任务中改动。
+
+离线验证（无运行时实验）：
+
+```text
+PYTHONPYCACHEPREFIX=/tmp/swarmlio_multi_gate5_pycache python3 -m py_compile scripts/two_uav_gt_mapper.py
+PASS
+
+python3 scripts/two_uav_gt_mapper.py --self-test
+two_uav_gt_mapper self-test: PASS
+```
+
+最终离线验证（无运行时实验）：
+
+```text
+sha256sum -c config/2uav_source_hashes.sha256
+PASS: 12/12
+
+python3 scripts/two_uav_preflight.py --mode static --config config/2uav_static.yaml \
+  --manifest experiments/manifests/2uav_smoke.yaml
+PASS: 53/53
+
+git diff --check
+PASS (no output)
+```
+
+有效 identity：
+
+```text
+scripts/two_uav_gt_mapper.py: bb60d5235d6cdc5d9f0bf03d8e83c1e4f57061a02061a7903a565b78a786f403
+source-hash manifest:         7a52642ffceb945341dad812cca7adaea90bd90da4723f4bad791df17ba87571
+```
+
+残余风险：诊断本身尚无新的 runroot 运行证据，且 stale pose 的命中是明确标记的假设性计数，不得据此
+宣称 occupancy 成因成立。它也不改变既有第 22/23 节 peer-mask 的行为；是否接受已有 mask 或签发
+任何 preflight 必须由 lead 单独审核。
+
+## 28. Gate 5 provenance 语义修正（无实验）
+
+按本任务包，仅修改 `scripts/two_uav_gt_mapper.py`、对应 source hash 与本记录。修正第 27 节中
+provenance 统计把 registered array 直接用于 hover 归属、以及 available 状态可能进入
+`peer_unavailable_*` 的语义缺口；未修改 collector、peer mask、参数、control path、manifest、approval
+package 或正式状态文件，未启动 ROS、Gazebo、preflight 或 smoke。
+
+`uav1_hover_voxels` 现在只由 `peer_body_filter()` 已得到的实际 `published` array 生成，故被既有
+peer mask 移除的点绝不会被归为 hover voxel。`peer_unavailable_*` 现在仅接受 `stale`、`missing` 与
+`uncomparable`：三种状态均分别落盘 status；missing 没有可用 pose 时 body/inflation candidate 保持零，
+不猜测位置；available 立即返回，不改变任何 unavailable counter。新增 diagnostic helper 仍只读
+published array/pose snapshot、只写 counter，未向 peer mask 或 publisher 返回数据。
+
+mapper self-test 的负向覆盖：available peer 的 hover 点会被既有 mask 移除，因而不进入 hover voxels
+且所有 unavailable 字段保持零；stale peer 保持既有 published array，同时记录 hypothetical body/
+inflation 命中与 source/first/recent sim time；missing 与 uncomparable 分别只记录状态、不会猜测 body/
+inflation 命中。所有分支均断言 diagnostic 前后既有 published array 与 peer-filter result 完全相同，
+并断言输入 array 不变。
+
+离线验证（无运行时实验）：
+
+```text
+PYTHONPYCACHEPREFIX=/tmp/swarmlio_multi_gate5r_pycache python3 -m py_compile scripts/two_uav_gt_mapper.py
+PASS
+
+python3 scripts/two_uav_gt_mapper.py --self-test
+two_uav_gt_mapper self-test: PASS
+
+sha256sum -c config/2uav_source_hashes.sha256
+PASS: 12/12
+
+python3 scripts/two_uav_preflight.py --mode static --config config/2uav_static.yaml \
+  --manifest experiments/manifests/2uav_smoke.yaml
+PASS: 53/53
+
+git diff --check
+PASS (no output)
+```
+
+有效 identity：
+
+```text
+scripts/two_uav_gt_mapper.py: 7ea6243d1518fc5e1a30f7b33c35378b645871fb201768e0a15f5c57f6d169ae
+source-hash manifest:         cb03164c3a3f1f44ad33c62790f7eb1b57dfc7bc5d997b1f9aafca228e00cfc5
+```
+
+不得将这项离线证据解释为 runtime occupancy 成因或任何实验批准。
+
+## 29. 第 24 节 frontier readiness 与 node probe 加固（无实验）
+
+按 `state/sol_plan.md` 第 24 节，仅修改 `scripts/two_uav_runner.py`、对应 source hash 与本记录；
+未修改 RACER/单机参数、mapper、collector、preflight、manifest、launch、approval package 或正式状态文件，
+未启动 ROS、Gazebo、preflight 或 smoke。
+
+变更：
+
+1. `ros_node_names()` 现在返回明确的 `success`、`timeout` 或 `error` observation。每次 node probe
+   至多 `2` 次、单次 `3 s`、退避 `0.25 s`；timeout/non-zero 不再伪装成空 node 集合。readiness 仅在
+   同一轮成功 node snapshot 包含所有 required node 且 payload 存在时通过；否则最终 detail 保留
+   `node probe timeout` 或 `node probe error`。
+2. RACER frontier 门使用集中常量的 `20 sim s` 初始化预算、`600 wall s` hard cap 与 `60 wall s`
+   clock-stall cap。sim time 单调推进但低 RT 时，旧 `180 wall s` 已过而 sim budget 未耗尽会继续等待；
+   sim budget 耗尽、wall cap、clock stalled、probe failure 或 process exit 均 fail-closed。
+3. 未改 payload probe、已启动 Popen liveness、bridge node requirement、RACER launch 顺序、frontier
+   topic 合同或 teardown 行为。
+
+runner self-test 的负向覆盖包括：node success/missing/timeout/error；当前 node snapshot 与 payload 才
+允许成功；低 RT 超过旧 wall 预算仍等到 payload；sim budget 耗尽；wall hard cap；clock stalled；任一
+process exit。测试为纯函数/注入时钟，不启动 ROS。
+
+离线验证（无运行时实验）：
+
+```text
+PYTHONPYCACHEPREFIX=/tmp/swarmlio_multi_s24_pycache python3 -m py_compile scripts/two_uav_runner.py
+PASS
+
+python3 scripts/two_uav_runner.py --self-test
+two_uav_runner self-test: PASS
+
+sha256sum -c config/2uav_source_hashes.sha256
+PASS: 12/12
+
+python3 scripts/two_uav_preflight.py --mode static --config config/2uav_static.yaml \
+  --manifest experiments/manifests/2uav_smoke.yaml
+PASS: 53/53
+
+git diff --check
+PASS (no output)
+```
+
+有效 identity：
+
+```text
+scripts/two_uav_runner.py: 67cf495c5c893039e386e746f8393b9ce6a9010bf296244381f8da08364f960e
+source-hash manifest:      48c2db6153211aec6ff85a3f83ad63229dc40b3de6ce1dc4e4ed8e89e9ec7faa
+frozen manifest:           75aececfaaa99137ddc1862dd28dbd4b99cb02336580a9b606d3ba391eb81d46
+```
+
+旧 package `6280f48317acda77b6c2659b12b397b186f85a8fd6ed23be93dab61c7e7ac5c1` 已消费，禁止复用。
+残余风险：这是离线 readiness hardening，尚无新 runroot 证明真实负载下 frontier 能在 sim budget 内
+出现；是否签发新的单次 preflight package 必须由 lead 单独审核。
+
+## 30. 第 25 节 live CLI retry 与 descendant teardown（无实验）
+
+仅修改 `two_uav_preflight.py`、`two_uav_runner.py`、对应 source hash 与本记录。live CLI 采用固定 argv、
+15 s 单次 timeout、3 次上限、0.5 s backoff、50 s 总 wall cap；每次保留 timeout/error/success attempt
+证据，成功仍须由既有精确值比较通过。runner 在 TERM 前冻结 `/proc` descendant closure，并仅再发现同时
+匹配本 runroot `ROS_LOG_DIR`、`ROS_HOME` 与唯一 `ROS_MASTER_URI` 的 reparent 后代；无关 ROS 进程或
+环境不匹配 PID 不会被选择。TERM 后仍存活的匹配目标会 KILL，最终 survivor 或 master port 未释放均
+`clean=false` 并使 preflight fail-closed。
+
+纯自测覆盖 CLI timeout/error 后成功、全部失败、值不匹配与总 cap；以及多层/reparent closure、无关
+进程排除、身份不匹配、TERM 后消失和 survivor failure。未启动 ROS、Gazebo、preflight 或 smoke；
+manifest 与参数不变，package `186c9159e90bb918b674f311d5f45bd4565e7305fb164a652fcf2de41c2dda98`
+已消费且禁止复用。
+
+离线验证：两个脚本 `py_compile/self-test`、`sha256sum -c` 12/12、static preflight 53/53 与
+`git diff --check` 均通过。
+
+```text
+scripts/two_uav_preflight.py: 35969b9698fcd802b87c6370ebe9c8e14e50154f2439a3093916e26e67dcd345
+scripts/two_uav_runner.py:    a7c23cd7850f6d63b9afe12334186f4898e4338fcf7185c40e71b1e3dbc1ad45
+source-hash manifest:         572603dff4e364a95b94385ab0af314ce02e1269519797c9b19ffda3eb04de48
+```
+
+## 31. 第 25 节 teardown root identity 锚定修正（无实验）
+
+仅修正 runner teardown：active 现在冻结本 runroot 的 `ROS_HOME`、`ROS_LOG_DIR` 与
+`ROS_MASTER_URI`。每一个顶层 PID 必须在 `/proc` snapshot 中精确匹配这三项才会成为 closure root；
+PID 不存在、reuse、缺少环境或任一值不匹配时，该 root 被排除、不会展开其子树，并令 teardown
+`clean=false`。同 runroot identity 的 reparent 后代仍按既有独立再发现规则处理。CLI retry、readiness
+预算、参数和其它组件未变。
+
+runner self-test 新增 PID reuse/root identity mismatch：root 与其无 identity child 均不进入 targets，
+teardown fail-closed；无关进程仍排除。未启动实验或创建 package。
+
+验证通过：两个脚本 `py_compile/self-test`、12/12 source hash、53/53 static preflight 与
+`git diff --check`。runner hash 为
+`bc33a2f6ecdf501e5a4b1b2ab415e925905b4a3b132e6c827c6c226d881363e1`；source-hash manifest 为
+`d0c509a6c5e223594442701c98ef102e69c0d22b033c145f99f3cea995fb0455`。
+
+## 32. 第 25 节 partial root identity teardown 修正（无实验）
+
+rejected root 仍使最终 `clean=false`，但不再提前返回：`stop_active()` 会继续 TERM/KILL 所有已通过
+完整 runroot identity 验证的 targets。拒绝 root 和仅由该 root 关系发现、但未独立验证的 child 不会收到
+信号。新增伪 `/proc` 负向自测：PID-reuse root 与独立 identity-matched reparent target 同时存在时，
+仅 reparent target 收到 TERM，最终无 survivors 但仍 fail-closed。CLI retry、参数、manifest 与其它逻辑
+未改。
+
+本节最终审计 identity：
+
+```text
+scripts/two_uav_runner.py: 67b6a343ea841bbfa54e23d72b6643aa22dde62c8bf47a243f83617ab760d6a2
+source-hash manifest:      a96af28ea6d8c9b032ee5b840c48f309a592e5c85de4bc1874b9eae147c1a49b
+frozen manifest:           75aececfaaa99137ddc1862dd28dbd4b99cb02336580a9b606d3ba391eb81d46
+```
+
+针对上述版本实际完成的离线验证：
+
+```text
+PYTHONPYCACHEPREFIX=/tmp/swarmlio_multi_s25partial_pycache python3 -m py_compile \
+  scripts/two_uav_preflight.py scripts/two_uav_runner.py
+PASS
+
+python3 scripts/two_uav_preflight.py --self-test
+PASS
+
+python3 scripts/two_uav_runner.py --self-test
+PASS
+
+sha256sum -c config/2uav_source_hashes.sha256
+PASS: 12/12
+
+python3 scripts/two_uav_preflight.py --mode static --config config/2uav_static.yaml \
+  --manifest experiments/manifests/2uav_smoke.yaml
+PASS: 53/53
+
+git diff --check
+PASS (no output)
+```
+
+## 33. 第 27 节 peer source-ray 精确相交 mask（无实验）
+
+按任务包，仅修改 `scripts/two_uav_gt_mapper.py`、其在
+`config/2uav_source_hashes.sha256` 的条目和本记录。未修改 collision geometry、
+`obstacles_inflation`、任何参数/时间窗/downsample、collector、runner、preflight、manifest、
+launch、approval package、正式状态文件或旧 runroot；未启动 ROS、Gazebo、live preflight 或 smoke。
+
+每个同步 scan 现在以该 scan 的 detached source world pose 作为射线起点。只有 peer ledger pose
+按既有 stamp 与 `SYNC_SLOP_S` 判定为 `available` 时才进行 endpoint/ray mask；peer missing、stale、
+uncomparable 或 nonfinite 均保留原 array。mask 是闭区间 segment 与冻结的 box/cylinder collision
+primitives 的精确几何相交，不含 epsilon、inflation、经验半径、hover/start 邻域或 voxel 批量删除。
+已保留 endpoint exact mask；实际删除严格为 `endpoint_mask OR ray_mask`。
+
+审计现在分别累计 `peer_endpoint_candidates`、`peer_ray_candidates`、union
+`peer_removed_points` 和 `published_points`，其中每 scan 恒等式为
+`published_points = registered_points - peer_removed_points`；旧 `peer_candidates` 保留为 endpoint
+candidate 的兼容别名。source self candidate 仅为独立诊断，未参与 peer-ray mask 或发布决策。
+
+mapper self-test 覆盖：endpoint body、peer 后方且射线穿过、peer 邻域但绕开、旋转 primitive、
+closed tangent/boundary、source origin 在 peer primitive 外、missing/stale/nonfinite 全量保留、两 mask
+重叠不重复计数、输入数组与 detached diagnostic snapshot 不变。自测还验证 source scan pose 作为
+ray origin，且 available peer 之外不存在推测删除。
+
+离线验证（无运行时实验）：
+
+```text
+PYTHONPYCACHEPREFIX=/tmp/swarmlio_multi_gate27_pycache python3 -m py_compile scripts/two_uav_gt_mapper.py
+PASS
+
+python3 scripts/two_uav_gt_mapper.py --self-test
+two_uav_gt_mapper self-test: PASS
+
+sha256sum -c config/2uav_source_hashes.sha256
+PASS: 12/12
+
+python3 scripts/two_uav_preflight.py --mode static --config config/2uav_static.yaml \
+  --manifest experiments/manifests/2uav_smoke.yaml
+PASS: 53/53
+
+git diff --check
+PASS (no output)
+```
+
+本次有效 identity：
+
+```text
+scripts/two_uav_gt_mapper.py: 1f008fba1ded02beea7fa48ada45b3280f8b3b08f566c95cea2a6e8b3332f941
+source-hash manifest:         48de98805b0648dbeda460f72f369972ee733ce2859a2fc667bba7f469928ffb
+frozen manifest:              75aececfaaa99137ddc1862dd28dbd4b99cb02336580a9b606d3ba391eb81d46
+```
+
+残余风险：这是几何与静态合同证据，不证明 runtime hover occupancy 已消失；是否签发一次
+diagnostic preflight 只能由 lead 审核决定，不能直接进入 smoke。
+
+## 34. 第 27 节首次实现复审：统一 LiDAR 外参与 ray origin（无实验）
+
+按复审任务包，仅修改 `scripts/two_uav_gt_mapper.py`、mapper 在
+`config/2uav_source_hashes.sha256` 的 hash 和本记录。未修改 primitive、collision geometry、epsilon、
+inflation、参数、collector、runner、preflight、manifest、launch、approval package 或正式状态文件；未启动
+ROS、Gazebo、live preflight 或 smoke。
+
+提取唯一冻结常量 `LIDAR_SENSOR_OFFSET_M = (0.0, 0.0, 0.13)` 与纯 helper
+`lidar_sensor_world_origin()`。`register_points()` 和 source-ray origin 共同使用这一个常量；ray origin
+现在严格为同步 scan source body world pose 加 `R_source * sensor_offset`，且仍携带该 scan stamp。
+不存在第二份 offset 数值、epsilon 或 primitive 扩张。
+
+新增 self-test 以非零 roll/pitch/yaw quaternion 验证 `register_points(local_zero)` 精确等于同一外参导出的
+sensor origin，并验证该 origin 到同一注册 endpoint 的 segment 对 peer primitive 产生正确判定。回归构造
+还证明旧 body-origin segment 会命中、而当前 LiDAR-origin segment 正确绕开；这证明修复消除了两种几何
+模型不一致，而非通过扩大 primitive 掩盖差异。
+
+离线验证（无运行时实验）：
+
+```text
+PYTHONPYCACHEPREFIX=/tmp/swarmlio_multi_gate27r_pycache python3 -m py_compile scripts/two_uav_gt_mapper.py
+PASS
+
+python3 scripts/two_uav_gt_mapper.py --self-test
+two_uav_gt_mapper self-test: PASS
+
+sha256sum -c config/2uav_source_hashes.sha256
+PASS: 12/12
+
+python3 scripts/two_uav_preflight.py --mode static --config config/2uav_static.yaml \
+  --manifest experiments/manifests/2uav_smoke.yaml
+PASS: 53/53
+
+git diff --check
+PASS (no output)
+```
+
+本次有效 identity：
+
+```text
+scripts/two_uav_gt_mapper.py: aa67881daa58dd13d3328ff40f0c93c59b71951943a99990493c4665f2d83cd9
+source-hash manifest:         07b8f795cc9b0475c3ba815590b3d4a39c59c50a820e0b53357b6285f028047e
+frozen manifest:              75aececfaaa99137ddc1862dd28dbd4b99cb02336580a9b606d3ba391eb81d46
+```
+
+残余风险：离线几何一致性不等于 runtime hover occupancy 已清除。只可交由 lead 审核是否签发新的
+diagnostic preflight；不得直接 smoke。
+
+## 35. 第 28 节 bridge OFFBOARD/arm readiness 重试（无实验，静态门阻断）
+
+按任务包，仅修改外部运行时文件
+`/home/houslakers/swarm_ws/src/Swarm-LIO2/swarm_lio/scripts/px4_bridge.py`、
+`config/2uav_source_hashes.sha256` 和本记录。未触及该外部仓库的其他文件（该仓库原有大量不相关 dirty
+状态保持原样），未改 PX4/MAVROS、hover 阈值、45 s timeout、launch、manifest、mapper、collector、runner、
+preflight、approval package 或正式状态文件；未启动 ROS、Gazebo、preflight 或 smoke。
+
+bridge 新增集中常量 `READINESS_REQUEST_INTERVAL_S = 1.0`。physical-hover readiness 的既有 45 s
+monotonic hard window 内继续连续发布原 hover target；若 mode 尚未确认 `OFFBOARD` 或尚未 armed，则至多
+每秒一次调用对应服务。helper `request_offboard_and_arm()` 只请求未确认的条件，分别记录
+`mode_sent`、`arm_success`、`mode_exception` 与 `arm_exception`，不再吞掉异常。每次尝试落盘 drone id、
+attempt、当前 mode/armed、服务返回值与异常类；首次 OFFBOARD、首次 armed 和最终 hover ready 都有结构化
+日志。原有高度、速度、stable、45 s 和 `RuntimeError("physical hover readiness timeout")` fail-closed
+路径未改变。
+
+新增纯 `--self-test`，因此不加载 ROS 消息包：覆盖 mode/arm false 后继续重试并最终成功、mode 已成功而
+arm 延迟、服务 exception 后恢复、确认状态不重复调用、45 s timeout 边界与两架状态独立。
+
+离线验证：
+
+```text
+PYTHONPYCACHEPREFIX=/tmp/swarmlio_multi_gate28_pycache python3 -m py_compile \
+  /home/houslakers/swarm_ws/src/Swarm-LIO2/swarm_lio/scripts/px4_bridge.py
+PASS
+
+python3 /home/houslakers/swarm_ws/src/Swarm-LIO2/swarm_lio/scripts/px4_bridge.py --self-test
+px4_bridge self-test: PASS
+
+sha256sum -c config/2uav_source_hashes.sha256
+PASS: 13/13
+
+git diff --check
+PASS (no output)
+
+git -C /home/houslakers/swarm_ws/src/Swarm-LIO2 diff --no-index --check \
+  /dev/null swarm_lio/scripts/px4_bridge.py
+PASS (expected no-index exit 1; no whitespace error)
+```
+
+外部仓库将这个精确文件报告为预存未跟踪文件（`?? swarm_lio/scripts/px4_bridge.py`），故普通 tracked
+`git diff` 没有基线；no-index check 仅对该精确文件执行，未将其它外部 dirty 文件纳入或清理。
+
+静态 preflight 结果为 **52/53，fail-closed**。唯一失败项是
+`source.overlay_installed_21_of_21`：其冻结 overlay identity 清单仍要求 bridge hash
+`9ad51e4a8122bea78401e33cc27452a3ae6f49581a9d277a5adf7bad5e553db0`，而当前任务指定的 bridge 修复 hash
+为下列值。第 28 节只授权 bridge、主 source-hash manifest 与本记录，未授权修改该外部 overlay identity
+清单；因此没有越权更新它来伪造 53/53。
+
+```text
+/home/houslakers/swarm_ws/src/Swarm-LIO2/swarm_lio/scripts/px4_bridge.py:
+  5cce75ddb7b3d21476a2492f7769cedd43bbfbdd2430dfe69562443bd87becf3
+source-hash manifest:
+  986982f4b0087a8946463d3659e31c590ef27e4220a0b0a525cf50358f1fab52
+frozen manifest:
+  75aececfaaa99137ddc1862dd28dbd4b99cb02336580a9b606d3ba391eb81d46
+```
+
+阻断事项：lead 必须先决定是否签发一个允许同步更新外部 overlay identity 的最小任务包；在该授权前，
+不得把本实现标为静态 53/53、不得签发 preflight 或进入 smoke。
+
+## 36. 第 29 节公共 overlay identity bundle 准备（无实验，等待 Sol commit）
+
+按第 29 节任务包，只准备公共 overlay identity；未修改运行时 bridge、installer 或安全门，未执行
+overlay `--apply`，未启动 ROS/Gazebo/preflight/smoke，未创建 approval package、commit 或 push。
+
+新建不可变 bundle source：
+
+```text
+/home/houslakers/auto_tune_racer/swarmlio-single-v2/history/
+RUN-20260822T000000Z-px4-bridge-readiness-identity/px4_bridge.py
+```
+
+它由当前已审核运行时 bridge 逐字节复制，mode 为 `0755`，SHA-256 均为
+`5cce75ddb7b3d21476a2492f7769cedd43bbfbdd2430dfe69562443bd87becf3`。公共 overlay 清单仍为 21 条，
+仅 bridge 条目从旧 bundle/hash 改为该新 bundle/hash；其它 20 条保持 Git diff 无变化。multi 的 static
+contract 和 smoke manifest 仅同步新 overlay manifest SHA；source-hash manifest 同步这两个文件并增加
+公共 overlay manifest 与 bundle source 的绝对路径 hash，保留运行时 bridge 条目。
+
+离线验证（均未 apply）：
+
+```text
+/home/houslakers/auto_tune_racer/swarmlio-single-v2/scripts/
+apply_range20m_omnidirectional_overlay.sh --verify-bundle
+OVERLAY_BUNDLE_READY files=21 base=57c1f34
+
+python3 /home/houslakers/swarm_ws/src/Swarm-LIO2/swarm_lio/scripts/px4_bridge.py --self-test
+px4_bridge self-test: PASS
+
+sha256sum -c config/2uav_source_hashes.sha256
+PASS: 15/15
+
+21-entry identity probe
+PASS: bridge hash/mode/source/root/target exact; other 20 unchanged by exact single Git diff
+
+git diff --check
+PASS (no output)
+
+git -C /home/houslakers/auto_tune_racer/swarmlio-single-v2 diff --check -- \
+  platform_overlays/range20m_omnidirectional_v1/current_config.sha256
+PASS (no output)
+```
+
+single 精确 status（仅本任务目标）：tracked manifest 为修改一行，new bundle 是未跟踪文件；其它原有
+single dirty 文件未纳入、未清理。运行时 bridge 没有在本节修改。此阶段故意不运行 static preflight：
+single 尚未由 Sol 提交，`source.single_tracked_clean` 必须继续 fail-closed，不能把准备态宣称为 53/53。
+
+有效 identity：
+
+```text
+overlay manifest:      a6479c4991d9d1f9c406b4b62292ab7c1fd1f58137078c65b5b88dcea677b249
+bundle / runtime bridge: 5cce75ddb7b3d21476a2492f7769cedd43bbfbdd2430dfe69562443bd87becf3
+multi static config:   52a4dbb6bf92b480eb27878b5bb120358b34fa00b77d9fb78a5ca43a178c1726
+multi manifest:        4e6e813d3cf4ed7099c1c48c24f5e01bd5d061df0b0d15a745b76df94d7926d1
+multi source manifest: 500d70948c7d721cff2a80a604020970be7dba6fa4d168455266756a9365bdd7
+```
+
+阻断：等待 Sol 审核并形成 single 公共 identity commit，随后才可同步新的 single commit 到 multi frozen
+identity 并复跑 static 53/53；此前不得签发 preflight package 或进入 smoke。
+
+## 37. 第 30 节 bridge 安装 mode 收敛（无实验）
+
+更正第 36 节证据中的 mode 记录：当时运行时
+`/home/houslakers/swarm_ws/src/Swarm-LIO2/swarm_lio/scripts/px4_bridge.py` 实际为 `0775`，并非所记的
+`0755`；bundle source 和 overlay 清单始终为 `0755`。本节唯一变更是将该运行时文件 mode 从 `0775` 收紧为
+`0755`；未修改任何字节、SHA-256、bundle、overlay 清单、installer、multi config/manifest/source-hash、
+安全门或其它外部 dirty 文件，未执行 apply、实验、commit、push 或 approval package。
+
+修正前后内容 hash 均为：
+
+```text
+5cce75ddb7b3d21476a2492f7769cedd43bbfbdd2430dfe69562443bd87becf3
+```
+
+修正后运行时 bridge 与 bundle source 均为 `0755`，并且二者 SHA-256 相同。
+
+离线验证（只读，未 apply）：
+
+```text
+stat -c '%a %n' runtime_bridge bundle_bridge
+755 runtime_bridge
+755 bundle_bridge
+
+sha256sum runtime_bridge bundle_bridge
+both: 5cce75ddb7b3d21476a2492f7769cedd43bbfbdd2430dfe69562443bd87becf3
+
+apply_range20m_omnidirectional_overlay.sh --verify-bundle
+OVERLAY_BUNDLE_READY files=21 base=57c1f34
+
+apply_range20m_omnidirectional_overlay.sh --check
+OVERLAY_CHECK_OK files=21 base=57c1f34
+
+PYTHONPYCACHEPREFIX=/tmp/swarmlio_multi_gate30_pycache python3 -m py_compile runtime_bridge
+PASS
+
+python3 runtime_bridge --self-test
+px4_bridge self-test: PASS
+
+sha256sum -c config/2uav_source_hashes.sha256
+PASS: 15/15
+
+multi git diff --check; single manifest git diff --check
+PASS (no output)
+```
+
+single task pathspec status 仍仅为 overlay manifest 的一行修改和新 bundle 未跟踪文件；等待 Sol 精确 pathspec
+提交公共 identity。尚未同步 single commit 或重跑 static 53/53，故不得签发 preflight 或进入 smoke。
+
+## 38. 第 32 节 bridge/bundle trailing-whitespace 同步清理（无实验）
+
+按第 32 节，只机械删除运行时 bridge 与 bundle 的第 150、168、198、331 行中只含空格的空白行尾随空格；
+保留四个空白行本身，未修改非空白代码、readiness 行为、参数、installer、安全门或其它外部 dirty 文件。
+两份文件保持 `cmp` 一致且 mode 均为 `0755`。未 commit/push、overlay apply、启动 ROS/Gazebo/preflight/smoke
+或创建 approval package。
+
+精确回归 diff 由当前文件重构清理前的四处空白，严格只得到这四个 hunks：
+
+```text
+line 150: "    " -> ""
+line 168: "    " -> ""
+line 198: "        " -> ""
+line 331: "            " -> ""
+```
+
+两份文件的全文件 trailing-space probe 均为空；清理后内容 SHA-256 相同：
+
+```text
+b673080c46916790431f257aea1a27fa8616adeb6b409fe22968e0316b57f34f
+```
+
+公共 overlay 清单仍为 21 条，仅 bridge 条目的 hash 从第 29 节 identity 更新为上述清理后 hash；
+source/mode/root/target 与其它 20 条不变。multi static config、smoke manifest 与 source-hash manifest
+已同步该级联 identity。
+
+离线验证（均未 apply）：
+
+```text
+cmp runtime_bridge bundle_bridge
+PASS
+
+stat -c '%a %n' runtime_bridge bundle_bridge
+755 runtime_bridge
+755 bundle_bridge
+
+bridge exact whitespace probe + reconstructed-before diff
+PASS: exactly lines 150, 168, 198, 331; no remaining trailing spaces
+
+apply_range20m_omnidirectional_overlay.sh --verify-bundle
+OVERLAY_BUNDLE_READY files=21 base=57c1f34
+
+apply_range20m_omnidirectional_overlay.sh --check
+OVERLAY_CHECK_OK files=21 base=57c1f34
+
+PYTHONPYCACHEPREFIX=/tmp/swarmlio_multi_gate32_pycache python3 -m py_compile runtime_bridge
+PASS
+
+python3 runtime_bridge --self-test
+px4_bridge self-test: PASS
+
+sha256sum -c config/2uav_source_hashes.sha256
+PASS: 15/15
+
+multi git diff --check; single overlay manifest git diff --check
+PASS (no output)
+
+single git diff --cached --name-status
+PASS: empty index
+```
+
+有效 identity：
+
+```text
+runtime/bundle bridge: b673080c46916790431f257aea1a27fa8616adeb6b409fe22968e0316b57f34f
+overlay manifest:       bc9864fc24741526548094d425cda877a84d27aabf0ab92cdef08b206fecd2d0
+multi static config:    dca22b88a64bd7d3dcd523b62ca1eaf8231aa2cac7c7025b26b5e3c7f600552d
+multi smoke manifest:   f36c7517204c51131d8cfa389e151b0751c4f695d3f42ee6038058b1020a0e8c
+multi source manifest:  38df7ad265ed4f6534184c4bf273ead47bd0e018fbb0d1b186bd42475bdfe82e
+```
+
+阻断保持：single 公共 identity 尚未由 Sol 以精确 pathspec 提交，multi 也尚未同步新的 single commit；
+不得签发 preflight package 或进入 smoke。
+
+## 39. 第 33 节 multi frozen single identity 同步与 static 53/53（无实验）
+
+按第 33 节，仅将 `config/2uav_static.yaml` 的 `frozen.single_commit` 与
+`experiments/manifests/2uav_smoke.yaml` 的顶层 `single_commit` 同步为已审核完整 single commit
+`aea4b71cff10061f3211ffa1d2b21a6500caac78`，并仅更新这两个文件在
+`config/2uav_source_hashes.sha256` 中的级联 hash。未修改任何源码、overlay/bundle/installer、参数、
+approval package、外部仓库、runroot 或正式状态文件；未 commit/push、启动 ROS/Gazebo/live preflight/smoke
+或创建 approval package。
+
+single 身份已验证：`main@aea4b71cff10061f3211ffa1d2b21a6500caac78`，tracked-clean。该 commit 的
+精确 file list 仅为：
+
+```text
+A history/RUN-20260822T000000Z-px4-bridge-readiness-identity/px4_bridge.py
+M platform_overlays/range20m_omnidirectional_v1/current_config.sha256
+```
+
+overlay identity 保持已审核内容：manifest
+`bc9864fc24741526548094d425cda877a84d27aabf0ab92cdef08b206fecd2d0`，bridge
+`b673080c46916790431f257aea1a27fa8616adeb6b409fe22968e0316b57f34f`，installer hash 未变。
+
+离线验证：
+
+```text
+single HEAD/full commit + tracked-clean + exact commit file list
+PASS
+
+overlay --verify-bundle / --check
+PASS: 21/21 CURRENT
+
+py_compile runner/preflight/bridge
+PASS
+
+two_uav_runner.py --self-test
+PASS
+
+two_uav_preflight.py --self-test
+PASS
+
+px4_bridge.py --self-test
+PASS
+
+sha256sum -c config/2uav_source_hashes.sha256
+PASS: 15/15
+
+python3 scripts/two_uav_preflight.py --mode static --config config/2uav_static.yaml \
+  --manifest experiments/manifests/2uav_smoke.yaml
+PASS: passed=true, 53/53
+
+git diff --check
+PASS (no output)
+```
+
+最终 identity：
+
+```text
+single commit:          aea4b71cff10061f3211ffa1d2b21a6500caac78
+multi static config:    d106f0ca52bfcad5800d65e9a0f6692a074631cea965e96f5880e99d23461de0
+multi smoke manifest:   5e841a9662fb49b1289951f490b094843740412f9845e122627e8d069fe1a871
+multi source manifest:  1a6e4caa4d784016e763942a601f22c29e1f247a23a582c7927106fc07943ef7
+```
+
+静态 53/53 仅恢复身份链，不构成 preflight 授权；是否签发新的单次 diagnostic preflight package 仍完全由
+Lead/Sol 审核决定，smoke 继续禁止。
+
+## 40. 第 34 节 available peer inflation-neighborhood endpoint mask（无实验）
+
+按第 34 节，仅修改 `scripts/two_uav_gt_mapper.py`、其在 source-hash manifest 中的 hash 与本记录。未修改
+`OCCUPANCY_INFLATION_M=0.35`、collision primitives、freshness/slop、source-ray、range/downsample、起点地图、
+manifest/static config、collector/runner/preflight、参数、approval package 或正式状态文件；未启动 ROS、Gazebo、
+preflight/smoke，未 commit/push。
+
+available peer pose 下，endpoint mask 现在严格为：
+
+```text
+exact_collision_endpoint OR exact_distance_to_frozen_collision<=0.35
+```
+
+最终删除为上述两个 endpoint mask 与既有 exact collision ray mask 的 union。ray 仍只相交原始冻结 collision
+primitives，不对 inflation 体积做射线扩张。missing/stale/uncomparable/nonfinite peer 与此前一样原数组全量
+保留，不推测删除。
+
+新增独立累计 `peer_inflation_endpoint_candidates`；保留 exact endpoint 与 ray counters。每 scan 删除数是三
+mask union，因而无重复计数并保持 `published_points = registered_points - peer_removed_points`。hover provenance
+继续只记录最终 published array；available pose 不进入 `peer_unavailable_*` diagnostics，故新 mask 删除的
+candidate 不会误记为 published hover voxel。
+
+self-test 新增/覆盖：primitive 内、外部但冻结 exact-distance `<=0.35`、闭边界 tangent、刚好超界、rotated
+primitive、三 mask overlap union、远环境点保留、available/stale/missing/nonfinite、输入不变与计数恒等式。
+以 uav1 hover coordinate 的合成点 `(1.9, 0, 1.5)` 证明旧 exact endpoint 会保留、当前 frozen-neighborhood
+endpoint 会删除；超出邻域点保持发布。该离线测试不声称 runtime 问题已消失。
+
+离线验证：
+
+```text
+PYTHONPYCACHEPREFIX=/tmp/swarmlio_multi_gate34_pycache python3 -m py_compile scripts/two_uav_gt_mapper.py
+PASS
+
+python3 scripts/two_uav_gt_mapper.py --self-test
+two_uav_gt_mapper self-test: PASS
+
+sha256sum -c config/2uav_source_hashes.sha256
+PASS: 15/15
+
+python3 scripts/two_uav_preflight.py --mode static --config config/2uav_static.yaml \
+  --manifest experiments/manifests/2uav_smoke.yaml
+PASS: passed=true, 53/53
+
+git diff --check
+PASS (no output)
+```
+
+本节 identity：
+
+```text
+mapper:                 c90383cb1083b554e50355405353d5a5e3ed3ce9a586a2d30962f8fc40a5c4e9
+multi source manifest:  a932046b25198a692d1932f4cf3b315692b6d4a85d137cf4f5e21b2ee0f6b5c5
+frozen smoke manifest:  5e841a9662fb49b1289951f490b094843740412f9845e122627e8d069fe1a871
+```
+
+残余风险：该修复具有运行期 peer echo/inflation 证据支撑，但当前证明仍仅为离线几何与静态合同；是否签发
+新的 diagnostic preflight 只能由 Lead/Sol 决定，smoke 仍禁止。
+
+## 41. 第 36 节 occupancy snapshot 与 runroot-local resource profiler（无实验）
+
+按第 36 节，仅修改 `scripts/two_uav_collector.py`、`scripts/two_uav_runner.py`、
+`scripts/two_uav_preflight.py`、`config/2uav_static.yaml`、
+`config/2uav_source_hashes.sha256` 与本记录。未修改 RACER、GT mapper、manifest、approval package、
+正式状态文件或外部仓库；未启动 ROS、Gazebo、live preflight/smoke，未 commit/push。
+
+collector 将 occupancy 从连续 5 s freshness 通道改为 startup-presence：在 startup grace 内必须成功解析至少一帧，
+缺失或解析异常仍 fail-closed；已出现的 occupancy 不再因地图大快照间隔超过 5 s 触发 stale。odom、cloud、health，
+以及运行期 pos_cmd/ACK freshness、trajectory presence、ACK timeout、TF/topic-owner/process-death/abort 等既有门
+未放宽。occupancy subscriber 使用 `queue_size=1`，callback 只保存最新 frame；flush 按冻结的 2.0 s sim-time
+period 处理 coverage union。每 UAV metrics 记录 received/processed/coalesced、消息/处理 wall+sim time 与最近
+callback/处理耗时，解析异常继续写 abort request。
+
+runner 增加每 1 wall s 的低开销 `/proc` sampler，写入 runroot append-only
+`resource_usage.jsonl`。按启动 role 聚合其进程树 CPU ticks/delta、RSS、threads 与 PID 列表，同时记录 wall、sim、
+loadavg 和 MemTotal/MemAvailable；PID 消失或读取失败只标为 `evidence_missing`，不改变生命周期控制。preflight/smoke
+结果汇总提供 p50/p95/max RSS、累计 CPU delta 与 top CPU consumers。live 与 final gate 均 fail-closed 要求 resource
+profile schema/records 完整；这不替代 occupancy startup presence 与 coverage available 的 final 要求。
+
+static contract 固定：`occupancy_contract: startup_presence`、`coverage_coalesce_sim_s: 2.0`、
+`resource_sample_wall_s: 1.0`，而 `freshness_s` 保持 5.0。preflight static 明确验证上述值。
+
+离线验证（均未启动实验）：
+
+```text
+PYTHONPYCACHEPREFIX=/tmp/swarmlio-pyc-36 python3 -m py_compile \
+  scripts/two_uav_collector.py scripts/two_uav_runner.py scripts/two_uav_preflight.py
+PASS
+
+python3 scripts/two_uav_collector.py --self-test
+PASS: startup presence、occupancy 非连续 stale、其他连续通道/ACK fail-closed
+
+python3 scripts/two_uav_runner.py --self-test
+PASS: resource schema、CPU delta、RSS p95、PID disappearance evidence_missing
+
+python3 scripts/two_uav_preflight.py --self-test
+PASS
+
+sha256sum -c config/2uav_source_hashes.sha256
+PASS: 15/15
+
+python3 scripts/two_uav_preflight.py --mode static --config config/2uav_static.yaml \
+  --manifest experiments/manifests/2uav_smoke.yaml
+PASS: passed=true, 53/53
+
+git diff --check
+PASS (no output)
+```
+
+本节 identity：
+
+```text
+collector:             0bc92bb15244cccdc604b5416105575f4e7ba60d158928656c0436174fdc6ec6
+runner:                aa87e9103b3ce3f599abe00c59d8f4eaa6400eb32c6a794f9e18d3a604bd7251
+preflight:             0b9f93e36f7a7b7c580c05c8babfc4733d22296883a8b90bc5f33381d4d918c0
+static config:         d269f96c3c59fc15035ee8fcb0d47b97ae41db60f6ad00c726a8ae783e38c303
+source-hash manifest:  43f9ce10fc457ea7ff10863546201ad993d26795351a7ad18950389141227bbe
+frozen smoke manifest: 5e841a9662fb49b1289951f490b094843740412f9845e122627e8d069fe1a871
+```
+
+仍为离线合同与自测证据，不构成实验授权；是否签发任何新的 diagnostic preflight package 完全由 Lead/Sol 审核决定，
+smoke 继续禁止。
+
+## 42. 第 37 节 captured-frame 竞态与完整 resource profile（无实验）
+
+按第 37 节，只修改 `scripts/two_uav_collector.py`、`scripts/two_uav_runner.py`、
+`scripts/two_uav_preflight.py`、`config/2uav_source_hashes.sha256` 与本记录。未修改
+`config/2uav_static.yaml` 的冻结值、manifest、GT mapper、RACER、approval package、旧 runroot 或正式状态文件；
+未启动 ROS、Gazebo、preflight/smoke，未 commit/push。
+
+修复 collector 的 captured-frame 提交竞态：解析完成的 captured occupancy frame 现在始终提交
+coverage/presence、processed 与 last processed 时间；仅当 `pending_occupancy is captured` 才清空 pending。
+因此 parse 期间到达的 newer frame 保持 pending，留给下一 coalesced 周期处理，而不会让持续大消息流将已成功
+解析的旧帧全部丢弃。callback 与 processing duration 已拆分；coverage 还提供 received/processed/coalesced、
+last message/processed wall+sim 与按当前 report reference 计算的 message/processed age。零 frame/解析异常仍
+fail-closed，occupancy 仍不进入连续 5 s stale 集合，其他连续与 ACK/TF/owner/process gates 未放宽。
+
+runner profiler 在第一个 role spawn 前创建并保留动态 `processes` mapping；每次 role spawn 及 readiness 轮询按
+1 wall s 限频采样，故覆盖 PX4/Gazebo/RACER 启动与 readiness。soak 从现有 collector telemetry JSONL 读取 sim
+time，monitor 使用既有 clock probe；不会为 profiler 新增 subprocess 高频采样。任何时刻取不到 sim 都写
+`sim_s: null, sim_evidence_missing: true`，不伪造时间。每条 record 现含 wall delta、sim、RT factor、CLK_TCK
+和每 role 归一化 `cpu_cores`；summary 输出 role CPU-core p50/p95/max、RSS p50/p95/max、top consumers 与有效
+RT 样本及 RT p50/p95/max。PID 消失仍只是 `evidence_missing`，不改变控制路径。live schema 同步要求新字段。
+
+离线验证（均未启动实验）：
+
+```text
+PYTHONPYCACHEPREFIX=/tmp/swarmlio-pyc-37 python3 -m py_compile \
+  scripts/two_uav_collector.py scripts/two_uav_runner.py scripts/two_uav_preflight.py
+PASS
+
+python3 scripts/two_uav_collector.py --self-test
+PASS: 确定性 A parse 期间 B 替换；A 计入 coverage/presence，B 保持 pending，下一周期清空 B
+
+python3 scripts/two_uav_runner.py --self-test
+PASS: fake /proc + fake clock 覆盖动态 startup role、wall delta、CLK_TCK CPU normalization、
+sim missing、RT、PID disappearance、CPU/RSS p50/p95/max
+
+python3 scripts/two_uav_preflight.py --self-test
+PASS: profile schema（wall delta/sim missing/CLK_TCK）正反测试
+
+sha256sum -c config/2uav_source_hashes.sha256
+PASS: 15/15
+
+python3 scripts/two_uav_preflight.py --mode static --config config/2uav_static.yaml \
+  --manifest experiments/manifests/2uav_smoke.yaml
+PASS: passed=true, 53/53
+
+git diff --check
+PASS (no output)
+```
+
+本节 identity：
+
+```text
+collector:             1685dcd64a442423fd3c00d4c1062e84e2fa667f01e2aee1009e195a7ad36eca
+runner:                f818feec31d8ad8bc480b11d851580bd7d3fdb0fca571a5879bd83ba5bff41f2
+preflight:             50fd9d421b64080f9b8616321a85032bd1b7ce4204276ba67ddd5fb2b69eac92
+source-hash manifest:  0d240a7df3f442ded8eca4b0ae9bfc72b5995272fdfe501cd18824c67cef22ff
+static config unchanged:d269f96c3c59fc15035ee8fcb0d47b97ae41db60f6ad00c726a8ae783e38c303
+mapper unchanged:      c90383cb1083b554e50355405353d5a5e3ed3ce9a586a2d30962f8fc40a5c4e9
+manifest unchanged:    5e841a9662fb49b1289951f490b094843740412f9845e122627e8d069fe1a871
+```
+
+这些是离线实现与诊断证据，不构成实验或 package 授权；是否重新签发 diagnostic preflight package 仍仅由
+Lead/Sol 决定，smoke 继续禁止。
+
+## 43. 第 38 节公共 compute overlay 准备（未 apply/未实验）
+
+按第 38 节准备 compute baseline：运行时 RACER XML 仅将 `sdf_map/resolution` 从 0.05 改为
+0.10，并新增 `map_ros/all_map_publish_period=2.0`；`map_ros.cpp` 仅读取该参数（默认 0.2）、
+拒绝非有限/非正值并以 ROS/sim time 的 elapsed period 节流 `publishMapAll()`。local map、ESDF、融合、
+规划和控制 timers 未改；sim time 回退会立即重新建立 full-map cadence。两文件逐字节复制到新的 immutable bundle
+`history/RUN-20260822T201500Z-compute-overlay-prepared/`，overlay manifest 恰替换这两个条目，仍为 21 条，
+root/target/mode 与其他 19 条不变。未执行 overlay `--apply`。
+
+50×50×3 m 地图 voxel：0.05 m 为 60,000,000，0.10 m 为 7,500,000（1/8）。该比例只说明主要
+per-voxel SDF buffer 的理论常驻量下界下降；double/short/flag 等实际 buffer 组合与共享页决定 RSS，不能将
+理论字节直接等同实测 RSS。2/4 UAV 的该类下界分别为每机 buffer 字节数的 2/4 倍。
+
+runner 增加 fail-closed 负载门：启动前 `MemAvailable>=8 GiB` 与 `load1<10`；stack-ready 与 soak
+`MemAvailable>=3 GiB`、相对启动基线无 swap-in/out。缺失证据、低内存、load 或 swap 都失败。profile 已保留
+连续 clock 采样得到的 overall RT 字段，且不以瞬时 collector flush 混叠作为通过依据。preflight static/live
+增加 resolution 与 full-map period readback。
+
+离线验证：
+
+```text
+single overlay --verify-bundle: PASS 21
+single overlay --check: PASS 21/21 CURRENT (未 --apply)
+cmp runtime/bundle XML,map_ros.cpp: PASS
+git -C single diff --cached --name-only: empty
+git diff --check (multi/single): PASS
+
+cd /home/houslakers/racer_ws && catkin_make -DCMAKE_BUILD_TYPE=Release --pkg exploration_manager
+PASS (map_ros.cpp rebuilt; exploration_node linked)
+
+PYTHONPYCACHEPREFIX=/tmp/swarmlio-pyc-38 python3 -m py_compile runner preflight
+runner/preflight self-test: PASS（含 8/3 GiB、load、swap、缺失证据边界）
+sha256sum -c config/2uav_source_hashes.sha256: PASS 15/15
+```
+
+identity：overlay `7ae5413c0f2197f15bba038635c2dc9f631ad98aeeb0bb4f452d552422cafc63`；
+XML `9c0ce4b2a489e019aee01cfcf124a11d66cdcc7bc10cdc5b82b69cdc3aa73721`；
+map_ros `fc23045c16e2f81aa9110a0ede8b2161e50805303a3a361bccfd1609f51e70ae`；
+multi source hash `82565a1b8c46a39142eec748319fb0dc79799fabc21efd6880ddffbe13bc410e`。
+
+single overlay 尚未由 Sol 精确 pathspec commit，故 multi single commit 未伪造更新；prepared static identity
+必须保持 fail-closed，不能签发 package 或启动 preflight/smoke。
+
+## 44. 第 40 节 compute XML trailing-whitespace 清理（无实验）
+
+按第 40 节先安全执行 single 的精确 pathspec `git restore --staged --`，取消暂存 compute bundle 两文件和
+overlay manifest，保留工作树内容；随后确认 single index 为空。仅删除 runtime
+`single_drone_planner.xml` 的 10 处历史 trailing whitespace（25、62、64–68、74、374、386 行），未重排或
+改变 XML 值。清理后 XML 逐字节同步至 immutable bundle；bundle `map_ros.cpp` 未修改并保持
+`fc23045c16e2f81aa9110a0ede8b2161e50805303a3a361bccfd1609f51e70ae`。
+
+single overlay manifest 保持 21 项，恰仅 XML bundle 条目的 SHA 变为
+`6739a77cc56bcf91a9525a0ea4b6932b40c1994cb485e437cbed9e587072d227`；其派生 overlay manifest 为
+`68ceb54faa24f4cc97396634bfc3d611f8e40a6db89999d3cbabc112092ccf62`。multi 仅同步该 manifest identity 及
+必要 source hash；`single_commit` 未改变。未 apply overlay、commit/push、启动 ROS/Gazebo/preflight/smoke 或
+创建 package。
+
+验证：XML parse/value probe 确认 resolution 仍 `0.10`、all-map period 仍 `2.0`；`rg '[ \t]+$'` runtime XML
+无输出；runtime/bundle `cmp` PASS；overlay `--verify-bundle`/`--check` 均为 21/21；single index empty；
+multi/single `git diff --check` 无输出；runner/preflight py_compile/self-test PASS；source hash 15/15 PASS。
+
+static 为预期 prepared-not-committed fail-closed：54/55，唯一失败
+`source.single_tracked_clean`（新的 single overlay manifest 尚未由 Sol 提交）。当前 preflight 增加的 compute
+readback 合同使总数从旧 53 变为 55；未据此创建 package。
+
+本节 multi source-hash manifest：
+`f23b290e5110fd49e79fdced842a4de78287310c313a5d56c6d6cc0b604ebb46`。
+
+## 45. 第 42 节 multi frozen single identity 同步（无实验）
+
+按第 42 节，仅将 `config/2uav_static.yaml` 的 `frozen.single_commit` 与
+`experiments/manifests/2uav_smoke.yaml` 的 `single_commit` 从
+`aea4b71cff10061f3211ffa1d2b21a6500caac78` 同步为已审核 single `main` commit
+`8c8ddf2add3f7b3ce4f9943583fd945f16b1bd91`，并仅更新这两项的派生 source hash。
+overlay manifest SHA 保持 `68ceb54faa24f4cc97396634bfc3d611f8e40a6db89999d3cbabc112092ccf62`；
+resolution、full-map period、资源门及所有其他代码/参数不变。未 commit/push、apply overlay、启动 ROS/Gazebo/
+preflight/smoke 或创建 approval package。
+
+验证：single HEAD 精确为上述 commit，index 为空，tracked tree clean；multi runner/preflight py_compile 与
+self-test PASS；source hash 15/15 PASS；static `55/55` PASS；multi/single `git diff --check` 无输出，single
+cached file list 为空。
+
+本节 identity：static config `a0fb9077b67d48cf30ed233a886954966e57df331c73c3f8f2ffa6958b44faed`，
+smoke manifest `5cc07755cb46cfb13fda34fa96b9e528766340541c8eb919f62f7a000381e3c5`，source-hash manifest
+`b275c3e06238b9e7a00653bd3b2439e893b47d947b7f085c64fa3974fb25c99a`。
+
+static 55/55 仅恢复可审核的公共 identity；不构成 preflight 授权，是否签发新 package 仍完全由 Lead/Sol 决定，
+smoke 继续禁止。
+
+## 46. 最小资源治理方案与离线资源证据（无实验）
+
+任务来源：`state/SESSION_HANDOFF.md` 交接指令 + RUN-20260821T202125Z 资源证据。本任务为
+**治理方案分析与离线验证**，未修改任何源码、manifest、config、launch、overlay、approval package、
+receipt 或正式状态文件；未启动 ROS、Gazebo、preflight 或 smoke，未 commit/push。实现结果只记录于本文件。
+
+### 46.1 运行证据解析（只读，两轮 profile 对比）
+
+对 `resource_usage.jsonl` 的逐角色进程树 RSS/CPU 基线做只读解析（脚本见
+`/tmp/resource_analyze.py`，仅统计不落盘任何新实验产物）：
+
+```text
+RUN-20260821T194922Z (0.05 m, 未 apply compute overlay):
+  gazebo      max_rss=4.933 GiB  max_cores=3.14  pids=18
+  racer       max_rss=6.917 GiB  max_cores=2.20  pids=9
+  bridges     max_rss=0.130 GiB  max_cores=2.96  pids=3
+  gt_mapper   max_rss=0.098 GiB  max_cores=0.46  pids=1
+  collector   max_rss=0.052 GiB  max_cores=0.15  pids=1
+  samples=41  min MemAvailable=1.25 GiB
+
+RUN-20260821T202125Z (0.10 m, compute overlay 生效; PREFLIGHT_FAILED_RESOURCE_GATE_SWAP):
+  gazebo      max_rss=4.932 GiB  max_cores=3.20  pids=18
+  racer       max_rss=1.667 GiB  max_cores=0.61  pids=9
+  bridges     max_rss=0.130 GiB  max_cores=3.28  pids=3
+  gt_mapper   max_rss=0.102 GiB  max_cores=0.52  pids=1
+  collector   max_rss=0.004 GiB  max_cores=0.00  pids=1
+  samples=17  min MemAvailable=6.35 GiB
+```
+
+结论（归因）：
+
+- **compute overlay 已兑现地图侧主收益**：`racer` 进程树 RSS 从 6.917 → 1.667 GiB（−5.25 GiB），
+  栈总 RSS 从 ~11.1 → ~6.8 GiB（−4.3 GiB），最低 MemAvailable 从 1.25 → 6.35 GiB。0.10 m overlay
+  使 per-voxel buffer 的理论下界降为 1/8（60M→7.5M voxels），实测与第 43 节预测量级一致。
+- **剩余主导消费者是 sim 基础设施而非算法**：`gazebo` 进程树（gzserver + 2×PX4 SITL + 2×livox
+  ray 插件）RSS 在两次运行均为 ~4.93 GiB，与地图分辨率无关。传感器 samples=24000、update_rate=10、
+  机型/物理、世界均为冻结合同，不能在不改变安全语义的前提下继续拆分。
+- **本次失败是 fail-closed 按设计生效**：startup 门 load1=2.01、MemAvailable=12.69 GiB 通过；running
+  门 MemAvailable=6.41 GiB（≥3 GiB 满足）但 `swap_in` 29491→29619（+128 KB）触发
+  `swap activity observed`。+128 KB 是启动爬升期的瞬时残留换页（本 boot 累计 swap_out 已 221,525 KB，
+  主要来自上一轮 0.05 m 运行），资源门拒绝它是正确行为；不得放宽门来掩盖。
+
+### 46.2 内存预算模型（2-UAV 全栈，来自实测）
+
+```text
+MemTotal            = 16.17 GB (15.42 GiB, 本机)
+非栈基线(内核+系统+外部进程) ≈ 2.73 GiB   (startup 时 15.42−12.69)
+栈 MemAvailable 消耗          ≈ 6.28 GiB   (12.69−6.41, 含共享页重复计数的 RSS 上限 6.84 GiB)
+running 时 MemAvailable      ≈ 6.4 GiB    (gate 采样 6.88 GB; profile 最低 6.35 GiB)
+```
+
+### 46.3 方案评估
+
+**方案 A：增加物理内存至 32 GB（优先）**
+
+- 32 GB 主机（~29.8 GiB 可用）推算：startup MemAvailable ≈ 29.8−2.7 = 27.1 GiB（≥8 GiB 门）；
+  running MemAvailable ≈ 27.1−6.3 = **20.8 GiB**（≥3 GiB 门，余量 ~17.8 GiB）；启动/运行全程
+  pswpin/pswpout 保持 0，无残留换页债务。
+- 确定性消除 swap-in 风险，且是 3-4 UAV 的必要前提（每架 UAV 增加约 ~3 GiB 栈 + sim 基础设施）。
+
+**方案 B：关闭外部竞争负载（必要的操作纪律，但不充分）**
+
+- 当前桌面负载（firefox ~0.9 GiB + cursor 多进程 ~2.4 GiB + gnome-shell ~0.8 GiB + Xorg ~0.3 GiB +
+  sogou/snap 等）合计 RSS ~5 GiB，其中可回收匿名页对 MemAvailable 的净增益约 1–3 GiB。
+- 16 GB 上即便全关，running MemAvailable ≈ 6.4+2 ≈ 8.4 GiB，仍可能因上一 boot 残留 swap 页被触碰而
+  触发 +128 KB 级 swap-in；无法保证不 fail。必须与方案 A 或全新 boot + 无历史 swap 债务配合。
+
+**方案 C：进程/地图负载拆分（已兑现主要部分，无进一步安全余量）**
+
+- 地图侧拆分已由 0.10 m overlay 完成（racer −5.25 GiB）。剩余 gazebo ~4.93 GiB 是 sim 基础设施，
+  受冻结合同约束；bridges 0.13 GiB / gt_mapper 0.10 GiB / collector 0.004 GiB 无可拆分空间。
+- 结论：在"不改变安全语义"约束下，代码侧没有新的有意义拆分。
+
+**方案 D（不采用）：降低资源门** —— 8/3 GiB 与 swap-free 门是正确防线，本次失败是资源不足的真实
+信号；不降门、不忽略 swap、不改 freshness/occupancy/安全合同。
+
+### 46.4 最小治理方案（推荐顺序）
+
+1. **主机物理内存升至 32 GB**（优先、确定性、可长期复用；同时是 3-4 UAV 的硬件前提）。
+2. **每次运行前关闭外部竞争负载**（firefox/cursor/gnome/Xorg 等）并记录 MemTotal/MemAvailable/pswpin/
+   pswpout 基线；推荐在全新 boot 后执行，避免历史 swap 债务。
+3. **保持全部 fail-closed 门不变**（startup MemAvailable≥8 GiB、load1<10；running MemAvailable≥3 GiB、
+   swap-in/out 不增长；缺失证据失败）。
+4. 当前 16 GB 主机在完成 32 GB 升级前，不得再次签发 preflight package；smoke 继续禁止。
+
+### 46.5 离线验证（只读系统证据，未启动实验）
+
+```text
+free/proc/meminfo: MemTotal=16,166,636 kB; MemAvailable=10,281,144 kB (当前空闲)
+/proc/vmstat: pswpin=0, pswpout=0 (主机已重启，无历史 swap 债务)
+SwapTotal=2,097,148 kB; SwapFree=2,097,148 kB
+loadavg=0.74 1.43 2.24; nproc=20
+ps -eo pid,rss,comm --sort=-rss 顶部: firefox~975MB, cursor~711MB, gnome-shell~549MB,
+  Xorg~281MB, sogou~174MB, snap-store~171MB … 外部负载合计 RSS ~5 GiB
+
+资源门代码复核: scripts/two_uav_runner.py capacity_gate() 固定
+  startup minimum=8 GiB + load1<10; running minimum=3 GiB + swap_in/out 与 baseline 逐字节相等;
+  config/2uav_static.yaml 冻结 resource_startup_mem_available_gib=8,
+  resource_running_mem_available_gib=3, resource_swap_activity=abort。门未被修改。
+```
+
+### 46.6 残余风险
+
+- 上述 32 GB 推算基于单次 running gate 采样与进程树 RSS 上限，实际不同主机/BIOS 内存量、共享页比例
+  会使数值 ±1–2 GiB；需要 32 GB 硬件到位后以同一 manifest 重跑一次 diagnostic preflight 实证。
+- 本次没有有效连续 RT 样本（`sim_evidence_missing: true`），compute baseline 的 RT≥0.5 目标仍未验证。
+- 本任务不构成任何实验或 package 授权；是否升级硬件、是否签发新的单次 diagnostic preflight package
+  完全由 Lead/Sol 决定，smoke 继续禁止。
+
+有效身份（本任务未改任何文件，以下为上一审核基线，未变化）：
+
+```text
+runner:  4ee36556e0cf5ddefa9bed7cf753e5ca00cd13512c69d6600e18e101fe03b8f1
+preflight: 0739418767fa19bc35ecd302d7feb5c8feebe9c2578f1ad733b28cf3ae840ccd
+collector: 1685dcd64a442423fd3c00d4c1062e84e2fa667f01e2aee1009e195a7ad36eca
+gt_mapper: c90383cb1083b554e50355405353d5a5e3ed3ce9a586a2d30962f8fc40a5c4e9
+multi source-hash manifest: b275c3e06238b9e7a00653bd3b2439e893b47d947b7f085c64fa3974fb25c99a
+static config: a0fb9077b67d48cf30ed233a886954966e57df331c73c3f8f2ffa6958b44faed
+smoke manifest: 5cc07755cb46cfb13fda34fa96b9e528766340541c8eb919f62f7a000381e3c5
+```
+
+## 47. 当前 16 GB 主机（不升级硬件）的 2-UAV / 3-UAV 资源方案
+
+用户意见（本会话）：**当前不能升级主机**；若四机不可行，最多考虑三机。本任务只做方案与离线
+估算，未改任何源码/launch/config/manifest，未启动实验；四机结论先行记录：4-UAV 栈 RSS 预计
+~10.2-11.0 GiB，MemAvailable 消耗 ~9.5-10.1 GiB，16 GB 下 running 余量不足 1 GiB 且启动瞬态
+必触发 swap，**当前主机四机明确不可行**，故只给出 2-UAV 与 3-UAV 两套方案。
+
+### 47.1 关键归因：上次失败是“残留 swap 页重读”，不是运行中新增换页
+
+RUN-20260821T202125Z 数据（第 46 节已记录）：running 门失败时 `swap_in` 29491→29619
+（+128 KB），而 **`swap_out` 全程保持 221,525 KB 未增长**。pswpout 不变说明本轮没有发生新的
+换出；+128 KB swap-in 是**本 boot 早期（0.05 m 运行）被换出的页在本轮被触碰后重读**的残留债务。
+这直接决定治理优先级：**消除历史 swap 债务（全新 boot）比加内存前的任何代码改动都更直接**。
+
+当前主机只读状态（2026-08-22 检查）：`pswpin=0, pswpout=0, SwapFree=2,097,148 KB`
+（主机已重启，残留 swap 债务已清零）；`MemTotal=15.42 GiB, MemAvailable≈10.28 GiB,
+load1=0.74, nproc=20`；桌面负载合计 RSS ~5 GiB（firefox ~0.95 GiB、cursor 多进程 ~2.0 GiB、
+wechat ~0.29 GiB、gnome-shell ~0.55 GiB、Xorg ~0.28 GiB 等）。
+
+### 47.2 方案一：2-UAV（当前冻结范围，仅操作治理，零代码改动）
+
+目标：让冻结的 `2uav_smoke` manifest 的 diagnostic preflight 在当前主机通过 running 资源门。
+
+1. **运行前全新 boot 一次**，确认 `pswpin/pswpout=0`、SwapCached=0（清除残留 swap 页）。
+2. **运行前关闭外部竞争负载**：firefox/cursor/wechat/gnome/Xorg 等（合计 RSS ~5 GiB），
+   预期回收 MemAvailable 约 2-4 GiB；运行期间保持负载 1 < 3。
+3. **保持全部 fail-closed 门不变**：startup MemAvailable≥8 GiB、load1<10；running
+   MemAvailable≥3 GiB、swap_in/out 不增长。不做任何降门或参数放宽。
+4. 预期（推算）：startup MemAvailable ≈ 14-15 GiB（≥8 GiB 门），running MemAvailable ≈
+   8-9 GiB（较上次实测 6.41 GiB 提升 ~2-3 GiB），且无残留 swap 页可重读 → swap_in 保持 0
+   → 有较高把握通过 running 门。残余风险：启动爬升瞬态（gazebo 0→5 GiB、racer 0→1.7 GiB）
+   若瞬时触及换页仍会 fail-closed；需以一次诊断 preflight 实证。
+5. 成功后：由 lead 决定是否按第 19 节最小修复后再签发 smoke；本方案本身不授权 smoke。
+
+### 47.3 方案二：3-UAV（超出冻结范围，需 lead 批准扩大范围）
+
+**内存推算**（per-UAV 增量取自 2-UAV 实测，按 92% MemAvailable 消耗/RSS 折算）：
+
+```text
+gazebo(3)   ≈ 4.93 + 1.0~1.2 = 5.9~6.1 GiB   (每 UAV: PX4 SITL+mavros+livox 模型数据)
+racer(3)    ≈ 1.667 + 0.83   = 2.50 GiB
+bridges(3)  ≈ 0.130 + 0.065  = 0.20 GiB
+gt_mapper   ≈ 0.10 GiB (共享), collector ≈ 0.004 GiB
+3-UAV 栈 RSS      ≈ 8.4~9.2 GiB (mid 8.8)
+3-UAV MemAvail 消耗 ≈ 7.7~8.5 GiB (mid 8.1)
+running MemAvailable (外部负载关闭、全新 boot, 基线≈1.5~2.0 GiB)
+            ≈ 15.42 − 1.75 − 8.1 ≈ 5.6 GiB (范围 4.9~6.2) → 相对 3 GiB 门余量 ≈ 1.9~3.2 GiB
+```
+
+- **可行性结论：边界可行但风险高**。预算中值可过 3 GiB 门（余量 ~2.6 GiB），但启动瞬态
+  （3×SITL + 3×mavros + gzserver + 3×exploration 同时爬升）会显著压低瞬时 MemAvailable，
+  在 16 GB 上触碰换页的概率不低；且 3-UAV 每次实验消耗一个 package，失败成本高。
+- **所需范围扩大**（当前全部不存在，需 lead 批准后才能创建/修改）：
+  1. `config/3uav_static.yaml`（uav_count: 3；uav2：racer_id=3、sysid=3、
+     fcu 14542:14582、mavlink_udp 14562、mavlink_tcp 4562、gst 5602、cam 14532；topics
+     *_3、log_subdir uav2）；
+  2. `launch/3uav_px4_sitl.launch`（uav2 group、tgt_system=3）、`launch/3uav_racer.launch`
+     （exploration_node_3、drone_num=3、node_3 box 参数）、`launch/3uav_bridges.launch`
+     （px4_bridge_3、/uav2、odom_3）；
+  3. `experiments/manifests/3uav_smoke.yaml`（uav_count: 3、命令白名单、approval contract）；
+  4. `scripts/two_uav_collector.py` 接触分类需支持 uav2/iris_2（第 30-49 行硬编码 uav0/uav1）；
+     runner/preflight 的进程规格与 launch 路径需按 3uav 参数化。
+- **建议实施顺序**（与 lead 商定后）：
+  1. 先在 2-UAV 冻结 manifest 上完成 47.2 的实证（证明资源门行为可控）；
+  2. 批准范围扩大到 3-UAV 后，先做 **3-UAV 静态检查 + 单次 diagnostic preflight**（同一组
+     fail-closed 门），绝不可直接 3-UAV smoke；
+  3. 若 3-UAV preflight 仍触发 swap 门或 MemAvailable 低于 ~4 GiB 瞬态，则 3-UAV 在
+     16 GB 不成立，回退到仅 2-UAV。
+
+### 47.4 不采用项（与 47.2/47.3 共用）
+
+- 不降低资源门、不忽略 swap、不改 freshness/occupancy/安全合同；
+- 不通过延迟 running 门检查或跳过启动爬升来“消化”瞬态内存；
+- 不修改单机算法参数或 overlay（0.10 m 已是冻结基线）。
+
+### 47.5 本任务身份
+
+本任务未修改任何文件；下列 hash 与上一审核基线一致（sha256sum 复核）：
+
+```text
+runner:  4ee36556e0cf5ddefa9bed7cf753e5ca00cd13512c69d6600e18e101fe03b8f1
+preflight: 0739418767fa19bc35ecd302d7feb5c8feebe9c2578f1ad733b28cf3ae840ccd
+collector: 1685dcd64a442423fd3c00d4c1062e84e2fa667f01e2aee1009e195a7ad36eca
+gt_mapper: c90383cb1083b554e50355405353d5a5e3ed3ce9a586a2d30962f8fc40a5c4e9
+```
+
+## 48. D1 runner dropout 事件（2026-08-23）
+
+- 任务来源：`state/sol_plan_dropout.md` 第 3 节；高终端即时交接已签发。
+- 范围：**只实现 runner 级 dropout 事件，manifest 保持 `enabled: false`（D1 只解析不触发）**；
+  不启动实验、不改安全门、不临时 kill、不 commit/push。
+- 允许写入：`scripts/two_uav_runner.py`、`experiments/manifests/2uav_smoke.yaml`（仅增加
+  `dropout:` 段）、`state/terra_implementation.md`、`state/events.jsonl`（追加）。
+
+### 48.1 修改内容
+
+`scripts/two_uav_runner.py`：
+
+1. `parse_dropout_config(manifest)`：解析 `dropout:` 段（`enabled/vehicle/mode/trigger_sim_s/
+   cleanup_policy/record`），缺失或非法字段 fail-fast；无 `dropout` 段返回 `None`（向后兼容）。
+2. `dropout_target_nodes(config, dropout_config)`：纯映射 vehicle+mode → 待 kill 的 ROS 节点：
+   - `control_chain` 与 `node_level`：`/px4_bridge_{racer_id}`、`/exploration_node_{racer_id}`、
+     `/traj_server_{racer_id}`；
+   - `communication`：仅 `/px4_bridge_{racer_id}`。
+   - racer_id 来自 `config/2uav_static.yaml`（uav0→1、uav1→2），与 launch 接线一致。
+3. `dropout_due(dropout_config, elapsed_sim_s, triggered)`：纯一次性触发判定（enabled 且未触发
+   且 elapsed_sim_s ≥ trigger_sim_s）。
+4. `rosnode_pid()` / `rosnode_kill()`：通过 `rosnode info`/`rosnode kill` 的白名单 runner 事件，
+   不执行裸 shell kill。
+5. `execute_dropout(runroot, dropout_config, config, sim_s=None, ...)`：执行注入并写
+   `fleet/dropout.json`（`vehicle/mode/trigger_sim_s/sim_s/wall_s/pids/killed_nodes/missing_nodes/
+   cleanup_policy/record/reason=intentional_dropout`）。
+6. `monitor_until(active, duration_sim_s, dropout_config=None, config=None, ...)`：在
+   `monitor_until` 循环中按相对 sim 时间到达 `trigger_sim_s` 时触发一次 dropout，之后
+   `dropout_triggered=True` 禁止重复触发；abort/process-death 路径保持活跃。
+7. `action_launch()`：解析 manifest dropout 配置并传给 `monitor_until`；
+   `action_preflight()`：解析并 fail-fast 校验（拒绝非法配置，不消耗 package）。
+
+`experiments/manifests/2uav_smoke.yaml`：增加 `dropout:` 段（`enabled: false`），供 D3
+rehearsal 使用（届时由高终端改为 `enabled: true`）。
+
+### 48.2 验证证据（未启动实验）
+
+```text
+PYTHONPYCACHEPREFIX=/tmp/swarmlio-pyc-d1 python3 -m py_compile scripts/two_uav_runner.py
+py_compile PASS
+PYTHONPYCACHEPREFIX=/tmp/swarmlio-pyc-d1 python3 scripts/two_uav_runner.py --self-test
+two_uav_runner self-test: PASS（含 dropout 解析 fail-fast、target 映射、dropout_due 一次性判定、
+execute_dropout 落盘 fleet/dropout.json、monitor_until 触发/禁用/一次性/向后兼容）
+git diff --check scripts/two_uav_runner.py experiments/manifests/2uav_smoke.yaml
+PASS（无 trailing whitespace）
+```
+
+### 48.3 新 hash（D1 后）
+
+```text
+runner:  c64c46c610f45ec3258aaf24716c7fa80c78f31805134bd3ff9cfcf328169c4b
+smoke manifest: ae21426cb3a62761dc8650cebc6d10626a4089802a7e4efb62b100dac37fd4ef
+```
+
+### 48.4 语义说明与残余风险
+
+- 触发时机按 `monitor_until` 循环内的相对 sim 时间（`current_sim_s - start_sim_s ≥
+  trigger_sim_s`），即「进入 command 链/soak 完成后」的 elapsed sim 时间，与工作流 0.3 的
+  「起飞稳定 + 进入 command 链之后 ≥ 30 sim-s」一致。
+- kill 的是 ROS 节点（bridges/racer roslaunch 的子进程）；这些进程树仍被 `active["processes"]`
+  追踪，`stop_active` 的 descendant 闭包会回收掉线机残余节点，不会成为 survivors。
+- `communication` 模式只 kill bridge；`control_chain` 与 `node_level` 目前 kill 相同的三个节点，
+  差异体现在语义分类与后续 D4 的分类强化上，由 D0 语义层界定。
+- 残余风险：`rosnode kill` 依赖 ROS master 可达；若掉线机的节点已不在 `/rosnode list`，会记为
+  `missing_nodes` 而不算失败。D1 阶段 manifest 为 `enabled: false`，任何 launch/preflight 都
+  不会实际触发 dropout。
+
