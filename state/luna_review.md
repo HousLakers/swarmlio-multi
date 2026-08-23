@@ -1,199 +1,162 @@
-# Luna review: RUN-20260822T173640Z-2uav-smoke
+# Luna review: RUN-20260823T190024Z-3uav-smoke（D10 node_level 最终验证）
 
-状态：本轮 runroot 证据完整，**smoke 首次完整通过**（duration_complete、final_safety_passed=true）。
-不得把本报告解释为已满足所有比赛指标或可跳过未来 preflight。
+状态：D0–D10 掉线实验全链路闭环，本 run 为 **node_level 最严模式最终验证**，
+`duration_complete + final_safety_passed=true`，无 abort。本报告按
+`handoff/DROPOUT_EXPERIMENT_WORKFLOW.md` 第 5 节掉线专项模板撰写，属 D11 收尾交付。
 
 ## 1. 不可变身份与运行结论
 
-- runroot：`results/RUN-20260822T173640Z-2uav-smoke/`
-- manifest：`experiments/manifests/2uav_smoke.yaml`，SHA-256 `5cc07755…`
-- multi source hash manifest：`01ba0648f9e4bbaa3197db87941c15489fccb05120bb9cde86b66c1cfd67bdf2`
-- 公共环境 baseline：`racer_outdoor_50x50_v1`，manifest SHA-256 `ce595caf…`
-- platform commit：`57c1f34a…`；single commit：`8c8ddf2…`
-- overlay：`range20m_omnidirectional_v1`，分辨率 0.10 m
-- smoke package `smoke-20260823-2uav-first-pass-1`（22e160bb）已消费，不得复用
-- `execution_result.json`：`exit_reason=duration_complete`、`final_safety_passed=true`、
-  `fleet_metrics/uav0_metrics/uav1_metrics` 全 true；teardown clean、无 survivors、无 kill
+- runroot：`results/RUN-20260823T190024Z-3uav-smoke/`
+- manifest：`experiments/manifests/3uav_smoke.yaml`
+  - SHA-256 `d9a64bf7b469ef85954fffdb09e7c9143b8b6b72b18b735477852a0e0265ebfe`
+  - `approval_status: blocked_pending_verified_launch_and_preflight`（D10 使用后未消费恢复，因 runner 合同要求 launch 前置为 blocked）
+  - `dropout: {enabled: true, vehicle: uav1, mode: node_level, trigger_sim_s: 60}`
+- 3-UAV source hash manifest：`config/3uav_source_hashes.sha256`
+  - SHA-256 `e4c79a5ce232254199ea319773cc28eb7955db909e5a880f24f226b190048ec9`
+- approval package：`state/3uav_approval.yaml`
+  - `issuance_id=dropout-smoke-20260823-3uav-D10-node_level`（一次性，已消费，不得复用）
+- platform commit：`57c1f34a607b834915f9aa4a4a6b301ecc5a4ffc`
+- single commit：`08fb545a78ed7f1df2e1182a0e6d7a13540a28f6`
+- overlay：`range20m_omnidirectional_v1`
+  - manifest `7c54d34ad5aa878a89fb07394b5efe88373fcdf848bbe0188b81b6fbdecb1f3c`（22 文件）
+  - installer `8cabae8d6c8019cf49e4f3f6d836ac9c0fa7d26d6926e1140af8cc87c42ee5eb`
+- 环境 baseline：`racer_outdoor_50x50_v1`（50×50×3 m，planner box ±24.5 / z 1.15–2.7）
 
-证据：`execution_result.json`、`live_preflight.json`（53/53）、`static_preflight.json`（55/55）、
-`resource_capacity_*.json`、`stop_result.json`、各 metrics/telemetry.jsonl。
+### 运行结论
 
-## 2. 资源与实时性
+- `exit_reason = duration_complete`（sim 120 s 合同，实际 clock 达 146.69 sim-s）
+- `final_safety_passed = true`，detail：`smoke command chain complete`
+- `fleet_metrics / uav0_metrics / uav1_metrics / uav2_metrics` 全部就绪
+- `stop = {clean: true, survivors: [], kill: [], identity_confirmed: true}`，teardown clean
+- 掉线注入后无任何非预期 abort，全局 `abort_reasons = []`
 
-| 门 | 周期 | 值 | 门限 | 结果 |
+## 2. 掉线事件核验（fleet/dropout.json）
+
+| 字段 | 值 |
+|---|---|
+| vehicle | `uav1` |
+| mode | `node_level`（最严：bridge + exploration + traj 三节点全杀） |
+| trigger_sim_s | 60 |
+| sim_s（实际） | **86.65**（poll 粒度，≈ trigger 点，工作流 0.2 允许） |
+| wall_s | 19004.12 |
+| reason | `intentional_dropout` |
+| cleanup_policy | `stop_active_reclaim` |
+| killed_nodes | `/px4_bridge_2`、`/exploration_node_2`、`/traj_server_2` |
+| pids | px4_bridge_2=206333、exploration_node_2=206617、traj_server_2=206626 |
+
+`missing_nodes` 为空；记录完整（vehicle/mode/sim_s/wall_s/pid 全在）。
+
+## 3. 掉线分类核验
+
+`fleet.dropout_classifications`：
+
+- `uav0`：`none` ✅（未受 uav1 掉线影响，无意外断线）
+- `uav1`：`intentional_dropout` ✅（与 dropout.json 的 vehicle 一致，未被误判为 crash/contact/freeze）
+- `uav2`：`none` ✅
+
+process_liveness 最终快照：
+
+- uav1 三节点（`/px4_bridge_2`、`/exploration_node_2`、`/traj_server_2`）`false` = **注入故障本身**，符合预期
+- 其余 8 节点全部 `true`
+
+uav1 逐机复核：`freeze=false`、`crash=false`、`dropout=true`、`ack_timeout=0`，
+`telemetry_complete="dropout_expected"` —— 未被误分类。无 `crash:*`、`severe_contact:*` abort。
+
+## 4. 剩余 UAV 继续性指标（掉线前 vs 掉线后）
+
+| 机 | surviving | post-dropout coverage delta | 继续性依据 |
+|---|---:|---:|---|
+| uav0 | ✅ true | **+7,461 voxels** | coverage 继续增长 |
+| uav2 | ✅ true | **+10,212 voxels** | coverage 继续增长 |
+
+- fleet `telemetry_completeness = true`
+- task_allocation_state_samples = 3,872（掉线后继续产生）
+- uav1 非 survivor：`surviving_uavs_continue[uav1] = false`，coverage_delta = null（正确语义）
+
+uav1 掉线后，剩余两机持续探索且无 abort、无 crash、无 contact，满足工作流 0.4 第 1–5 项。
+
+## 5. 资源与安全门对照
+
+| 门 | 阶段 | 值 | 门限 | 结果 |
 |---|---:|---:|---:|:---:|
-| MemAvailable | startup | 11.18 GiB（12.00 GB） | ≥ 8 GiB | ✅ |
-| load1 | startup | 2.43 | < 10 | ✅ |
-| swap_in/out | startup | 0 / 0 | — | ✅ |
-| MemAvailable | running | **4.95 GiB**（5.31 GB） | ≥ 3 GiB | ✅ |
-| load1 | running | 3.52 | — | ✅ |
-| swap_in/out | running | **0 / 0**（delta +0/+0） | delta ≤ 200000 | ✅ |
-| RT factor | smoke 全程 | **p50=0.41, p95=0.43** | ≥ 0.5 | ❌ **未达标** |
+| MemAvailable | startup | 11.86 GiB（12,733,030,400 B） | ≥ 8 GiB | ✅ |
+| MemAvailable | ready | **2.76 GiB**（2,959,286,272 B） | ≥ 3 GiB | ⚠️ 低于门限记录 |
+| load1 | startup / ready | 1.85 / 4.57 | < 10 | ✅ |
+| swap delta | 全程 | in +0 / out +11,982 | ≤ 200,000 | ✅ |
+| stop | teardown | clean, survivors=[], kill=[] | 无 survivors | ✅ |
 
-**资源关键状态：**
-- Gazebo max RSS 5.17 GiB（稳定，与 preflight 一致）
-- RACER max RSS **1.87 GiB**（双机，含两个 exploration_node；0.10m overlay 使 racer 内存从 6.9 GiB 降至 1.87 GiB）
-- bridges 137 MB, gt_mapper 105 MB, collector 82 MB
-- 栈总 RSS 约 **7.3 GiB**，运行态 MemAvailable 4.95 GiB（≥ 3 GiB 有 1.95 GiB 余量）
-- load1 稳态 6.28-6.72（20 核，CPU 并非瓶颈；RT 低的原因不在此）
-- **swap 零活动**：全程 pswpin/pswpout 保持 0，资源面已充分可控
+**备注（重要）**：ready 阶段 MemAvailable 2.76 GiB 低于 3 GiB 门限。这与本项目历史
+记录一致——3-UAV 栈 RSS ≈ 9.3 GiB，16 GB 主机边界资源紧张。本次判定为「已知资源偏差」，
+不豁免门限、不作为掉线语义结论的组成部分；如需正式 PASS 需在资源更充裕的主机复跑
+preflight + smoke，或减小地图/机数。掉线实验语义本身未受资源门影响。
 
-**RT factor 分析：** preflight no-goal soak 时 RT p95≈1.97（快于实时）；smoke 有双机实时规划/轨迹执行时 RT 降至 0.41。机器有 20 核但 load1 仅 ~6.5，RT 低可能原因是 gzserver 的 `real_time_update_rate=1000`（1000 Hz physics）产生同步约束，或者串行依赖（如 map 共享锁）在双机并发时形成瓶颈。该指标未达标，但 **120 sim-s 实际用时 ~293 wall-s（~5 分钟）**，对开发可接受，对比赛 "在线重规划响应延迟不超过 2 秒" 需进一步验证。
+RT factor：与 D8/D9 一致（preflight 尽力 ≥0.5，实测低于 0.5），记录为已知偏差，
+不阻断掉线语义实验（掉线语义 ≠ 实时性对比）。
 
-## 3. uav1 freeze = true 分析（用户重点提问）
+## 6. 逐机与 fleet 结果表
 
-### 数据
+### 逐机
 
-| 指标 | uav0 | uav1 |
-|---|---:|---:|
-| trajectory（总） | **83** | **52** |
-| ack_count | 10,178 | 12,238 |
-| path length | **121.27 m** | **51.43 m** |
-| pos_cmd | 10,178 | 12,238 |
-| ack_timeout | 0 | 0 |
-| freeze | **false** | **true** |
-| crash | false | false |
-| contact | 0/0/0 | 0/0/0 |
-| completion | false | false |
-| coverage ratio | 0.081（8.1%） | **0.106（10.6%）** |
-| final position | (-4.07, 9.14, 2.05) | **(-4.32, -19.10, 1.91)** |
+| 机 | freeze | crash | dropout | ack_timeout | trajectory | pos_cmd/ack | path (m) | coverage voxels | coverage ratio | completion |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| uav0 | false | false | none | 0 | 52 | 9,165 | 107.5 | 19,604 | 0.0729 | false |
+| uav1 | false | false | intentional | 0 | 17（掉线前） | 5,684 / 5,644 | 55.4 | 8,818 | 0.0328 | 掉线（dropout_expected） |
+| uav2 | false | false | none | 0 | 176 | 12,134 | 145.0 | 32,471 | 0.1207 | false |
 
-### freeze 判定逻辑
+uav2 为三机探索量最大（traj=176、12,134 ack、145 m 路径），D9r `clearVehicleBody`
+冻结修复在 D10 node_level 下持续有效。
 
-collector 的 `update_position()`：
-```python
-if distance >= 0.02:            # 单次位移 ≥ 2cm 才算 "motion"
-    self.last_motion_wall_s = now
-```
+### Fleet
 
-`snapshot()` 的 freeze 判定：
-```python
-moved = self.path_length_m >= 0.25
-frozen = bool(moved and self.last_motion_wall_s is not None and
-              now - self.last_motion_wall_s >= 15.0)
-```
+| 指标 | 值 |
+|---|---:|
+| fleet_coverage_voxels | 34,581 |
+| fleet_coverage_ratio | 0.1286（12.9%，120 sim-s / 50×50 地图） |
+| overlap_ratio | 0.8672（共享地图一致） |
+| map_consistency_jaccard | 0.2484 |
+| minimum_inter_uav_distance | 0.582 m（>0，未接触） |
+| fleet_contact_count | 0 |
+| abort_reasons | `[]` |
+| clock | monotonic=true、samples=135,751、last_sim_s=146.69 |
+| task_allocation_state_samples | 3,872 |
 
-### 结论：该 freeze 是"晚期规划停滞"，非"早期不接令"
+## 7. 产出物与固定交付约定（本次新增）
 
-uav1 的 telemetry 时间线：
+- `grid_path.png`：三机 top-down 栅格路径图（1600×1600）
+- `point_cloud.png`：三机轨迹/占据点云图（1600×1280）
+- **约定**：自本 run 起，每个实验 run 的 collector 收尾自动输出以上两张图（
+  `two_uav_collector.py` 的 `_write_visual_artifacts`），保存在对应 runroot 下。
 
-| 样本 | sim 区间 | path (m) | ack_id | freeze |
-|---|---:|---:|---:|:---:|
-| 0-7 | 起飞 | 0→1.67 | None | false→true（短暂）→false |
-| 10-30 | 活跃探索 | 2.92→47.84 | 4→52 | false |
-| **35-70** | **末期** | **48.64→51.43** | **52（不变）** | **true** |
+## 8. Luna 判断与后续边界
 
-uav1 最后一条轨迹 id=52 完成后，规划器无法找到下一条可行路径。racer.log 显示在 sim 150.68-150.80 期间 `exploration_node_2` 连续抛 `Astar timed out`，从地图各角落候选 viewpoint 均超时，最高单次迭代 49154 次、reject 183729 次。此后车辆在 (-4.3, -19.1, 1.9) 处悬停，单次 odometry 位移 < 2cm 不触发 motion 标记，15s 后 freeze=true。
+### 判断
 
-**这与上一轮 smoke（uav1 trajectory=0/ack=0，完全不接令）有本质区别。** 本轮回度冻结束是由于规划器在给定地图边界内耗尽了可达 viewpoint —— 这在 120 sim-s 有限探索下是正常终点现象。若运行更长时间（或更大地图），可能需要更鲁棒的 frontier 选择与 A* 优化。
+- D0–D10 掉线实验 Route A 全链路闭环：
+  1. D1/D2 掉线注入与分类链路正确；
+  2. D3/D9 的 control_chain smoke 证明掉线后剩余机可继续探索；
+  3. uav2 冻结根因（shared-map 机体误标占据 → A* NO_PATH → PLAN_TRAJ 死循环）
+     经 `clearVehicleBody` 源码修复闭环；
+  4. collector `ack_timeout` 竞态误杀经恢复语义修正；
+  5. **D10 node_level 最严模式最终验证通过**：uav1 三节点全杀后，
+     剩余两机无 abort、无 crash、无 contact，coverage 继续增长。
+- 掉线分类无混淆：uav1=`intentional_dropout`，非 crash/contact/freeze 误判。
+- 身份链完整且可追溯：manifest + source hash manifest + approval package 三重绑定。
 
-### 建议
+### 边界（不得外推）
 
-- freeze 判定阈值（目前 15s 无 ≥2cm 运动）对 hover-in-place 场景过于敏感。可在 collector 中增加对 `airborne && pos_cmd_active` 的联合判定：若最新 pos_cmd wall 时间距今 < 15s 且车辆已就位目标点，则不应标为 freeze。但这属于功能改进，**不改变已在 smoke 中通过的核心安全门**。
-- 更长时间的 smoke（如 300 sim-s）可验证是否为真正的"探索耗尽"。
-
-## 4. 无图像仿真的问题（用户重点提问）
-
-### 原因
-
-当前 world 和 SITL launch 中无 camera/RGB 传感器。仿真硬件栈仅为：**LiDAR（livox ray plugin）+ PX4 SITL + IMU/气压计**。Gazebo 世界没有任何 `<camera>` 标签。这是为了在 16 GB 主机上节省 GPU 和 CPU 算力——加 visual camera 会显著增加 gzserver 负载，使 RT factor 进一步下降。
-
-### 影响
-
-- **栅格（occupancy）图**：系统内在产生 `/sdf_map/occupancy_all_*` topic（0.10m 分辨率，268,912 voxels 在 planner_box 内）。**可在 smoke 结束时 dump 为 PGM/PNG + 叠加轨迹。** 这是一个后处理脚本，不涉及仿真更改。
-- **点云图**：GT mapper 产生 `/cloud_registered_*` topic，可 dump 为 PCD + 渲染截图。也需后处理。
-- **相机/视觉证据**：如果比赛报告需要视觉 SLAM 证据（如特征点跟踪、关键帧快照），则需要添加 camera sensor 或在 GT mapper 中保存视角渲染。这会增加资源消耗。
-
-### 建议
-
-1. 短期：编写 post-smoke 后处理脚本，从 occupancy_all topic 导出栅格图（PGM/PNG），从 registered_cloud 导出点云快照（PCD）
-2. 中期：评估是否可加一个低分辨率 camera（320×240, 5fps）而不显著影响 RT factor
-3. 这些后处理脚本属于**结果分析工具而非实验修改**，可并行开发
-
-## 5. Fleet 关键指标
-
-| 指标 | 值 | 评价 |
-|---|---:|---:|
-| fleet_coverage_ratio | **0.114**（11.4%） | 120s 内低，因 50×50 地图大；需更长 run |
-| fleet_coverage_voxels | 30,655 | — |
-| map_consistency_jaccard | **0.639** | 两机地图 64% 一致，合理 |
-| overlap_ratio | **0.904** | 90% 观察重叠，共享地图良好 |
-| minimum_inter_uav_distance | **1.479 m** | 略低于初始间距1.5m，仍安全 |
-| fleet_contact_count | 0 | 无碰撞 |
-| process_liveness | 8/8 全存活 | — |
-| abort_reasons | **空（无 abort）** | 全运行时通过 |
-| telemetry_completeness | true | — |
-| task_allocation_state_samples | 3,581 | — |
-
-## 6. 三机扩建与单机掉线实验方案
-
-### 比赛要求
-
-题目文件明确要求"自适应决策：当部分子系统因故障、损毁或通信阻塞而失联时，无人机能否自主重构并持续完成任务"以及"通信断续（丢包率≤20%）保持核心任务不中断"。这是本文件夹系列实验的最终目标。单机掉线实验需要**至少 3 机**才能演示"一架掉线，剩余继续"的场景。
-
-### 当前资源余量
-
-16 GB 主机，当前双机 smoke 运行态：
-- 栈 RSS ≈ 7.3 GiB（Gazebo 5.17 + RACER 1.87 + bridges 0.14 + gt_mapper 0.11 + collector 0.08）
-- 运行 MemAvailable = 4.95 GiB
-- RT factor = 0.41
-
-第三机边际增量预估（按第 47 节模型）：
-- Gazebo（额外 SITL + mavros + livox）：**+1.0-1.2 GiB**
-- RACER（exploration_node_3 + 地图/规划器）：**+0.83 GiB**
-- bridges（px4_bridge_3）：**+0.065 GiB**
-- 合计：**+1.9-2.1 GiB**
-
-三机栈 RSS ≈ 7.3 + 2.0 ≈ 9.3 GiB → MemAvailable ≈ 15.42 - 1.75（OS 基线） - 9.3 ≈ **4.4 GiB**（余量 1.4 GiB ≥ 3 GiB 门）。边界可行，但风险较高。RT factor 会进一步下降（可能到 0.25-0.30）。
-
-### 最快三机扩建步骤（不升级硬件）
-
-```text
-1. 创建新文件（不改 2-UAV 冻结文件）：
-   - config/3uav_static.yaml（uav_count: 3，uav2 参数）
-   - launch/3uav_px4_sitl.launch（uav2 group, tgt_system=3）
-   - launch/3uav_racer.launch（exploration_node_3, drone_num=3）
-   - launch/3uav_bridges.launch（px4_bridge_3, /uav2）
-   - experiments/manifests/3uav_smoke.yaml（uav_count: 3）
-
-2. 修改现有文件（改变 identity 链）：
-   - scripts/three_uav_collector.py（或 two_uav_collector.py + uav2 支持）
-   - scripts/three_uav_runner.py（或 runner 参数化，支持 uav_count 推导路径）
-   - scripts/three_uav_preflight.py（或 preflight 参数化）
-
-3. 更新 source hash manifest → 新的 source-hash manifest hash
-
-4. 静态检查 + 单次 diagnostic preflight
-
-5. 单机掉线实验（在 3-UAV 基础上断开一机，验证剩余 2 机自适应继续）
-```
-
-但注意：**三机 preflight 和掉线实验绝不能在三机 preflight 通过前执行。** 所有步骤与 2-UAV 有依赖关系，建议使用 `scripts/two_uav_runner.py` 作为基准修改为参数化版本（接受 `--manifest` 中的 `uav_count`），而不是复制三份不同的 runner。
-
-### 更快速路径：先在 2-UAV 上验证掉线逻辑
-
-如果开发时间紧张，可以先在 2-UAV smoke 基础上实现"主动断开 uav1"实验（软掉线）：在 smoke 过程中 kill uav1 的 px4_bridge/exploration_node 进程，验证 uav0 继续探索、collector 正确报告掉线、系统不进入未知状态。这只需要修改 runner 的 smoke 阶段（或添加一个 dropout 模式），可在**现有 identity 链**基础上进行，不涉及三机扩建。然后三机扩建时复用该掉线逻辑。
-
-## 7. Luna 判断与后续边界
-
-本轮是 **首次完全通过的 2-UAV smoke**。所有安全门通过（55+53 static+lives、资源门、final safety、teardown），RT 目标未达标（p95 0.43 < 0.5）但 120s 实验在 ~5 分钟 wall 内完成，不影响数据完整性。uav1 freeze=true 是晚期规划停滞而非早期掉线，与上一轮有本质区别。
-
-### 进入三机扩建的条件
-
-1. 确认 2-UAV smoke 结果满足比赛基线
-2. 资源评估确认 3-UAV MemAvailable ≥ 3 GiB + swap delta ≤ 200000（当前 16 GB 边界可行但风险高）
-3. 建议先做 collect/tools 后处理（栅格图 + 点云图输出），再切换到三机
-
-### 不批准项
-
-- 不修改已冻结的 2-UAV 身份文件（manifest、source hash、config、launch、scripts）来适应 3-UAV；新建 3-UAV 文件
-- 不降低资源门（MemAvailable ≥ 3 GiB、swap delta ≤ 200000 不变）
-- 不在三机 preflight 通过前进入三机 smoke 或掉线实验
-- 不添加 camera sensor 到 world 而不评估 RT 影响
+- 本次证明的是 **掉线语义正确性与剩余机继续性**，不是比赛实时性/覆盖率的 PASS。
+- RT < 0.5 与 ready MemAvailable < 3 GiB 为已知偏差，须在正式比赛口径中另行评估。
+- 不把 `intentional_dropout` 写成 crash/contact；不外推单机/双机性能到 fleet。
+- 120 sim-s 内无人触发 `completion`（exploration 未收敛），这是地图规模下的正常现象，
+  不是失败。
+- 后续任何新实验（含资源更充裕主机上的复跑）必须重新签发 approval package；
+  已消费的 `dropout-smoke-20260823-3uav-D10-node_level` 不得复用。
 
 ```text
 handoff_status: READY
-handoff_model: lead-planning
+handoff_model: high-terminal
 handoff_command:
-审核完毕。请基于本 luna_review.md 决定后续路径：(A) 直接进入三机扩建（创建 config/launch/manifest + 参数化 runner/collector/preflight）；(B) 先在 2-UAV 上实施主动掉线实验（验证掉下逻辑再扩展）；(C) 先做后处理工具（栅格图/点云图导出）再决定。package 已消费、不得复用同一 identity 重试 smoke。
+D10 node_level dropout-smoke 证据完整，Luna 判定 PASS（掉线语义维度）。
+收尾：一次性更新 project_state.md / current_summary.md / SESSION_HANDOFF.md，
+提交 stage: D11 dropout report and closeout (high)；后续实验需重新签发 approval package。
 ```

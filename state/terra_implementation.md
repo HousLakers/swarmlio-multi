@@ -3357,9 +3357,67 @@ manifest:              2232cb58…（恢复 pending 状态）
 
 ### 54.15 残余风险（重跑前）
 
+### 54.16 D11 收尾与可视化交付
+
+- 最终 smoke：`results/RUN-20260823T190024Z-3uav-smoke/`
+  - `exit_reason = duration_complete`
+  - `final_safety_passed = true`
+  - `abort_reasons = []`
+- 三机最终：uav0/uav1/uav2 全部 `freeze=false`、`crash=false`；uav1 intentional_dropout
+  为 `node_level`，其余车辆持续运行正常。
+- 新增实验默认可视化交付：
+  - `grid_path.png`：三机 top-down 栅格路径图
+  - `point_cloud.png`：三机轨迹/占据点云图
+- 这两张图将作为每次实验的标准输出之一，方便审阅轨迹覆盖与局部几何关系。
+
+### 54.17 最终结论
+
+- D0–D10 已闭环，D11 完成；本轮掉线路线可复现、可审计、可收尾。
+- 已将最终结果、图像和状态写回 runroot；后续新实验应继续沿用相同图像输出约定。
+
 - 起飞点修复基于「共享地图动态标记」假设，未做静态验证；需重跑 D9 实证
   uav2 不再冻结。
 - 若重跑仍冻结，需在 racer 侧启用 `sdf_map/no_drone` 排除（代码层，超出
   本仓库范围，另立任务）。
 
 
+
+
+## 54.16 D11 报告与收尾（高终端）
+
+### 最终结论
+
+- Route A 已完成 D0–D10 全阶段闭环。
+- D10 `node_level` 最终 smoke 通过：`duration_complete`、`final_safety_passed=true`、
+  `abort_reasons=[]`。
+- 这表明：
+  1. D1/D2 掉线注入与分类链路正确；
+  2. D3/D9 的 control_chain smoke 证明掉线后剩余机可继续探索；
+  3. uav2 冻结根因已通过源码修复闭环；
+  4. collector 的 ACK 超时竞态误杀已通过恢复语义修正；
+  5. D10 的 node_level 是最终最严格验证，已通过。
+
+### 最终身份链
+
+```text
+platform_commit:          57c1f34a607b834915f9aa4a4a6b301ecc5a4ffc
+single_commit:            08fb545a78ed7f1df2e1182a0e6d7a13540a28f6
+overlay_manifest:         7c54d34ad5aa878a89fb07394b5efe88373fcdf848bbe0188b81b6fbdecb1f3c
+overlay_installer:        8cabae8d6c8019cf49e4f3f6d836ac9c0fa7d26d6926e1140af8cc87c42ee5eb
+3uav_smoke manifest:      d9a64bf7b469ef85954fffdb09e7c9143b8b6b72b18b735477852a0e0265ebfe
+3uav hashes manifest:     e4c79a5ce232254199ea319773cc28eb7955db909e5a880f24f226b190048ec9
+approval package:         state/3uav_approval.yaml (issuance_id=dropout-smoke-20260823-3uav-D10-node_level)
+```
+
+### 统计摘要（D10）
+
+- `uav0`: `freeze=false`, `crash=false`, `ack_timeout=0`, `traj=52`
+- `uav1`: `dropout=true`, `mode=node_level`, `freeze=false`, `crash=false`, `traj=17`
+- `uav2`: `freeze=false`, `crash=false`, `ack_timeout=0`, `traj=176`
+- `exit_reason=duration_complete`
+- `final_safety_passed=true`
+
+### 收尾
+
+- `state/current_summary.md` 已更新为 D10/D11 状态。
+- 后续若需要继续实验，必须重新签发新的 approval package；本轮已完成收尾，不再启动新实验。

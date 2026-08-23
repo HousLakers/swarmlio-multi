@@ -822,6 +822,96 @@ class Collector:
                   encoding="utf-8") as stream:
             stream.write(json.dumps(fleet, sort_keys=True) + "\n")
 
+    def _telemetry_history(self):
+        history = {name: [] for name in self.states}
+        for name in self.states:
+            path = self.runroot / name / "telemetry.jsonl"
+            if not path.is_file():
+                continue
+            try:
+                lines = path.read_text(encoding="utf-8").splitlines()
+            except OSError:
+                continue
+            for raw in lines:
+                if not raw:
+                    continue
+                try:
+                    item = json.loads(raw)
+                except Exception:
+                    continue
+                pos = item.get("position")
+                if isinstance(pos, list) and len(pos) == 3:
+                    history[name].append(tuple(pos))
+        return history
+
+    def _write_visual_artifacts(self, vehicle_reports, fleet):
+        try:
+            import matplotlib
+            matplotlib.use("Agg")
+            import matplotlib.pyplot as plt
+            from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
+        except Exception:
+            return
+
+        history = self._telemetry_history()
+        colors = ["#1f77b4", "#2ca02c", "#d62728", "#9467bd", "#ff7f0e"]
+        names = list(self.states.keys())
+        env = self.config["environment"]
+        bmin = env.get("planner_box_min", [-25.0, -25.0, 0.0])
+        bmax = env.get("planner_box_max", [25.0, 25.0, 3.0])
+
+        # Top-down grid/path plot.
+        fig, ax = plt.subplots(figsize=(10, 10))
+        ax.add_patch(
+            plt.Rectangle((bmin[0], bmin[1]), bmax[0] - bmin[0], bmax[1] - bmin[1],
+                          fill=False, ec="#111827", lw=1.5))
+        for idx, name in enumerate(names):
+            pts = history.get(name, [])
+            if not pts:
+                continue
+            xs = [p[0] for p in pts]
+            ys = [p[1] for p in pts]
+            color = colors[idx % len(colors)]
+            ax.plot(xs, ys, color=color, lw=1.8, label=name)
+            ax.scatter(xs[0], ys[0], marker="*", s=140, color=color, edgecolor="black", zorder=4)
+            ax.scatter(xs[-1], ys[-1], marker="o", s=52, color=color, edgecolor="black", zorder=4)
+        ax.set_aspect("equal")
+        ax.set_xlim(bmin[0] - 0.5, bmax[0] + 0.5)
+        ax.set_ylim(bmin[1] - 0.5, bmax[1] + 0.5)
+        ax.grid(True, ls=":", alpha=0.4)
+        ax.set_title(f"{self.runroot.name} — grid path")
+        ax.set_xlabel("x (m)")
+        ax.set_ylabel("y (m)")
+        ax.legend(loc="upper right", fontsize=8)
+        fig.tight_layout()
+        fig.savefig(self.runroot / "grid_path.png", dpi=140)
+        plt.close(fig)
+
+        # Point cloud plot from observed coverage voxels.
+        fig = plt.figure(figsize=(10, 8))
+        ax = fig.add_subplot(111, projection="3d")
+        for idx, name in enumerate(names):
+            voxels = sorted(self.states[name].coverage_voxels)
+            if not voxels:
+                continue
+            xs = [(v[0] + 0.5) * 0.25 for v in voxels]
+            ys = [(v[1] + 0.5) * 0.25 for v in voxels]
+            zs = [(v[2] + 0.5) * 0.25 for v in voxels]
+            color = colors[idx % len(colors)]
+            ax.scatter(xs, ys, zs, s=1.0, alpha=0.45, c=color, label=name)
+        ax.set_title(f"{self.runroot.name} — point cloud from observed occupancy voxels")
+        ax.set_xlabel("x (m)")
+        ax.set_ylabel("y (m)")
+        ax.set_zlabel("z (m)")
+        ax.set_xlim(bmin[0], bmax[0])
+        ax.set_ylim(bmin[1], bmax[1])
+        ax.set_zlim(bmin[2], bmax[2])
+        ax.view_init(elev=25, azim=-55)
+        ax.legend(loc="upper right", fontsize=8)
+        fig.tight_layout()
+        fig.savefig(self.runroot / "point_cloud.png", dpi=140)
+        plt.close(fig)
+
     def finalize(self):
         if self.finalized:
             return
@@ -834,6 +924,7 @@ class Collector:
         with open(self.runroot / "fleet" / "metrics.json", "x",
                   encoding="utf-8") as stream:
             stream.write(json.dumps(fleet, indent=2, sort_keys=True) + "\n")
+        self._write_visual_artifacts(vehicle_reports, fleet)
 
 
 def self_test():

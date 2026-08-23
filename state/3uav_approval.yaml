@@ -2,15 +2,15 @@ schema_version: 1
 stage: smoke
 approved: true
 allowed_actions: [launch]
-manifest_sha256: 9dc78cb9e2ae7468a2de6eab1ab8662372c08bb13881842b223e188e9907e947
-source_hash_manifest_sha256: dbe41081bd48723a77623875772f69426f3af69bd326e1301bb2a0474685c0e9
+manifest_sha256: d9a64bf7b469ef85954fffdb09e7c9143b8b6b72b18b735477852a0e0265ebfe
+source_hash_manifest_sha256: e4c79a5ce232254199ea319773cc28eb7955db909e5a880f24f226b190048ec9
 issued_by: sol
 max_uses: 1
-issuance_id: dropout-smoke-20260823-3uav-7
+issuance_id: dropout-smoke-20260823-3uav-D10-node_level
 dropout:
   enabled: true
   vehicle: uav1
-  mode: control_chain
+  mode: node_level
   trigger_sim_s: 60
   cleanup_policy: stop_active_reclaim
   record: fleet/dropout.json

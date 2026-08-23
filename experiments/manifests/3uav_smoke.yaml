@@ -1,5 +1,5 @@
 experiment_id: three_uav_smoke_v1
-approval_status: smoke_completed
+approval_status: blocked_pending_verified_launch_and_preflight
 approval_contract: config/3uav_approval_contract.yaml
 uav_count: 3
 duration_sim_s: 120
@@ -41,7 +41,7 @@ static_contract: config/3uav_static.yaml
 dropout:
   enabled: true
   vehicle: uav1
-  mode: control_chain
+  mode: node_level
   trigger_sim_s: 60
   cleanup_policy: stop_active_reclaim
   record: fleet/dropout.json
