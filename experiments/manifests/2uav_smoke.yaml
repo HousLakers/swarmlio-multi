@@ -39,7 +39,7 @@ communication_delay_ms: 0
 static_contract: config/2uav_static.yaml
 # D1 (runner dropout event) 解析但不触发；D3 rehearsal 由高终端改为 enabled: true。
 dropout:
-  enabled: false
+  enabled: true
   vehicle: uav1
   mode: control_chain
   trigger_sim_s: 60
