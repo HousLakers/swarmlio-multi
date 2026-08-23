@@ -263,15 +263,21 @@ def parse_dropout_config(manifest):
 
 
 def dropout_target_nodes(config, dropout_config):
-    """Pure mapping of dropout vehicle+mode to the ROS nodes that get killed."""
+    """Pure mapping of dropout vehicle+mode to the ROS nodes that get killed.
+
+    D0 semantics (workflow 0.2): control_chain breaks exploration/traj so the
+    vehicle can still fly/hover, which requires keeping px4_bridge (the pos_cmd
+    relay) alive; communication breaks only the bridge heartbeat; node_level
+    kills exploration + bridge + traj as the closest to real loss-of-link.
+    """
     vehicle = next(item for item in config["vehicles"]
                    if item["name"] == dropout_config["vehicle"])
     racer_id = vehicle["racer_id"]
-    control_chain = ["/px4_bridge_%d" % racer_id,
-                     "/exploration_node_%d" % racer_id,
-                     "/traj_server_%d" % racer_id]
-    return {"control_chain": list(control_chain),
-            "node_level": list(control_chain),
+    control = ["/exploration_node_%d" % racer_id,
+               "/traj_server_%d" % racer_id]
+    node_level = ["/px4_bridge_%d" % racer_id] + list(control)
+    return {"control_chain": list(control),
+            "node_level": node_level,
             "communication": ["/px4_bridge_%d" % racer_id]}[dropout_config["mode"]]
 
 
@@ -1700,19 +1706,19 @@ def self_test():
     config = load_yaml(CONFIG)
     dropout_cfg = {**valid_dropout, "vehicle": "uav0"}
     nodes = dropout_target_nodes(config, dropout_cfg)
-    assert "/px4_bridge_1" in nodes
+    assert "/px4_bridge_1" not in nodes
     assert "/exploration_node_1" in nodes
     assert "/traj_server_1" in nodes
-    assert len(nodes) == 3
+    assert len(nodes) == 2
     dropout_cfg_uav1 = {**valid_dropout, "vehicle": "uav1"}
     nodes_uav1 = dropout_target_nodes(config, dropout_cfg_uav1)
-    assert "/px4_bridge_2" in nodes_uav1
+    assert "/px4_bridge_2" not in nodes_uav1
     assert "/exploration_node_2" in nodes_uav1
     assert "/traj_server_2" in nodes_uav1
     # dropout_target_nodes: communication mode only kills bridge
     nodes_comm = dropout_target_nodes(config, {**valid_dropout, "mode": "communication"})
     assert nodes_comm == ["/px4_bridge_2"]
-    # dropout_target_nodes: node_level same three nodes as control_chain
+    # dropout_target_nodes: node_level kills bridge + exploration + traj
     nodes_nl = dropout_target_nodes(config, {**valid_dropout, "mode": "node_level"})
     assert set(nodes_nl) == {"/px4_bridge_2", "/exploration_node_2", "/traj_server_2"}
     assert len(nodes_nl) == 3
@@ -1743,10 +1749,10 @@ def self_test():
         assert record["vehicle"] == "uav0"
         assert record["mode"] == "control_chain"
         assert record["sim_s"] == 65.0
-        assert record["pids"] == {"/px4_bridge_1": fake_pid, "/exploration_node_1": fake_pid,
+        assert record["pids"] == {"/exploration_node_1": fake_pid,
                                   "/traj_server_1": fake_pid}
         assert record["reason"] == "intentional_dropout"
-        assert record["killed_nodes"] == ["/px4_bridge_1", "/exploration_node_1", "/traj_server_1"]
+        assert record["killed_nodes"] == ["/exploration_node_1", "/traj_server_1"]
         assert record["missing_nodes"] == []
         assert record["record"] == "fleet/dropout.json"
         # Verify file written

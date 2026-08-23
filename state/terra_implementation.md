@@ -2699,6 +2699,31 @@ smoke manifest: ae21426cb3a62761dc8650cebc6d10626a4089802a7e4efb62b100dac37fd4ef
   `missing_nodes` 而不算失败。D1 阶段 manifest 为 `enabled: false`，任何 launch/preflight 都
   不会实际触发 dropout。
 
+## 50. D1 返工：control_chain 保留 px4_bridge（无实验）
+
+按高终端返工指令修正 `dropout_target_nodes()` 的 D0 模式语义：
+
+- `control_chain`：仅 kill `/exploration_node_{racer_id}` 与 `/traj_server_{racer_id}`；保留
+  `/px4_bridge_{racer_id}`，使机体仍可飞/悬停；
+- `communication`：仍仅 kill `/px4_bridge_{racer_id}`；
+- `node_level`：仍 kill bridge、exploration、traj 三节点。
+
+同步更新 runner self-test 与 `execute_dropout()` 断言，确保 control_chain 的目标节点、PID
+记录和 `killed_nodes` 均不包含 bridge。未启动实验、未创建或消费 approval package、未 commit/push。
+
+验证：
+
+```text
+PYTHONPYCACHEPREFIX=/tmp/swarmlio-pyc-r1 python3 -m py_compile scripts/two_uav_runner.py
+PASS
+PYTHONPYCACHEPREFIX=/tmp/swarmlio-pyc-r1 python3 scripts/two_uav_runner.py --self-test
+PASS
+git diff --check scripts/two_uav_runner.py
+PASS
+```
+
+runner 返工后 SHA-256：`fa9ce9f9fe057bc8fd07b608532ee7d15b6c4cd021e5198536f60fae732f345b`。
+
 ## 49. D2 collector dropout classification v1（中终端）
 
 - 日期：2026-08-23
