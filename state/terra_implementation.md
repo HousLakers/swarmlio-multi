@@ -3008,4 +3008,80 @@ experiments/manifests/3uav_smoke.yaml: 2232cb58445e7bd765e9747443dd3296532fd10a8
 - gt_mapper `load_contract` 仍要求 `uav_count == 2`（2uav 冻结脚本），3-UAV 实跑前需
   单独评审其参数化；本次未改。
 
+## 54. D7 runner CONFIG 实例化 + gt_mapper uav_count 泛化（>=2）
+
+- 任务来源：`state/dropout_experiment_plan.md` D7（3-UAV static 校验 + self-test 前置）
+- 目标：runner 从 manifest `static_contract` 派生 config/approval/source-hash 路径；
+  gt_mapper 支持 uav_count>=2；恢复 git HEAD 与 source hash manifest 一致性。
+
+### 54.1 修改内容
+
+`scripts/two_uav_runner.py`（CONFIG 实例化）：
+
+1. 新增解析器：`manifest_static_config_path(manifest)`（static_contract →
+   `config/Nuav_static.yaml`）、`manifest_approval_contract_path(manifest)`、
+   `approval_package_path(contract)`（contract 的 approval_package → `state/Nuav_approval.yaml`）、
+   `source_hashes_for_config(config_path)`（`config/Nuav_static.yaml` →
+   `config/Nuav_source_hashes.sha256`）、`runroot_config_path(runroot)`（runroot 内
+   `static.yaml` → `2uav_static.yaml` → manifest 派生，最后回退默认 CONFIG）。
+2. `approval_guard` / `verify_source_hashes`：contract/package/hash manifest 全部由
+   manifest 派生（2-UAV 路径不变）。
+3. `process_specs` / `make_runroot` / `start_stack`：gt_mapper/collector 的 `--config`
+   与 static_checks 用 manifest 派生的 config；runroot 拷贝改名为 `static.yaml`
+   （旧 runroot 的 `2uav_static.yaml` 仍被 `runroot_config_path` 兼容读取）。
+4. `watchdog_evidence` / `wait_final_metrics` / `final_safety_result` /
+   `action_preflight` / `action_launch` / `action_collect`：config/车辆列表按
+   runroot 或 manifest 解析。
+5. `parse_dropout_config(manifest, config_path=None)`：无显式 config_path 时从
+   manifest 的 `static_contract` 派生（self-test 的裸 dict 仍回退默认 2uav）。
+
+`scripts/two_uav_gt_mapper.py`（uav_count>=2）：
+
+1. `load_contract`：`uav_count` 为 int、>=2 且等于 `vehicles` 长度。
+2. 新增 `multi_peer_body_filter`：单 peer 时与 `peer_body_filter` 逐字节一致；
+   多 peer 时 endpoint/inflation/ray mask 累加计数并对移除 mask 取并集。
+3. `VehicleMapper` 接受 `peer_names`（可迭代）；`main()` 以「其它所有车辆」作为每机
+   peers；provenance recorder（741 行遗留实现）保持 2-UAV 冻结键语义不变。
+4. self-test：单 peer 等价性、双 peer 并集、缺失 peer 降级、3uav contract 加载、
+   uav_count=1 拒绝。
+
+### 54.2 source hash manifest 更新（恢复 HEAD↔manifest 一致性）
+
+`config/2uav_source_hashes.sha256` 与 `config/3uav_source_hashes.sha256` 的四个脚本条目
+更新为当前工作树 hash（gt_mapper 含 provenance recorder + D7 泛化）：
+
+```text
+runner:    4eff30e5003e98b261c70d1cfdd1d5defedbd8e57a5d6fbe5665b698334420aa
+gt_mapper: ead7324d68fa69b00df6a44d90532be758d91538c1e467d1023d2259c0a8c23c
+preflight: 41f0c76913532c4d184162d787055ec49155d9ba6272690c96d687b0c52be1aa
+collector: 20a1832b89c6c6425d15ef948423e38e020f29da82ee32d5fb5a72f7629806b2
+```
+
+### 54.3 验证证据（未启动实验）
+
+```text
+2uav static preflight: passed=true，54/54 ok（含 source.multi_hash_manifest 匹配）
+3uav static preflight: passed=true，57/57 ok（含 source.multi_hash_manifest 匹配）
+py_compile（四脚本）: PASS
+self-test（runner/preflight/collector/gt_mapper）: 全部 PASS
+git diff --check: PASS
+approval 路径解析（2uav/3uav）: verify_source_hashes OK
+```
+
+### 54.4 新 hash（D7）
+
+```text
+runner:    4eff30e5003e98b261c70d1cfdd1d5defedbd8e57a5d6fbe5665b698334420aa
+gt_mapper: ead7324d68fa69b00df6a44d90532be758d91538c1e467d1023d2259c0a8c23c
+2uav hashes manifest: aa4ca5660c5f81de0b1d634fccbdd4ff15c32b8ff0447b14857ee126aea0c02a
+3uav hashes manifest: c3f11e561d3b1160d6d06701b83068ba887f29637ae4601f949fc4a3c59b587e
+```
+
+### 54.5 残余风险
+
+- `state/3uav_approval.yaml` 仍未签发；D7 提交后 HEAD 的 gt_mapper（含 provenance
+  recorder）与两个 hash manifest 一致，后续修改任一冻结脚本必须同步更新 manifest。
+- `VehicleMapper` 的 provenance recorder 键（`uav1_hover_voxels` 等）仍为 2-UAV 语义；
+  3-UAV 实跑时 provenance 以 peer_names[0] 记录，属已知受限（不影响注册/发布/控制）。
+
 

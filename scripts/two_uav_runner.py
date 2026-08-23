@@ -36,6 +36,54 @@ WORKSPACES = (
 )
 NODE_PROBE_TIMEOUT_S = 3
 NODE_PROBE_ATTEMPTS = 2
+
+
+def manifest_static_config_path(manifest):
+    """Resolve the static contract path pinned by a manifest's static_contract."""
+    contract = manifest.get("static_contract")
+    if not isinstance(contract, str) or not contract:
+        raise RuntimeError("manifest has no static_contract")
+    path = ROOT / contract
+    if not path.is_file():
+        raise RuntimeError("static_contract %s not found" % path)
+    return path
+
+
+def manifest_approval_contract_path(manifest):
+    """Resolve the approval contract path pinned by a manifest's approval_contract."""
+    contract = manifest.get("approval_contract")
+    if not isinstance(contract, str) or not contract:
+        raise RuntimeError("manifest has no approval_contract")
+    return ROOT / contract
+
+
+def approval_package_path(contract):
+    """Resolve the immutable approval package path from an approval contract."""
+    package = contract.get("approval_package")
+    if not isinstance(package, str) or not package:
+        raise RuntimeError("approval contract has no approval_package")
+    return ROOT / package
+
+
+def source_hashes_for_config(config_path):
+    """config/Nuav_static.yaml -> config/Nuav_source_hashes.sha256"""
+    name = Path(config_path).name
+    return ROOT / "config" / name.replace("_static.yaml", "_source_hashes.sha256")
+
+
+def runroot_config_path(runroot):
+    """Resolve the static contract copied into a runroot (or the default)."""
+    runroot = Path(runroot)
+    for name in ("static.yaml", "2uav_static.yaml"):
+        candidate = runroot / name
+        if candidate.is_file():
+            return candidate
+    if (runroot / "manifest.yaml").is_file():
+        try:
+            return manifest_static_config_path(load_yaml(runroot / "manifest.yaml"))
+        except (OSError, RuntimeError, yaml.YAMLError):
+            pass
+    return CONFIG
 NODE_PROBE_BACKOFF_S = 0.25
 FRONTIER_INIT_SIM_BUDGET_S = 20.0
 FRONTIER_INIT_WALL_HARD_CAP_S = 600.0
@@ -232,15 +280,17 @@ def load_yaml(path):
         return yaml.safe_load(stream)
 
 
-def config_vehicle_names(config=None):
+def config_vehicle_names(config=None, config_path=None):
     """Ordered UAV names (uav0, uav1, ...) derived from the static contract."""
-    config = config or load_yaml(CONFIG)
+    if config is None:
+        config = load_yaml(config_path or CONFIG)
     return [vehicle["name"] for vehicle in config["vehicles"]]
 
 
-def config_bridge_nodes(config=None):
+def config_bridge_nodes(config=None, config_path=None):
     """Ordered px4_bridge node names for every configured vehicle."""
-    config = config or load_yaml(CONFIG)
+    if config is None:
+        config = load_yaml(config_path or CONFIG)
     return tuple("/px4_bridge_%d" % vehicle["racer_id"]
                  for vehicle in config["vehicles"])
 
@@ -255,10 +305,11 @@ def vehicle_metrics_summary(runroot, names):
 DROPOUT_MODES = ("control_chain", "communication", "node_level")
 
 
-def parse_dropout_config(manifest):
+def parse_dropout_config(manifest, config_path=None):
     """Parse the manifest `dropout:` section (D1). Fail-fast on any invalid field.
 
     Returns None when the section is absent so non-dropout runs behave unchanged.
+    The vehicle is validated against the manifest's static_contract when present.
     """
     dropout = manifest.get("dropout")
     if dropout is None:
@@ -275,7 +326,11 @@ def parse_dropout_config(manifest):
         raise RuntimeError("dropout.mode %r not in %s" % (dropout["mode"], DROPOUT_MODES))
     if not isinstance(dropout["record"], str) or not dropout["record"]:
         raise RuntimeError("dropout.record must be a non-empty relative path")
-    vehicle_names = {vehicle["name"] for vehicle in load_yaml(CONFIG)["vehicles"]}
+    if config_path is None:
+        contract = manifest.get("static_contract")
+        if isinstance(contract, str) and contract:
+            config_path = ROOT / contract
+    vehicle_names = {vehicle["name"] for vehicle in load_yaml(config_path or CONFIG)["vehicles"]}
     if dropout["vehicle"] not in vehicle_names:
         raise RuntimeError("dropout.vehicle %r not in %s" % (
             dropout["vehicle"], sorted(vehicle_names)))
@@ -384,11 +439,13 @@ def execute_dropout(runroot, dropout_config, config, sim_s=None,
     return record
 
 
-def verify_source_hashes():
-    if not SOURCE_HASHES.is_file():
-        raise RuntimeError("missing config/2uav_source_hashes.sha256")
+def verify_source_hashes(config_path=None, source_hashes_path=None):
+    if source_hashes_path is None:
+        source_hashes_path = source_hashes_for_config(config_path or CONFIG)
+    if not source_hashes_path.is_file():
+        raise RuntimeError("missing source hash manifest %s" % source_hashes_path)
     failures = []
-    for raw_line in SOURCE_HASHES.read_text(encoding="utf-8").splitlines():
+    for raw_line in source_hashes_path.read_text(encoding="utf-8").splitlines():
         if not raw_line or raw_line.startswith("#"):
             continue
         expected, relative = raw_line.split(None, 1)
@@ -424,17 +481,19 @@ def validate_approval_package(action, manifest, approval, manifest_hash, source_
 
 def approval_guard(action, manifest_path):
     manifest = load_yaml(manifest_path)
-    if not APPROVAL_CONTRACT.is_file():
-        raise RuntimeError("missing config/2uav_approval_contract.yaml")
-    contract = load_yaml(APPROVAL_CONTRACT)
-    if Path(contract.get("approval_package", "")).as_posix() != "state/2uav_approval.yaml":
-        raise RuntimeError("approval contract package path is not fixed")
-    if not APPROVAL_PACKAGE.is_file():
-        raise RuntimeError("missing immutable state/2uav_approval.yaml")
-    verify_source_hashes()
-    package_bytes = APPROVAL_PACKAGE.read_bytes()
+    contract_path = manifest_approval_contract_path(manifest)
+    if not contract_path.is_file():
+        raise RuntimeError("missing approval contract %s" % contract_path)
+    contract = load_yaml(contract_path)
+    package_path = approval_package_path(contract)
+    if not package_path.is_file():
+        raise RuntimeError("missing immutable approval package %s" % package_path)
+    config_path = manifest_static_config_path(manifest)
+    source_hashes_path = source_hashes_for_config(config_path)
+    verify_source_hashes(config_path=config_path, source_hashes_path=source_hashes_path)
+    package_bytes = package_path.read_bytes()
     validate_approval_package(action, manifest, yaml.safe_load(package_bytes),
-                              sha256(manifest_path), sha256(SOURCE_HASHES), contract)
+                              sha256(manifest_path), sha256(source_hashes_path), contract)
     digest = hashlib.sha256(package_bytes).hexdigest()
     receipt = APPROVAL_CONSUMPTIONS / (digest + ".json")
     if receipt.exists():
@@ -572,7 +631,8 @@ def ros_runtime_prefix(runroot):
 
 
 def process_specs(runroot):
-    config = load_yaml(CONFIG)
+    config_path = runroot_config_path(runroot)
+    config = load_yaml(config_path)
     uav_count = int(config["uav_count"])
     launch_prefix = "%duav" % uav_count
     env_prefix = ros_runtime_prefix(runroot)
@@ -591,14 +651,14 @@ def process_specs(runroot):
                          str(ROOT / ("launch/%s_px4_sitl.launch" % launch_prefix)))),
         ("gt_mapper", shell(env_prefix + "exec python3 " +
                             str(ROOT / "scripts/two_uav_gt_mapper.py") +
-                            " --config " + str(CONFIG))),
+                            " --config " + str(config_path))),
         ("bridges", shell(env_prefix + "exec roslaunch " +
                           str(ROOT / ("launch/%s_bridges.launch" % launch_prefix)))),
         ("racer", shell(env_prefix + "exec roslaunch " +
                         str(ROOT / ("launch/%s_racer.launch" % launch_prefix)))),
         ("collector", shell(env_prefix + "exec python3 " +
                             str(ROOT / "scripts/two_uav_collector.py") +
-                            " --config " + str(CONFIG) + " --runroot " + str(runroot))),
+                            " --config " + str(config_path) + " --runroot " + str(runroot))),
     ]
 
 
@@ -791,7 +851,9 @@ def verify_workspace_environment(runroot):
 
 
 def make_runroot(kind, manifest_path, approval_bytes):
-    config = load_yaml(CONFIG)
+    manifest = load_yaml(manifest_path)
+    config_path = manifest_static_config_path(manifest)
+    config = load_yaml(config_path)
     stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     runroot = ROOT / "results" / ("RUN-%s-%duav-%s" % (stamp, config["uav_count"], kind))
     runroot.mkdir(parents=True, exist_ok=False)
@@ -799,13 +861,14 @@ def make_runroot(kind, manifest_path, approval_bytes):
         (runroot / name).mkdir()
     prepare_runroot_ros_environment(runroot)
     shutil.copy2(manifest_path, runroot / "manifest.yaml")
-    shutil.copy2(CONFIG, runroot / "2uav_static.yaml")
+    shutil.copy2(config_path, runroot / "static.yaml")
     (runroot / "2uav_approval.yaml").write_bytes(approval_bytes)
     return runroot
 
 
 def start_stack(runroot, manifest_path):
-    config = load_yaml(CONFIG)
+    config_path = manifest_static_config_path(load_yaml(manifest_path))
+    config = load_yaml(config_path)
     startup_capacity = system_capacity()
     startup_ok, startup_detail = capacity_gate(startup_capacity, "startup")
     (Path(runroot) / "resource_capacity_startup.json").write_text(
@@ -813,7 +876,7 @@ def start_stack(runroot, manifest_path):
                    indent=2, sort_keys=True) + "\n", encoding="utf-8")
     if not startup_ok:
         raise RuntimeError("startup resource gate failed: " + startup_detail)
-    checks, hashes = static_checks(CONFIG, manifest_path)
+    checks, hashes = static_checks(config_path, manifest_path)
     report = {"passed": all(item["ok"] for item in checks),
               "checks": checks, "source_hashes": hashes}
     (runroot / "static_preflight.json").write_text(
@@ -1073,15 +1136,16 @@ def watchdog_evidence(runroot):
     runroot = Path(runroot)
     if (runroot / "fleet" / "abort.request").is_file():
         return False, "abort.request exists"
+    config_path = runroot_config_path(runroot)
     try:
         fleet = last_jsonl(runroot / "fleet" / "telemetry.jsonl")
         vehicles = [last_jsonl(runroot / name / "telemetry.jsonl")
-                    for name in config_vehicle_names()]
+                    for name in config_vehicle_names(config_path=config_path)]
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         return False, "missing watchdog telemetry: %s" % exc
     if not fleet.get("telemetry_completeness"):
         return False, "fleet telemetry incomplete"
-    config = load_yaml(CONFIG)
+    config = load_yaml(config_path)
     expected_topics = {topic for vehicle in config["vehicles"]
                        for topic in vehicle["topics"].values()}
     topic_owners = fleet.get("topic_owners")
@@ -1122,8 +1186,9 @@ def watchdog_soak(runroot, seconds):
 
 
 def wait_final_metrics(runroot, timeout_s=10):
+    config_path = runroot_config_path(runroot)
     paths = [Path(runroot) / name / "metrics.json"
-             for name in config_vehicle_names() + ["fleet"]]
+             for name in config_vehicle_names(config_path=config_path) + ["fleet"]]
     deadline = time.monotonic() + timeout_s
     while time.monotonic() < deadline:
         if all(path.is_file() for path in paths):
@@ -1136,7 +1201,7 @@ def final_safety_result(runroot, require_command_chain=False):
     runroot = Path(runroot)
     if (runroot / "fleet" / "abort.request").is_file():
         return False, "abort.request exists"
-    names = config_vehicle_names()
+    names = config_vehicle_names(config_path=runroot_config_path(runroot))
     try:
         fleet = json.loads((runroot / "fleet" / "metrics.json").read_text(encoding="utf-8"))
         vehicles = [json.loads((runroot / name / "metrics.json").read_text(
@@ -1197,7 +1262,8 @@ def smoke_command_chain_valid(vehicles, expected_names=("uav0", "uav1")):
 
 def action_preflight(manifest_path):
     manifest, approval_bytes, approval_digest = approval_guard("preflight", manifest_path)
-    parse_dropout_config(manifest)  # D1 fail-fast: reject invalid dropout before runroot
+    config_path = manifest_static_config_path(manifest)
+    parse_dropout_config(manifest, config_path=config_path)  # D1 fail-fast
     runroot = make_runroot("preflight", manifest_path, approval_bytes)
     consume_approval("preflight", manifest_path, approval_digest, runroot)
     checks = []
@@ -1205,8 +1271,8 @@ def action_preflight(manifest_path):
     try:
         with runroot_ros_environment_scope(runroot):
             start_stack(runroot, manifest_path)
-            checks = live_checks(CONFIG, runroot)
-            config = load_yaml(CONFIG)
+            checks = live_checks(config_path, runroot)
+            config = load_yaml(config_path)
             soak_ok, soak_detail = watchdog_soak(
                 runroot, config["safety_contract"]["telemetry"]["preflight_soak_s"])
             checks.append({"name": "live.watchdog_soak", "ok": soak_ok,
@@ -1241,21 +1307,23 @@ def action_preflight(manifest_path):
 
 def action_launch(manifest_path):
     manifest, approval_bytes, approval_digest = approval_guard("launch", manifest_path)
+    config_path = manifest_static_config_path(manifest)
     runroot = make_runroot("smoke", manifest_path, approval_bytes)
     consume_approval("launch", manifest_path, approval_digest, runroot)
     active = start_stack(runroot, manifest_path)
     stopped = False
     try:
         with runroot_ros_environment_scope(runroot):
-            checks = live_checks(CONFIG, runroot)
+            checks = live_checks(config_path, runroot)
             report = {"passed": all(item["ok"] for item in checks), "checks": checks,
                       "resource_usage": resource_usage_summary(runroot)}
             (runroot / "live_preflight.json").write_text(
                 json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
             if not report["passed"]:
                 raise RuntimeError("live preflight failed; smoke trigger withheld")
-            config = load_yaml(CONFIG)
-            manifest_dropout = parse_dropout_config(load_yaml(manifest_path))
+            config = load_yaml(config_path)
+            manifest_dropout = parse_dropout_config(load_yaml(manifest_path),
+                                                    config_path=config_path)
             soak_ok, soak_detail = watchdog_soak(
                 runroot, config["safety_contract"]["telemetry"]["preflight_soak_s"])
             report["checks"].append({"name": "live.watchdog_soak", "ok": soak_ok,
@@ -1284,7 +1352,7 @@ def action_launch(manifest_path):
     metrics_ready = wait_final_metrics(runroot)
     safe, safety_detail = final_safety_result(runroot, require_command_chain=True) if metrics_ready else (
         False, "final metrics timeout")
-    names = config_vehicle_names()
+    names = config_vehicle_names(config_path=runroot_config_path(runroot))
     summary = {
         "runroot": str(runroot),
         "exit_reason": reason,
@@ -1334,7 +1402,7 @@ def action_collect():
     active = load_active()
     runroot = Path(active["runroot"])
     result = action_monitor()
-    names = config_vehicle_names()
+    names = config_vehicle_names(config_path=runroot_config_path(runroot))
     summary = {"runroot": str(runroot), "monitor_exit": result,
                **vehicle_metrics_summary(runroot, names),
                "fleet_metrics": (runroot / "fleet/metrics.json").is_file()}
@@ -1584,6 +1652,28 @@ def self_test():
     assert config_vehicle_names(three_vehicle_config) == ["uav0", "uav1", "uav2"]
     assert config_bridge_nodes(three_vehicle_config) == (
         "/px4_bridge_1", "/px4_bridge_2", "/px4_bridge_3")
+    # D7: manifest/runroot config instantiation resolves static_contract paths.
+    three_manifest = load_yaml(ROOT / "experiments/manifests/3uav_smoke.yaml")
+    assert manifest_static_config_path(three_manifest) == ROOT / "config/3uav_static.yaml"
+    assert manifest_approval_contract_path(three_manifest) == \
+        ROOT / "config/3uav_approval_contract.yaml"
+    assert source_hashes_for_config(ROOT / "config/3uav_static.yaml") == \
+        ROOT / "config/3uav_source_hashes.sha256"
+    assert source_hashes_for_config(ROOT / "config/2uav_static.yaml") == \
+        ROOT / "config/2uav_source_hashes.sha256"
+    three_contract = load_yaml(ROOT / "config/3uav_approval_contract.yaml")
+    assert approval_package_path(three_contract) == ROOT / "state/3uav_approval.yaml"
+    with tempfile.TemporaryDirectory() as tempdir:
+        runroot = Path(tempdir)
+        (runroot / "static.yaml").write_text(
+            (ROOT / "config/3uav_static.yaml").read_text(encoding="utf-8"), encoding="utf-8")
+        resolved = runroot_config_path(runroot)
+        assert load_yaml(resolved)["uav_count"] == 3
+        assert config_vehicle_names(config_path=resolved) == ["uav0", "uav1", "uav2"]
+    # D7: manifest-driven parse_dropout_config validates against the 3uav contract.
+    three_dropout = parse_dropout_config(
+        three_manifest, config_path=ROOT / "config/3uav_static.yaml")
+    assert three_dropout["vehicle"] == "uav1"
     topic_owners = {topic: ["/owner"] for vehicle in config["vehicles"]
                     for topic in vehicle["topics"].values()}
     tf_last_wall_s = {vehicle["frames"]["child"]: 1.0 for vehicle in config["vehicles"]}
