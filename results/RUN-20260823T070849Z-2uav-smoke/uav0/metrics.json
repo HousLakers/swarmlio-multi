@@ -1,0 +1,98 @@
+{
+  "ack_count": 11038,
+  "ack_timeout": {
+    "count": 0,
+    "recovered_count": 0,
+    "recovered_trajectory_ids": [],
+    "threshold_s": 1.0,
+    "trajectory_ids": []
+  },
+  "completion": {
+    "marker": "finish exploration.",
+    "observed": true,
+    "source": "/rosout",
+    "wall_s": 11076.434629338
+  },
+  "contact": {
+    "ground": 0,
+    "inter_uav": 0,
+    "obstacle": 0
+  },
+  "coverage": {
+    "available": true,
+    "callback_wall_duration_s": [
+      3.6830006138188764e-06,
+      4.45099976786878e-06,
+      4.899999112240039e-06,
+      5.583000529441051e-06,
+      5.297999450704083e-06,
+      6.547999873873778e-06,
+      6.26499968348071e-06,
+      5.310999767971225e-06,
+      6.162001227494329e-06,
+      5.187999704503454e-06,
+      5.263998900773004e-06,
+      4.524999894783832e-06,
+      5.706000592908822e-06,
+      7.347000064328313e-06,
+      3.3304999305983074e-05,
+      4.034000085084699e-06
+    ],
+    "coalesced": 1,
+    "denominator_voxels": 268912,
+    "last_message_wall_s": 11073.734207659,
+    "last_processed_sim_s": null,
+    "last_processed_wall_s": 11077.07297976,
+    "message_age_s": 3.3469817440000043,
+    "missing_policy": "abort_after_startup_grace",
+    "observed_voxels": 7227,
+    "processed": 38,
+    "processed_age_s": 0.008209642999645439,
+    "processing_wall_duration_s": [
+      0.0066749899997375906,
+      0.024340686000869027,
+      0.015542315000857343,
+      0.00782198999877437,
+      0.007114060001185862,
+      0.006752342998879612,
+      0.009464521999689168,
+      0.010767896999823279,
+      0.007738289001281373,
+      0.008529694001481403,
+      0.008147058999384171,
+      0.00871929899949464,
+      0.012537786999018863,
+      0.007086027999321232,
+      0.007717488000707817,
+      0.009650787998907617
+    ],
+    "ratio": 0.026874962813113582,
+    "received": 39
+  },
+  "crash": false,
+  "dropout": false,
+  "dropout_classification": "none",
+  "freeze": false,
+  "hold_at_goal": true,
+  "last_ack_id": 2,
+  "path_length_m": 7.417617951603335,
+  "position": [
+    -0.12866993248462677,
+    -0.012558091431856155,
+    1.512451171875
+  ],
+  "telemetry": {
+    "ack": 11038,
+    "cloud": 1405,
+    "frontier": 1434,
+    "health": 142,
+    "occupancy": 38,
+    "odometry": 1405,
+    "pos_cmd": 11038,
+    "trajectory": 2
+  },
+  "telemetry_complete": true,
+  "telemetry_expected": false,
+  "telemetry_missing_channels": [],
+  "telemetry_stale_channels": []
+}
