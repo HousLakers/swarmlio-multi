@@ -3111,4 +3111,78 @@ runner 新 hash: 735a266b979870b757bbd771a3c09ca23a7b031259bdfb1f542540f2cf5e8f7
 `3uav-preflight-20260823-2`，manifest 2232cb58 / source 494aafa4，digest ee8a97ea），
 旧 issuance `3uav-preflight-20260823-1`（绑定 c3f11e56）因源码漂移作废，未消费、不得复用。
 
+## 54.7 D8 内存路线审核返工：C 路线（门限参数化 + 3-UAV 放宽，interactive=false 回退）
+
+- 触发：B 路线 `interactive=false` 经高终端源码核验**方向错误**——PX4
+  `single_vehicle_spawn.launch` 中 `interactive=true`（默认）传 `-d`，而 PX4 `main.cpp`
+  `case 'd': pxh_off = true` 进入 `wait_to_exit()`（**不启动** PXH shell，daemon 模式更省内存）；
+  `interactive=false` 反而启动 PXH shell（增内存）。B 路线无 live 证据且方向相反，驳回。
+- 用户裁决：放宽 running 门限（只要三机能运行），辅以代码参数化，直接修改不再交接。
+
+### 修改内容
+
+`scripts/two_uav_runner.py`：
+
+1. `capacity_gate(facts, phase, baseline=None, config=None)`：门限从 `config.safety_contract.
+   metrics` 读取（`resource_startup_mem_available_gib` 默认 8、`resource_running_mem_
+   available_gib` 默认 3、`resource_startup_load1_max` 默认 10.0）；config 缺省时回退原硬编码，
+   2-UAV 路径逐字节不变。
+2. `watchdog_soak(runroot, seconds, config=None)`：soak 内 running 门限随 config。
+3. `start_stack` / `action_preflight` / `action_launch`：capacity_gate 与 watchdog_soak 传 config。
+4. self-test 新增 config 驱动门限断言（2uav 回退兼容、3uav 放宽通过/1 GiB-1 拒绝）。
+
+`scripts/two_uav_preflight.py`：
+
+- watchdog_contract 静态检查：`resource_running_mem_available_gib` 由 `== 3` 放宽为
+  `int 且 1 <= x <= 8`（2-UAV=3 仍符合，3-UAV=1 通过；startup 仍要求 == 8）。
+
+`launch/3uav_px4_sitl.launch`：
+
+- **回退** B 路线新增的 3 处 `interactive=false`（hash 恢复 D6 原值 a79f9c9e）。
+
+`config/3uav_static.yaml`：
+
+- `resource_running_mem_available_gib: 3 → 1`（实际运行期 MemAvailable 1.72 GiB 可过，
+  startup 保持 8）。
+
+### 验证证据
+
+```text
+2uav static preflight: passed=true，54/54 ok（source.multi_hash_manifest 匹配）
+3uav static preflight: passed=true，57/57 ok（含 watchdog_contract 与 source 匹配）
+py_compile（四脚本）: PASS
+self-test（runner 含新 capacity_gate 断言 / preflight / collector / gt_mapper）: 全 PASS
+git diff --check: PASS
+双 source hash manifest 逐文件校验 15/15 OK（2uav/3uav）
+```
+
+### 54.8 新 hash（D8 返工后）
+
+```text
+runner:    56ce9ff243a7e8afb8976b60f28ff6ee2b841432c29dcad06733df50a43c9127
+preflight: 9f7c60f2a793ce272eed56d429f67acdda1efb0d1f9473aca17c048141fa1074
+3uav static: dd4ee86228e69adc9b97d2dd288a167ce56fb5ae8ec4b1aad63e0a76f5abe49f
+3uav px4_sitl launch: a79f9c9e8e84dcb8ed76221ddaa59f8af3dac632291f5f5237de432388afd6ab
+（回退至 D6 原值）
+2uav hashes manifest: b9ec075effd13be9e67ca9f58f886df043f8f8ada5c59d48169821396ac724de
+3uav hashes manifest: b5b0f2d4d331af1de31e1cbade5cce38f0a7e2b580afd939b9d08b460ff9259f
+```
+
+### 54.9 3uav preflight approval 重签（issuance 3uav-preflight-20260823-3）
+
+```text
+manifest_sha256:             2232cb58445e7bd765e9747443dd3296532fd10a8f3afd0ae1e8fad6262ef26b
+source_hash_manifest_sha256: b5b0f2d4d331af1de31e1cbade5cce38f0a7e2b580afd939b9d08b460ff9259f
+issuance_id:                 3uav-preflight-20260823-3
+digest:                      de2db38c7318bd4ebdca89475976f811baaddfb217baa7a96e82e6f8d3a9061e
+package 静态验证: ALL PASS（8 项）
+旧 issuance 2（3uav-preflight-20260823-2，绑定 494aafa4）已消费；因源码漂移失效，不得复用。
+```
+
+### 54.10 残余风险
+
+- running 门限 1 GiB 基于上次实测 1.72 GiB，余量 ~0.7 GiB；3-UAV smoke 全程内存增长
+  若超余量仍可能失败（swap 兜底：swap delta > 200000 页 abort）。
+- startup 门限仍为 8 GiB（上次实测 11.5 GiB 空闲，充足）。
+
 

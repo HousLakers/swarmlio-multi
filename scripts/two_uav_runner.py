@@ -112,14 +112,19 @@ def system_capacity(meminfo_path=Path("/proc/meminfo"), vmstat_path=Path("/proc/
 SWAP_DELTA_ALLOWED_PAGES = 200000
 
 
-def capacity_gate(facts, phase, baseline=None):
+def capacity_gate(facts, phase, baseline=None, config=None):
     if not isinstance(facts, dict):
         return False, "resource evidence missing"
-    minimum = 8 * GIB if phase == "startup" else 3 * GIB
+    metrics = (config or {}).get("safety_contract", {}).get("metrics", {})
+    startup_min_gib = metrics.get("resource_startup_mem_available_gib", 8)
+    running_min_gib = metrics.get("resource_running_mem_available_gib", 3)
+    minimum = int(startup_min_gib) * GIB if phase == "startup" else int(running_min_gib) * GIB
     if facts["mem_available_bytes"] < minimum:
         return False, "MemAvailable below %d GiB" % (minimum // GIB)
-    if phase == "startup" and facts["load1"] >= 10.0:
-        return False, "load1 >= 10"
+    if phase == "startup":
+        load1_max = float(metrics.get("resource_startup_load1_max", 10.0))
+        if facts["load1"] >= load1_max:
+            return False, "load1 >= %g" % load1_max
     if phase != "startup":
         if not isinstance(baseline, dict):
             return False, "swap baseline missing"
@@ -870,7 +875,7 @@ def start_stack(runroot, manifest_path):
     config_path = manifest_static_config_path(load_yaml(manifest_path))
     config = load_yaml(config_path)
     startup_capacity = system_capacity()
-    startup_ok, startup_detail = capacity_gate(startup_capacity, "startup")
+    startup_ok, startup_detail = capacity_gate(startup_capacity, "startup", config=config)
     (Path(runroot) / "resource_capacity_startup.json").write_text(
         json.dumps({"facts": startup_capacity, "ok": startup_ok, "detail": startup_detail},
                    indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -929,7 +934,7 @@ def start_stack(runroot, manifest_path):
                      "teardown_identity": teardown_identity(runroot)})
         raise
     running_capacity = system_capacity()
-    running_ok, running_detail = capacity_gate(running_capacity, "running", startup_capacity)
+    running_ok, running_detail = capacity_gate(running_capacity, "running", startup_capacity, config=config)
     (Path(runroot) / "resource_capacity_ready.json").write_text(
         json.dumps({"facts": running_capacity, "baseline": startup_capacity,
                     "ok": running_ok, "detail": running_detail}, indent=2, sort_keys=True) + "\n",
@@ -1165,7 +1170,7 @@ def watchdog_evidence(runroot):
     return True, "watchdog evidence complete"
 
 
-def watchdog_soak(runroot, seconds):
+def watchdog_soak(runroot, seconds, config=None):
     try:
         baseline = json.loads((Path(runroot) / "resource_capacity_startup.json").read_text(
             encoding="utf-8"))["facts"]
@@ -1176,7 +1181,8 @@ def watchdog_soak(runroot, seconds):
         profiler = resource_profiler(runroot)
         if profiler is not None:
             profiler.sample(recorded_sim_time(runroot))
-        capacity_ok, capacity_detail = capacity_gate(system_capacity(), "running", baseline)
+        capacity_ok, capacity_detail = capacity_gate(
+            system_capacity(), "running", baseline, config=config)
         if not capacity_ok:
             return False, "resource gate failed: " + capacity_detail
         if (Path(runroot) / "fleet" / "abort.request").is_file():
@@ -1274,7 +1280,8 @@ def action_preflight(manifest_path):
             checks = live_checks(config_path, runroot)
             config = load_yaml(config_path)
             soak_ok, soak_detail = watchdog_soak(
-                runroot, config["safety_contract"]["telemetry"]["preflight_soak_s"])
+                runroot, config["safety_contract"]["telemetry"]["preflight_soak_s"],
+                config=config)
             checks.append({"name": "live.watchdog_soak", "ok": soak_ok,
                            "detail": soak_detail})
     except Exception as exc:
@@ -1325,7 +1332,8 @@ def action_launch(manifest_path):
             manifest_dropout = parse_dropout_config(load_yaml(manifest_path),
                                                     config_path=config_path)
             soak_ok, soak_detail = watchdog_soak(
-                runroot, config["safety_contract"]["telemetry"]["preflight_soak_s"])
+                runroot, config["safety_contract"]["telemetry"]["preflight_soak_s"],
+                config=config)
             report["checks"].append({"name": "live.watchdog_soak", "ok": soak_ok,
                                      "detail": soak_detail})
             report["passed"] = all(item["ok"] for item in report["checks"])
@@ -1747,6 +1755,18 @@ def self_test():
     assert capacity_gate(dict(running, swap_out=6), "running", baseline)[0]  # delta=1 可接受
     assert not capacity_gate(dict(running, swap_out=200006), "running", baseline)[0]  # delta=200001>200000
     assert not capacity_gate(None, "running", baseline)[0]
+    # Config-driven thresholds: 2-UAV backward-compatible default.
+    two_config = {"safety_contract": {"metrics": {"resource_startup_mem_available_gib": 8,
+                   "resource_running_mem_available_gib": 3, "resource_startup_load1_max": 10.0}}}
+    assert capacity_gate(baseline, "startup", config=two_config)[0]
+    assert capacity_gate(running, "running", baseline, config=two_config)[0]
+    # 3-UAV relaxed running threshold.
+    three_config = {"safety_contract": {"metrics": {"resource_startup_mem_available_gib": 8,
+                     "resource_running_mem_available_gib": 1, "resource_startup_load1_max": 10.0}}}
+    three_running = dict(running, mem_available_bytes=1 * GIB + GIB // 2)
+    assert capacity_gate(three_running, "running", baseline, config=three_config)[0]
+    assert not capacity_gate(dict(three_running, mem_available_bytes=1 * GIB - 1),
+                             "running", baseline, config=three_config)[0]
     with tempfile.TemporaryDirectory() as tempdir:
         first_runroot = Path(tempdir) / "RUN-first"
         second_runroot = Path(tempdir) / "RUN-second"

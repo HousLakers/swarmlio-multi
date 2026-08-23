@@ -300,7 +300,8 @@ def static_checks(config_path, manifest_path):
           metrics_contract.get("coverage_coalesce_sim_s") == 2.0 and
           metrics_contract.get("resource_sample_wall_s") == 1.0 and
           metrics_contract.get("resource_startup_mem_available_gib") == 8 and
-          metrics_contract.get("resource_running_mem_available_gib") == 3 and
+          isinstance(metrics_contract.get("resource_running_mem_available_gib"), int) and
+          1 <= metrics_contract.get("resource_running_mem_available_gib") <= 8 and
           metrics_contract.get("resource_startup_load1_max") == 10.0 and
           metrics_contract.get("resource_swap_activity") == "abort",
           "safety.watchdog_contract", {"telemetry": telemetry_contract,
