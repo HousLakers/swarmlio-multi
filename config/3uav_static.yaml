@@ -104,7 +104,7 @@ vehicles:
     namespace: /uav2
     racer_id: 3
     mavlink_system_id: 3
-    initial_position: [-3.0, 3.0, 0.0]
+    initial_position: [-3.0, -3.0, 0.0]
     ports:
       fcu_local_udp: 14542
       fcu_remote_udp: 14582

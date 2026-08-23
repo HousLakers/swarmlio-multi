@@ -15,7 +15,7 @@
   <node pkg="swarm_lio" type="px4_bridge.py" name="px4_bridge_3" output="log">
     <param name="drone_id" value="3"/>
     <param name="mavros_ns" value="/uav2"/>
-    <param name="init_pos" type="yaml" value="[-3.0, 3.0]"/>
+    <param name="init_pos" type="yaml" value="[-3.0, -3.0]"/>
     <param name="odom_topic" value="/mavros_relay/odom_3"/>
   </node>
 </launch>

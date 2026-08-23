@@ -3207,4 +3207,51 @@ package 静态验证: ALL PASS（8 项）
   3uav hashes manifest b5b0f2d4 → 802b8340（15/15 逐文件一致）。
 - 2-UAV 与 3-UAV 主流程至此闭环（D1→D9）。
 
+## 54.13 D9 后续：uav2 冻结根因排查与起飞点修复（次终端执行）
+
+### 根因（源码 + 日志证据链）
+
+1. `exploration_node_3` 全程 105 次 `PLAN_TRAJ`，从未 `PUB_TRAJ`/`EXEC_TRAJ`；
+   `T1S4R planner_fail` 1409 次（uav0 为 0）。
+2. A* 根因日志（racer.log 115,455 次）：
+   `Astar vehicle start is inside inflated occupancy: start=-3.09 3.07 1.49`。
+3. `astar2.cpp:70`：`start_inflated` 直接 `return NO_PATH`。
+4. `sdf_map` 初始 `occupancy_buffer_inflate_` 全 0；只有雷达观测到 occupied 才膨胀。
+   uav2 悬停点在地图内却被标记膨胀占据——共享地图（`shared_async`）中 uav2 机身
+   被其他机（或自身）雷达扫描标记为障碍，`no_drone_1: false` 未排除任何机。
+5. 世界文件几何核验：uav2 原起飞点 (-3, 3) 距最近障碍物 >4 m，**非静态障碍物膨胀**，
+   为共享地图动态标记所致。
+
+### 修复（用户裁决：挪起飞点，uav2 (-3, 3) → (-3, -3)）
+
+- `config/3uav_static.yaml`：uav2 `initial_position: [-3.0, -3.0, 0.0]`
+- `launch/3uav_px4_sitl.launch`：uav2 group spawn x=-3.0, y=-3.0
+- `launch/3uav_bridges.launch`：`px4_bridge_3` init_pos [-3.0, -3.0]
+- `launch/3uav_racer.launch`：drone_id=3 init_x=-3.0, init_y=-3.0
+- 地图可视化脚本：`scripts/draw_50x50_map_overview.py`（输出
+  `results/map_50x50_overview.png`，标注障碍物/膨胀 0.35 m/起飞点/uav2 悬停点）
+- manifest approval_status：smoke_completed → blocked_pending_verified_launch_and_preflight
+  （重跑前置；manifest hash 恢复 2232cb58）
+
+### 54.14 新 hash（uav2 起飞点修复后）
+
+```text
+3uav static.yaml:      f65ed408695defbf45111e0df2685c9bac7744eb731ee2fd7ec4938bcc8398eb
+3uav px4_sitl launch:  6c5420f3a0a910f4c30d1a3b94912c9ec3253fd19f8b3218829cfc7b413c7c16
+3uav bridges launch:   4fec5484507b4786bfeeba1a5410d6dda78655eb991fad3c6864473c0174be68
+3uav racer launch:     15f5cf5ea6ee8ac49f48dfbc0e1d771eac8f75a2ce945beae066cb30825549c1
+3uav hashes manifest:  1c100822755de8b91c72cad8f5bacf15c21114a4e6b1ca0aaf648775c0d1b447
+manifest:              2232cb58…（恢复 pending 状态）
+```
+
+验证：3uav static preflight 57/57 passed；source hash manifest 15/15 一致；
+三个 launch XML well-formed；uav2 initial_position 一致性核对通过。
+
+### 54.15 残余风险（重跑前）
+
+- 起飞点修复基于「共享地图动态标记」假设，未做静态验证；需重跑 D9 实证
+  uav2 不再冻结。
+- 若重跑仍冻结，需在 racer 侧启用 `sdf_map/no_drone` 排除（代码层，超出
+  本仓库范围，另立任务）。
+
 

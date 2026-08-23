@@ -23,7 +23,7 @@
   </include>
   <include file="$(find exploration_manager)/launch/single_drone_exploration.xml">
     <arg name="drone_id" value="3"/><arg name="drone_num" value="3"/>
-    <arg name="init_x" value="-3.0"/><arg name="init_y" value="3.0"/><arg name="init_z" value="0.0"/>
+    <arg name="init_x" value="-3.0"/><arg name="init_y" value="-3.0"/><arg name="init_z" value="0.0"/>
     <arg name="map_size_x" value="$(arg map_size_x)"/><arg name="map_size_y" value="$(arg map_size_y)"/><arg name="map_size_z" value="$(arg map_size_z)"/>
     <arg name="odom_prefix" value="/lidar_slam/odom"/>
     <arg name="simulation" value="$(arg simulation)"/>
