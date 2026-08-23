@@ -2,11 +2,11 @@ schema_version: 1
 stage: smoke
 approved: true
 allowed_actions: [launch]
-manifest_sha256: d9a64bf7b469ef85954fffdb09e7c9143b8b6b72b18b735477852a0e0265ebfe
-source_hash_manifest_sha256: 146591227da89c43093c1d3b6783950f08b7a8bc92c735166f9c70586fbf6784
+manifest_sha256: 509e71fda25d275caae12f6d01246bf264ca3d1588c7a056853877764a29370f
+source_hash_manifest_sha256: 48ce54177330f445d4bb154fa2764f14c94d580e853c0dff3922bf300589f72e
 issued_by: sol
 max_uses: 1
-issuance_id: dropout-smoke-20260824-3uav-D10-replay
+issuance_id: load-balancing-20260824-3uav-300s-smoke
 dropout:
   enabled: true
   vehicle: uav1

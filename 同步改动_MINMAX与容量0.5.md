@@ -256,31 +256,48 @@ git commit -m "fix: align multi-UAV figures with single-UAV drawing standard"
 
 ---
 
-## 七、实施优先级
+## 七、实施状态
 
-### P0（立即做）
+> 已按本方案完成到"第四步跑实验之前"，具体状态见下表。
+> 当前身份链（2026-08 参数化后）：
+> - 3-UAV manifest `experiments/manifests/3uav_smoke.yaml`
+>   - SHA-256 `509e71fda25d275caae12f6d01246bf264ca3d1588c7a056853877764a29370f`（duration 300s）
+> - 3-UAV source hash manifest `config/3uav_source_hashes.sha256`
+>   - SHA-256 `48ce54177330f445d4bb154fa2764f14c94d580e853c0dff3922bf300589f72e`
 
-1. ⬜ 重写 `draw_experiment_artifacts.py`
+### P0（已完成）
+
+1. ✅ 重写 `draw_experiment_artifacts.py`
    - 产出 `coverage.png`（上下两栏，对齐单机画法）
    - 产出 `grid_map.png`（5cm 灰度栅格）
    - 产出 `point_cloud.png`（二维俯视点云）
-   - 产出 `coverage_seq.json` 时间序列
+   - 产出 `coverage_seq.json` 时间序列（无该文件时从 telemetry 回退）
 
-2. ⬜ collector 新增 coverage 时间序列记录
+2. ✅ collector 新增 coverage 时间序列记录
    - `_process_occupancy_snapshots` 中追加 `coverage_seq`
    - finalize 落盘 `coverage_seq.json`
 
-### P1（下一步做）
+### P1（已完成）
 
-3. ⬜ 创建实验分支 `experiment/load-balancing`
-   - 修改 `fast_exploration_manager.cpp` 加 MINMAX
-   - 容量 0.5 参数化
+3. ✅ 创建实验分支 `experiment/load-balancing`（RACER 仓库）
+   - `fast_exploration_manager.cpp` 加 `MTSP_OBJECTIVE` 参数（MINSUM/MINMAX）
+   - `capacity_factor` 参数化（0.75 默认 / 0.5 实验）
+   - `single_drone_planner.xml` / `single_drone_exploration.xml` 透传参数
+   - 已编译通过（`exploration_node` Built target）
+   - swarmlio_multi：`3uav_static.yaml` 加 `exploration` 段，
+     `3uav_racer.launch` 透传 launch arg，runner 转发给 roslaunch
+   - main 分支保留默认 `MINSUM + 0.75`，实验矩阵只改 config 即可切换
 
-### P2（验证阶段做）
+### P2（待验证阶段）
 
-4. ⬜ 按实验矩阵跑阶段 1-3
+4. ⬜ 按实验矩阵跑阶段 1-3（每组 300s）
 5. ⬜ 阶段 4 最终验证
 6. ⬜ 更新报告和图表
+
+### 跑实验前需重新签发 approval
+
+- 已消费的 approval（`dropout-smoke-20260824-3uav-D10-replay`）不得复用
+- 新的 manifest/source-hash 组合必须签发新 approval package 后才能 `launch`
 
 ---
 
