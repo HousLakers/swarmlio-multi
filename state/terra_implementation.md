@@ -2795,3 +2795,66 @@ collector: cb2443adfa61d27edd28e4ab8b98222bce9fa920f9570e6890ebad07df42a02c
   但 intentional dropout 场景下的掉线机相关 checks 已被隔离，不会误杀 surviving UAV。
 - 当前未运行 D3 rehearsal；因此这些 classification 分支只通过 self-test 和静态 diff 证据验证。
 
+## 51. D4 分类强化 + 报告字段（有 D3 runroot 可验证）
+
+- 任务来源：`state/dropout_experiment_plan.md` D4（collector 分类强化 + 报告字段）
+- 允许写入：`two_uav_collector.py`、`two_uav_runner.py`（仅分类自检）、terra、events
+- 验证输入：D3 正式 runroot `results/RUN-20260823T070849Z-2uav-smoke/`（返工后
+  control_chain，kill exploration_node_2+traj_server_2，sim_s=90.14）；
+  对照 runroot `RUN-20260823T063342Z-2uav-smoke/`（旧 control_chain，含 px4_bridge_2）。
+
+### 51.1 修改内容
+
+`scripts/two_uav_collector.py`：
+
+1. `dropout_classification(..., vehicle_nodes=None)`：强化 unexpected_loss 归因——只有当
+   liveness `lost_after_seen` 包含**该机自己的节点**（px4_bridge/exploration/traj 按
+   racer_id）才判 unexpected_loss；其它机节点死亡不再误伤本机分类。
+2. `_load_dropout_record()`：强化记录有效性——必须含 `vehicle`（str）且 `mode`（非空 str）
+   且 `sim_s`（非 bool 数字），否则不视为 intentional_dropout 依据。
+3. 新增 `dropout_continue_evidence(baseline, report, dropped=False)`：纯函数，输出
+   `{"continued": bool|None, "coverage_delta": int|None}`——幸存机在 dropout 基线后
+   有 coverage/telemetry/path 任一增量即 `continued=True`；dropped 机恒为
+   `{continued: False, coverage_delta: None}`。
+4. `Collector` 新增 `dropout_baseline` 与 `_capture_dropout_baseline()`：首个看到
+   dropout 记录的 report 时快照每机 coverage_voxels/path_length/ack/pos_cmd/odometry。
+5. `report()`：fleet metrics 新增（仅 dropout 场景出现）：
+   - `surviving_uavs_continue`：每机 `{"uav0": true, "uav1": false}`；
+   - `post_dropout_coverage_delta`：每机 coverage 增量（dropped 为 null）。
+
+`scripts/two_uav_runner.py`（仅 self-test）：新增 D4 分类自检——对三种 mode 各执行一次
+`execute_dropout`，断言记录含 collector 分类消费字段（vehicle/mode/sim_s/reason）且
+`killed_nodes` 与该 mode 的 `dropout_target_nodes` 完全一致（control_chain 不含
+px4_bridge、communication 仅 bridge、node_level 三节点）。
+
+### 51.2 验证证据（未启动实验）
+
+```text
+collector: py_compile PASS / self-test PASS / git diff --check PASS
+runner:    py_compile PASS / self-test PASS（含 D4 三 mode 分类自检）/ git diff --check PASS
+```
+
+D3 runroot 只读验证（D4 指标语义，非实验）：
+
+```text
+dropout vehicle=uav1 mode=control_chain sim_s=90.14
+uav0 final coverage=7227  baseline@dropout≈4861  post_dropout_delta=2366 continued=True
+uav0 coverage first=0 last=7227 samples=70
+```
+
+### 51.3 新 hash（D4）
+
+```text
+collector: 1e029f55dac22d500564dc4ce38caf5bec8bc8419d56763e5dd3335e803b2460
+runner:    aca7cbd2f91ec37c57f6a4d1a9514ee091ce46124b84fd29dc7ec0e64878b90b
+```
+
+### 51.4 残余风险
+
+- `surviving_uavs_continue` 的 baseline 取「collector 首个看到 dropout.json 的 report」，
+  与 runner 触发时刻相差一个 flush 周期（≤2 s），coverage delta 存在 ≤1 个 snapshot 的
+  近似误差；仅用于报告，不影响 fail-closed 门。
+- 对照 runroot（063342Z）是旧 control_chain（kill 含 px4_bridge_2）；与正式 runroot
+  （070849Z）不可直接按 coverage 对比，D4 只用于验证分类字段齐全，不改变安全门。
+
+

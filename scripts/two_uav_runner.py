@@ -1762,6 +1762,29 @@ def self_test():
         assert saved["vehicle"] == "uav0"
         assert saved["reason"] == "intentional_dropout"
 
+    # D4 classification self-check: every mode's record must carry the fields
+    # the collector classification consumes and killed_nodes must match the
+    # mode's target set exactly.
+    for mode in ("control_chain", "communication", "node_level"):
+        with tempfile.TemporaryDirectory() as tempdir:
+            mode_runroot = Path(tempdir) / ("RUN-mode-" + mode)
+            mode_runroot.mkdir()
+            mode_cfg = {**valid_dropout, "enabled": True, "vehicle": "uav1", "mode": mode}
+            mode_record = execute_dropout(str(mode_runroot), mode_cfg, config, sim_s=70.0,
+                                          pid_probe=pid_probe, killer=killer)
+            for key in ("vehicle", "mode", "sim_s", "reason"):
+                assert key in mode_record
+            assert mode_record["mode"] == mode
+            assert mode_record["reason"] == "intentional_dropout"
+            assert mode_record["killed_nodes"] == dropout_target_nodes(config, mode_cfg)
+            if mode == "control_chain":
+                assert "/px4_bridge_2" not in mode_record["killed_nodes"]
+            elif mode == "communication":
+                assert mode_record["killed_nodes"] == ["/px4_bridge_2"]
+            elif mode == "node_level":
+                assert set(mode_record["killed_nodes"]) == {
+                    "/px4_bridge_2", "/exploration_node_2", "/traj_server_2"}
+
     # monitor_until: dropout trigger via injected probes
     with tempfile.TemporaryDirectory() as tempdir:
         mu_runroot = Path(tempdir) / "RUN-monitor"

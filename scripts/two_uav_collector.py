@@ -76,24 +76,51 @@ def liveness_state(expected_nodes, seen_nodes, live_nodes, active):
     }
 
 
-def dropout_classification(vehicle_name, dropout_record, liveness, snapshot, active):
+def dropout_classification(vehicle_name, dropout_record, liveness, snapshot, active,
+                           vehicle_nodes=None):
     """Classify a vehicle per D0 semantics: intentional/unexpected/telemetry_missing/none.
 
     The runner-authored fleet/dropout.json is authoritative for the vehicle it names;
-    otherwise a live liveness break is unexpected_loss and a channel break while the
-    process tree survives is telemetry_missing.  Teardown (active=False) never invents
-    a fault classification on its own.
+    otherwise a liveness break on the vehicle's *own* nodes is unexpected_loss and a
+    channel break while the process tree survives is telemetry_missing.  Teardown
+    (active=False) never invents a fault classification on its own.
     """
     if dropout_record is not None and dropout_record.get("vehicle") == vehicle_name:
         return "intentional_dropout"
     if not active:
         return "none"
     if liveness and liveness.get("lost_after_seen"):
-        return "unexpected_loss"
+        if vehicle_nodes is None:
+            return "unexpected_loss"
+        own_lost = [node for node in liveness["lost_after_seen"] if node in vehicle_nodes]
+        if own_lost:
+            return "unexpected_loss"
     if snapshot and (snapshot.get("telemetry_stale_channels") or
                      snapshot.get("telemetry_missing_channels")):
         return "telemetry_missing"
     return "none"
+
+
+def dropout_continue_evidence(baseline, report, dropped=False):
+    """Per-vehicle continuation evidence after the dropout baseline.
+
+    A survivor "continues" when it produced new coverage, telemetry, or path
+    progress after the dropout record first appeared; the dropped vehicle is
+    explicitly not a survivor and reports no post-dropout coverage delta.
+    """
+    if dropped:
+        return {"continued": False, "coverage_delta": None}
+    if not isinstance(baseline, dict):
+        return {"continued": None, "coverage_delta": None}
+    cov_now = report.get("coverage", {}).get("observed_voxels", 0)
+    cov_delta = max(0, int(cov_now) - int(baseline.get("coverage_voxels", 0)))
+    telemetry = report.get("telemetry", {})
+    progressed = (cov_delta > 0 or
+                  telemetry.get("ack", 0) > baseline.get("ack", 0) or
+                  telemetry.get("pos_cmd", 0) > baseline.get("pos_cmd", 0) or
+                  telemetry.get("odometry", 0) > baseline.get("odometry", 0) or
+                  report.get("path_length_m", 0.0) > baseline.get("path_length_m", 0.0))
+    return {"continued": bool(progressed), "coverage_delta": cov_delta}
 
 
 def apply_dropout_report(report, dropout_record):
@@ -364,6 +391,7 @@ class Collector:
         self.last_active_liveness = None
         self.last_active_report_wall_s = None
         self.dropout_record = None
+        self.dropout_baseline = None
         self.expected_nodes_by_vehicle = {
             spec["name"]: {
                 "/px4_bridge_%s" % spec["racer_id"],
@@ -374,7 +402,12 @@ class Collector:
                            for spec in config["vehicles"]}
 
     def _load_dropout_record(self):
-        """Read the runner-authored fleet/dropout.json once and cache it."""
+        """Read the runner-authored fleet/dropout.json once and cache it.
+
+        D4 strengthening: a record is authoritative only when it carries the
+        vehicle plus the classification fields (mode, sim_s) that distinguish
+        intentional_dropout from unexpected_loss/telemetry_missing.
+        """
         if self.dropout_record is not None:
             return self.dropout_record
         path = self.runroot / "fleet" / "dropout.json"
@@ -385,6 +418,11 @@ class Collector:
         except (OSError, ValueError, json.JSONDecodeError):
             return None
         if not isinstance(record, dict) or not isinstance(record.get("vehicle"), str):
+            return None
+        if not isinstance(record.get("mode"), str) or not record["mode"]:
+            return None
+        sim_s = record.get("sim_s")
+        if not isinstance(sim_s, (int, float)) or isinstance(sim_s, bool):
             return None
         self.dropout_record = record
         return record
@@ -401,6 +439,25 @@ class Collector:
             if node_name in self.expected_nodes_by_vehicle[spec["name"]]:
                 return spec["name"]
         return None
+
+    def _capture_dropout_baseline(self):
+        """Snapshot per-vehicle progress at the first report after the dropout."""
+        if self.dropout_baseline is not None:
+            return
+        record = self._load_dropout_record()
+        if record is None:
+            return
+        baseline = {"sim_s": record.get("sim_s"), "vehicles": {}}
+        for name, state in self.states.items():
+            with state.lock:
+                baseline["vehicles"][name] = {
+                    "coverage_voxels": len(state.coverage_voxels),
+                    "path_length_m": state.path_length_m,
+                    "ack": state.samples["ack"],
+                    "pos_cmd": state.samples["pos_cmd"],
+                    "odometry": state.samples["odometry"],
+                }
+        self.dropout_baseline = baseline
 
     def _count_cb(self, _message, args):
         state, key = args
@@ -630,6 +687,7 @@ class Collector:
         telemetry = self.safety["telemetry"]
         dropout_record = self._load_dropout_record()
         dropped_vehicle = dropout_record.get("vehicle") if dropout_record else None
+        self._capture_dropout_baseline()
         if active:
             freshness_reference = time.monotonic()
             self.last_active_report_wall_s = freshness_reference
@@ -668,8 +726,9 @@ class Collector:
                 self.expected_nodes, self.seen_nodes, set(), False)
         classifications = {}
         for name, report in vehicle_reports.items():
-            classification = dropout_classification(name, dropout_record, liveness,
-                                                    report, active)
+            classification = dropout_classification(
+                name, dropout_record, liveness, report, active,
+                vehicle_nodes=self.expected_nodes_by_vehicle.get(name))
             classifications[name] = classification
             report["dropout"] = classification == "intentional_dropout"
             report["dropout_classification"] = classification
@@ -678,6 +737,15 @@ class Collector:
                 apply_dropout_report(report, dropout_record)
             elif report["crash"]:
                 self._abort("crash:" + name)
+        continue_evidence = {}
+        if self.dropout_baseline is None:
+            for name in self.states:
+                continue_evidence[name] = {"continued": None, "coverage_delta": None}
+        else:
+            for name, report in vehicle_reports.items():
+                base = self.dropout_baseline["vehicles"].get(name)
+                continue_evidence[name] = dropout_continue_evidence(
+                    base, report, dropped=(name == dropped_vehicle))
         fleet = {
             "fleet_coverage_voxels": len(union),
             "fleet_coverage_ratio": float(len(union)) / denominator,
@@ -703,6 +771,10 @@ class Collector:
         }
         if dropout_record is not None:
             fleet["dropout"] = dropout_record
+            fleet["surviving_uavs_continue"] = {
+                name: evidence["continued"] for name, evidence in continue_evidence.items()}
+            fleet["post_dropout_coverage_delta"] = {
+                name: evidence["coverage_delta"] for name, evidence in continue_evidence.items()}
         fleet["dropout_classifications"] = classifications
         return vehicle_reports, fleet
 
@@ -757,6 +829,34 @@ def self_test():
         "telemetry_missing"
     assert dropout_classification("uav1", None, {}, {"telemetry_missing_channels": []}, False) == \
         "none"
+    # D4: unexpected_loss is attributed to the vehicle whose *own* nodes died,
+    # not fleet-wide (a dead px4_bridge_2 must not label uav0 unexpected_loss).
+    uav0_nodes = {"/px4_bridge_1", "/exploration_node_1", "/traj_server_1"}
+    uav1_nodes = {"/px4_bridge_2", "/exploration_node_2", "/traj_server_2"}
+    lost_fleet = {"lost_after_seen": ["/px4_bridge_2", "/traj_server_2"]}
+    assert dropout_classification("uav1", None, lost_fleet, {}, True,
+                                  vehicle_nodes=uav1_nodes) == "unexpected_loss"
+    assert dropout_classification("uav0", None, lost_fleet, {}, True,
+                                  vehicle_nodes=uav0_nodes) == "none"
+    assert dropout_classification("uav0", None, lost_fleet,
+                                  {"telemetry_stale_channels": ["health"]}, True,
+                                  vehicle_nodes=uav0_nodes) == "telemetry_missing"
+    # D4: dropout_continue_evidence — survivor continues on coverage/telemetry/
+    # path progress; the dropped vehicle is not a survivor.
+    survivor_after = {"coverage": {"observed_voxels": 120}, "telemetry": {"ack": 10},
+                      "path_length_m": 12.0}
+    baseline = {"coverage_voxels": 100, "ack": 8, "pos_cmd": 8, "odometry": 8,
+                "path_length_m": 10.0}
+    evidence = dropout_continue_evidence(baseline, survivor_after)
+    assert evidence == {"continued": True, "coverage_delta": 20}
+    assert dropout_continue_evidence(baseline, survivor_after, dropped=True) == {
+        "continued": False, "coverage_delta": None}
+    no_progress = {"coverage": {"observed_voxels": 100}, "telemetry": {"ack": 8},
+                   "path_length_m": 10.0}
+    assert dropout_continue_evidence(baseline, no_progress) == {
+        "continued": False, "coverage_delta": 0}
+    assert dropout_continue_evidence(None, survivor_after) == {
+        "continued": None, "coverage_delta": None}
     assert not exactly_one_topic_owner(("/owner_a", "/owner_b"))
     expected = {"/a", "/b"}
     first_live = liveness_state(expected, set(), {"/a"}, True)
