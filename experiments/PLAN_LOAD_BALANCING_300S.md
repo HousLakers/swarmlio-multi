@@ -1,9 +1,11 @@
-# 多机掉线负载均衡实验详细计划（每组 300s）
+# 多机掉线负载均衡实验详细计划（每组 300s × 3 次重复，夜间自动执行）
 
 > 状态：`计划定稿，等待执行批准`
 > 前置：P0（绘图标准）P1（MINMAX/容量参数化）已完成并本地提交；
 > approval 已重签为 `load-balancing-20260824-3uav-300s-smoke`（尚未消费）。
 > 本文档是第四步"跑实验"的执行蓝本。
+> **每组重复 3 次（用户决策）**，共 6 组 × 3 = **18 runs**；
+> **夜间全程自动执行**，由执行器脚本驱动、监控兜底。
 
 ---
 
@@ -28,25 +30,26 @@
 
 ---
 
-## 2. 实验矩阵（7 组，每组 300 sim-s）
+## 2. 实验矩阵（6 组 × 3 次重复 = 18 runs，每组 300 sim-s）
 
-| 组 | ID | 掉线 | 目标函数 | 容量 | 用途 |
+| 组 | ID | 掉线 | 目标函数 | 容量 | 重复 |
 |----|----|------|---------|------|------|
-| A1 | `no-drop-minsum-075` | 无 | MINSUM | 0.75 | 历史默认基线 |
-| A2 | `no-drop-minmax-075` | 无 | MINMAX | 0.75 | 评估 MINMAX 单独效果 |
-| A3 | `no-drop-minmax-050` | 无 | MINMAX | 0.50 | 评估 MINMAX + 容量降低 |
-| B1 | `drop-minsum-075` | uav1@60s node_level | MINSUM | 0.75 | 掉线基线 |
-| B2 | `drop-minmax-075` | uav1@60s node_level | MINMAX | 0.75 | 掉线 + MINMAX |
-| B3 | `drop-minmax-050` | uav1@60s node_level | MINMAX | 0.50 | 掉线 + MINMAX + 容量 |
-| C1 | `final-best-config` | 依 A/B 结果 | 最佳 | 最佳 | 最终验证（可选） |
+| A1 | `no-drop-minsum-075` | 无 | MINSUM | 0.75 | 3 |
+| A2 | `no-drop-minmax-075` | 无 | MINMAX | 0.75 | 3 |
+| A3 | `no-drop-minmax-050` | 无 | MINMAX | 0.50 | 3 |
+| B1 | `drop-minsum-075` | uav1@60s node_level | MINSUM | 0.75 | 3 |
+| B2 | `drop-minmax-075` | uav1@60s node_level | MINMAX | 0.75 | 3 |
+| B3 | `drop-minmax-050` | uav1@60s node_level | MINMAX | 0.50 | 3 |
 
-**常量**（所有组）：
+> C1（最终最佳配置验证）在 A/B 结果分析后追加 3 次，不在首批夜间矩阵内。
+
+**常量**（所有 run）：
 
 - `duration_sim_s: 300`
 - 地图：`racer_outdoor_50x50_v1`（50×50×3 m，planner box ±24.5）
 - 种子：`20260823`；3 UAV；起飞位置固定
 - 掉线组统一：`uav1`、`node_level`、`trigger_sim_s: 60`、`stop_active_reclaim`
-- `repetitions: 1`（若某组失败/资源门不过，允许重跑该组并记录）
+- 每组 3 次重复，runroot 各自独立
 
 ---
 
@@ -124,51 +127,63 @@ dropout:
 
 ---
 
-## 4. 每组执行流程
+## 4. 夜间自动执行流程（由执行器驱动）
 
-### 4.1 标准流程（每组重复）
+### 4.1 执行器
+
+新增脚本 `scripts/run_overnight_matrix.py`，职责：
+
+- 内置矩阵定义（6 组 × 3 次 = 18 runs）
+- 每组 run 前自动完成连锁准备：
+  1. 生成/更新 manifest（无掉线组独立 manifest，`dropout.enabled: false`）
+  2. 写 `config/3uav_static.yaml` 的 `exploration` 段（objective + capacity）
+  3. 刷新 `config/3uav_source_hashes.sha256` 的 config/manifest 哈希
+  4. 重签 `state/3uav_approval.yaml`（绑定最新 manifest + source-hash）
+- 调用 frozen runner `launch`（含 live preflight + soak + 掉线注入 + 300s 监控）
+- 每 run 结束记录到 `experiments/matrix_results.jsonl` 并渲染
+  `experiments/matrix_results.md`
+- 状态机持久化在 `experiments/matrix_state.json`，可断点续跑
+
+### 4.2 使用方式
 
 ```bash
 cd /home/houslakers/auto_tune_racer/swarmlio_multi
 
-# 0) 环境检查：确保无残留进程
-ls /tmp/swarmlio_multi_2uav_active.json 2>/dev/null && echo "残留! 先 stop"
-pgrep -af "gazebo|rosmaster" | grep -v grep || echo "环境干净"
+# 预演：打印矩阵 + 时间估算
+python3 scripts/run_overnight_matrix.py plan
 
-# 1) 确认/修改 config 的 exploration 段
-vim config/3uav_static.yaml
+# 查看当前进度
+python3 scripts/run_overnight_matrix.py status
 
-# 2) 更新 source hash manifest + 重算哈希 + 重签 approval（见第 3 节）
-
-# 3) runner 自测（快速门）
-python3 scripts/two_uav_runner.py --self-test
-
-# 4) 静态 preflight（可选但推荐首组）
-python3 scripts/two_uav_runner.py preflight --manifest <manifest>
-
-# 5) launch（含 live preflight + watchdog soak + 掉线注入 + 300s 监控）
-python3 scripts/two_uav_runner.py launch --manifest <manifest>
-# 等待约 25–30 分钟 wall time（300 sim-s / RT≈0.28）
-
-# 6) 结果收集与绘图（collector finalize 已自动产出三张图 + coverage_seq.json）
-python3 scripts/two_uav_runner.py collect --manifest <manifest>
-
-# 7) 记录 runroot 到实验台账（第 6 节）
+# 夜间自动执行（可后台挂起：nohup ... &）
+python3 scripts/run_overnight_matrix.py run
+# 可选：--groups A1,B2 只跑指定组；--max-runs N 本次最多跑 N 个
 ```
 
-### 4.2 每组耗时估算
+### 4.3 监控兜底
+
+执行器本身串行驱动，每个 run 结束后才启动下一个。额外的兜底：
+
+```bash
+# 另一终端实时看 telemetry 健康
+python3 scripts/monitor_experiment.py
+
+# 检查是否有 run 卡死 / 残留进程
+pgrep -af "gazebo|rosmaster" | grep -v grep
+```
+
+### 4.4 每组耗时估算
 
 - 启动 + readiness：约 2–3 分钟
 - 300 sim-s 监控：约 23–28 分钟（实测 RT≈0.22–0.30）
 - 收尾 + 收集：约 2 分钟
-- **单组约 30 分钟，7 组约 3.5–4 小时**
+- **单 run 约 30 分钟，18 runs 约 9 小时（夜间可行）**
 
-### 4.3 监控
+### 4.5 失败策略
 
-```bash
-# 另一终端实时监控（看 telemetry 是否健康、coverage 是否增长）
-python3 scripts/monitor_experiment.py
-```
+- 单个 run 失败：记录 `status=failed` + 原因，继续下一 run
+- 连续 2 个 run 失败：执行器停止，等待人工介入
+- 资源门不满足：runner 自身在 launch 前拒绝（MemAvailable 等硬门）
 
 ---
 
@@ -209,12 +224,13 @@ python3 scripts/monitor_experiment.py
 
 ---
 
-## 6. 实验台账（每完成一组就记录）
+## 6. 实验台账（执行器自动维护）
 
-新建 `experiments/matrix_results.md`，逐组记录：
+执行器每 run 结束自动追加 `experiments/matrix_results.jsonl`，并渲染
+`experiments/matrix_results.md` 表格（18 行）。手动复核用：
 
 ```markdown
-## <组ID>（UTC 时间）
+## <run key>（UTC 时间）
 
 - runroot：`results/RUN-<ts>-3uav-smoke/`
 - 配置：objective=MINSUM, capacity=0.75, dropout=<none|node_level@60s>
@@ -239,12 +255,13 @@ python3 scripts/monitor_experiment.py
 
 | 风险 | 对策 |
 |------|------|
-| 300s 下 RT 偏差放大 wall time | 监控 RT；若 wall 超 40 分钟考虑中断重跑 |
-| approval 消费后不能复用 | 每组建独立 manifest+approval，绝不共享 |
-| config 切换漏更新 hash | 用 `sha256sum` 校验 + `--self-test` 门 |
-| 无掉线组误触发掉线 | manifest `dropout.enabled: false` 单独校验 |
+| 300s 下 RT 偏差放大 wall time | 执行器 timeout 3600s/run；监控 RT |
+| approval 消费后不能复用 | 执行器每 run 自动重签，issuance_id 唯一 |
+| config 切换漏更新 hash | 执行器自动刷新 hash manifest + approval 绑定校验 |
+| 无掉线组误触发掉线 | 独立 manifest `dropout.enabled: false`，执行器按组生成 |
 | 三机探索负载本身不均衡 | 这正是本实验要测的；A1 作为参照 |
-| 某组 crash/abort | 记录 FAIL 原因；是否重跑由结果决定 |
+| 某 run crash/abort | 记录 FAIL 原因；连续 2 次失败暂停 |
+| 执行器中途退出 | `matrix_state.json` 断点续跑，`run` 重进即可 |
 | 远端 push 不通 | 本地提交保存历史（已确认可行） |
 
 ---
@@ -252,13 +269,12 @@ python3 scripts/monitor_experiment.py
 ## 8. 执行顺序与前置检查清单
 
 ```text
-□ 每组 config 的 exploration 段与矩阵一致
-□ 无掉线组使用 dropout.enabled:false 的独立 manifest
-□ source hash manifest 与 static config 一致（sha256sum 核对）
-□ approval 的 manifest/source-hash 绑定正确（runner self-test + 手动核对）
-□ 环境无残留进程
-□ 每组 launch 前记录预注册组 ID
-□ 每组完成后更新 experiments/matrix_results.md
+□ python3 scripts/run_overnight_matrix.py plan   # 确认 18 runs 矩阵
+□ runner / collector self-test 通过
+□ 环境无残留进程（无 gazebo/rosmaster）
+□ MemAvailable ≥ 8 GiB（本机 11 GiB 满足）
+□ 执行器启动：python3 scripts/run_overnight_matrix.py run
+□ 每 run 完成后 matrix_results.md 自动更新，人工/自动化核对
 □ 全部完成后汇总对比表 + 更新报告图与 luna_review
 ```
 

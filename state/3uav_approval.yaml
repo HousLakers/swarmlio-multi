@@ -1,12 +1,13 @@
 schema_version: 1
 stage: smoke
 approved: true
-allowed_actions: [launch]
-manifest_sha256: 509e71fda25d275caae12f6d01246bf264ca3d1588c7a056853877764a29370f
-source_hash_manifest_sha256: 48ce54177330f445d4bb154fa2764f14c94d580e853c0dff3922bf300589f72e
+allowed_actions:
+- launch
+manifest_sha256: 03a790ccfb322b7a1176e4d41795f2432c70dec8862b145445f3d5cdca447b23
+source_hash_manifest_sha256: 08a67d115538e86a41aed032dc56268e91ec22ccd4d8a0e1c589732c4247207e
 issued_by: sol
 max_uses: 1
-issuance_id: load-balancing-20260824-3uav-300s-smoke
+issuance_id: lb-overnight-20260824-3uav-300s-r3
 dropout:
   enabled: true
   vehicle: uav1
