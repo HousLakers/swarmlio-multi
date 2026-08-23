@@ -3,13 +3,13 @@ stage: smoke
 approved: true
 allowed_actions:
 - launch
-manifest_sha256: 03a790ccfb322b7a1176e4d41795f2432c70dec8862b145445f3d5cdca447b23
-source_hash_manifest_sha256: 08a67d115538e86a41aed032dc56268e91ec22ccd4d8a0e1c589732c4247207e
+manifest_sha256: babdc4c3a95ede1ec4ce042a0cb5aa38b149fd8f437e4df9fcad14f91ce6d40b
+source_hash_manifest_sha256: fad58d29247191232b138fc78b7df18f14a88ca95e65ad9eaae996a60a6a1e81
 issued_by: sol
 max_uses: 1
-issuance_id: lb-overnight-20260824-3uav-300s-r3
+issuance_id: lb-A1-verify-A1-20260823T213700Z-3uav-300s
 dropout:
-  enabled: true
+  enabled: false
   vehicle: uav1
   mode: node_level
   trigger_sim_s: 60

@@ -113,14 +113,14 @@ def manifest_for(group_id: str, dropout: bool) -> Path:
 def regenerate_manifest(group):
     """Write the per-group manifest (dropout enabled or disabled)."""
     manifest = load_yaml(BASE_MANIFEST)
-    manifest["experiment_id"] = "three_uav_%s_v1" % group["id"].lower()
+    manifest["experiment_id"] = "three_uav_%s_v1" % group["group"].lower()
     manifest["approval_status"] = "blocked_pending_verified_launch_and_preflight"
     manifest["duration_sim_s"] = DURATION_SIM_S
     manifest["latest_runroot"] = None
     dropout = manifest.get("dropout")
     if dropout is not None:
         dropout["enabled"] = bool(group["dropout"])
-    path = manifest_for(group["id"], group["dropout"])
+    path = manifest_for(group["group"], group["dropout"])
     dump_yaml(manifest, path)
     return path
 
@@ -134,7 +134,7 @@ def update_config_and_hashes(group):
     config["exploration"]["capacity_factor"] = float(group["capacity"])
     dump_yaml(config, CONFIG_PATH)
 
-    manifest_path = manifest_for(group["id"], group["dropout"])
+    manifest_path = manifest_for(group["group"], group["dropout"])
     lines = HASH_MANIFEST_PATH.read_text(encoding="utf-8").splitlines()
     out = []
     replaced = {"config": False, "manifest": False}
@@ -168,7 +168,7 @@ def update_config_and_hashes(group):
     return manifest_path
 
 
-def reissue_approval(group, manifest_path):
+def reissue_approval(group, manifest_path, run_key=None):
     """Write state/3uav_approval.yaml bound to the current hashes."""
     manifest_hash = sha256_file(manifest_path)
     source_hash = sha256_file(HASH_MANIFEST_PATH)
@@ -182,7 +182,8 @@ def reissue_approval(group, manifest_path):
         "source_hash_manifest_sha256": source_hash,
         "issued_by": contract.get("issued_by_must_be", "sol"),
         "max_uses": contract.get("max_uses", 1),
-        "issuance_id": "lb-%s-%s-3uav-300s" % (group["id"], now_utc()),
+        "issuance_id": "lb-%s-%s-%s-3uav-300s" % (
+            run_key or group["group"], group["group"], now_utc()),
     }
     manifest = load_yaml(manifest_path)
     if manifest.get("dropout"):
@@ -203,7 +204,7 @@ def run_one(run, state):
     try:
         manifest_path = regenerate_manifest(run)
         update_config_and_hashes(run)
-        manifest_hash, source_hash = reissue_approval(run, manifest_path)
+        manifest_hash, source_hash = reissue_approval(run, manifest_path, run_key=key)
         proc = subprocess.run(
             [sys.executable, str(RUNNER), "launch", "--manifest", str(manifest_path)],
             cwd=str(ROOT), capture_output=True, text=True, timeout=3600)
