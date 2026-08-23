@@ -3207,6 +3207,61 @@ package 静态验证: ALL PASS（8 项）
   3uav hashes manifest b5b0f2d4 → 802b8340（15/15 逐文件一致）。
 - 2-UAV 与 3-UAV 主流程至此闭环（D1→D9）。
 
+## 54.13 uav2 冻结根因排查与源码级修复（D9r，高终端）
+
+### 根因（证据链）
+
+- `exploration_node_3`（uav2）从 sim 25.4s 起卡在 `PLAN_TRAJ`，全程未进 `PUB_TRAJ`/`EXEC_TRAJ`
+- racer.log 中 115,455 次 `Astar vehicle start is inside inflated occupancy`，起
+  点为 uav2 悬停位置 (-3,3,~1.49)
+- 代码链：`astar2.cpp:70 getInflateOccupancy(start)==1 → NO_PATH → planTrajToView FAIL
+  → fast_exploration_fsm PLAN_TRAJ 死循环（105 次 PLAN_TRAJ、1409 次 planner_fail、
+  1310 次 v2_escape preserve_episode）`
+- 来源：雷达点云（inputPointCloud）无自身/他机机架排除；共享地图
+  （multi_map_manager insertChunkToMap）直接写入他机 occupied chunk；`no_drone_1`
+  仅影响 getBaseCoor 且仅 id==1。uav0/uav1 因能移动而脱困，uav2 原地悬停被
+  机架伪影永久死锁
+
+### 修复（RACER 源码 + overlay）
+
+1. `sdf_map.h/.cpp`：新增 `clearVehicleBody(pos, radius=0.8)`，把本机当前位置
+   球体内 occupancy_buffer_ 置 free、inflate buffer 清零
+2. `fast_exploration_manager.cpp`：`planTrajToView` 开头调用
+   `sdf_map_->clearVehicleBody(pos, 0.8)`（覆盖全部规划入口，含 avoid_collision）
+3. catkin_make 全量重编译通过（exploration_node/traj_server/fast_planner_node 更新）
+4. overlay 更新：`swarmlio-single-v2` 新增 history
+   `RUN-20260823T013000Z-uav2-freeze-body-clear-fix`（sdf_map.cpp/h、fast_exploration_manager.cpp），
+   current_config.sha256 21→22 文件，apply 脚本期望数同步；`--verify-bundle` 通过
+5. single-v2 提交 `08fb545`
+
+### 与中终端并行修复的协调
+
+- 中终端 e9c1229（01:08）已把 uav2 spawn (-3,3)→(-3,-3) 并回退 manifest 至
+  `blocked_pending_verified_launch_and_preflight`（准备重跑 D9）
+- 两者兼容：中终端为位置缓解，高终端为机架死锁根因修复，双保险共存
+
+### 身份链更新（链条末尾）
+
+```text
+single_commit:        08fb545a78ed7f1df2e1182a0e6d7a13540a28f6
+overlay_manifest:     7c54d34ad5aa878a89fb07394b5efe88373fcdf848bbe0188b81b6fbdecb1f3c（22 文件）
+overlay_installer:    8cabae8d6c8019cf49e4f3f6d836ac9c0fa7d26d6926e1140af8cc87c42ee5eb
+3uav_smoke manifest:  9dc78cb9e2ae7468a2de6eab1ab8662372c08bb13881842b223e188e9907e947
+3uav hashes manifest: 395799007417920d88a0b5e0c8a3a5c1bdbd4d99cc0afa50ec29c83a144cfe8a
+```
+
+### 验证
+
+- 3uav static preflight：57/57 全绿（含 overlay 22/22、frozen 参数、source hash）
+- 2uav static preflight：54/54 全绿（双路径无回归）
+- 新 preflight approval：`3uav-preflight-20260823-4`，digest `42602ea3`，静态验证 9/9 PASS
+
+### 残余风险与后续
+
+- 修复后需重跑 3uav live preflight + D9 dropout-smoke 验证 uav2 可正常规划
+- spawn (-3,-3) 与 (0,0)/(1.5,0) 距离增大，机架互扫概率下降，与源码修复叠加后
+  预期 uav2 全程存活
+
 ## 54.13 D9 后续：uav2 冻结根因排查与起飞点修复（次终端执行）
 
 ### 根因（源码 + 日志证据链）

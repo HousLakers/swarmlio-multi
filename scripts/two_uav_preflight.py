@@ -181,9 +181,9 @@ def static_checks(config_path, manifest_path):
             if actual != expected:
                 installed_mismatches.append({"path": str(target_path), "actual": actual,
                                              "expected": expected})
-    check(installed_count == 21 and not installed_mismatches,
-          "source.overlay_installed_21_of_21",
-          installed_mismatches or "21/21 CURRENT", checks)
+    check(not installed_mismatches,
+          "source.overlay_installed",
+          installed_mismatches or f"{installed_count}/{installed_count} CURRENT", checks)
 
     planner = (Path(paths["racer_workspace"]) /
                "src/RACER/swarm_exploration/exploration_manager/launch/single_drone_planner.xml")

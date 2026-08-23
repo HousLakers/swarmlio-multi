@@ -19,7 +19,7 @@ environment_baseline:
   planner_box_max: [24.5, 24.5, 2.7]
   runtime_validation: not_run
 single_repository: https://github.com/HousLakers/swarmlio-single.git
-single_commit: 8c8ddf2add3f7b3ce4f9943583fd945f16b1bd91
+single_commit: 08fb545a78ed7f1df2e1182a0e6d7a13540a28f6
 overlay_manifest: platform_overlays/range20m_omnidirectional_v1/current_config.sha256
 overlay_manifest_sha256: 68ceb54faa24f4cc97396634bfc3d611f8e40a6db89999d3cbabc112092ccf62
 overlay_installer_sha256: 7e2280d5d0ba88ee501764ab5b5ccc3f3724d5b6abf39704badc7a8976349151

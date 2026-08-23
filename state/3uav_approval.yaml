@@ -1,12 +1,12 @@
 schema_version: 1
-stage: smoke
+stage: preflight
 approved: true
-allowed_actions: [launch]
-manifest_sha256: 2232cb58445e7bd765e9747443dd3296532fd10a8f3afd0ae1e8fad6262ef26b
-source_hash_manifest_sha256: b5b0f2d4d331af1de31e1cbade5cce38f0a7e2b580afd939b9d08b460ff9259f
+allowed_actions: [preflight]
+manifest_sha256: 9dc78cb9e2ae7468a2de6eab1ab8662372c08bb13881842b223e188e9907e947
+source_hash_manifest_sha256: 395799007417920d88a0b5e0c8a3a5c1bdbd4d99cc0afa50ec29c83a144cfe8a
 issued_by: sol
 max_uses: 1
-issuance_id: dropout-smoke-20260823-3uav-1
+issuance_id: 3uav-preflight-20260823-4
 dropout:
   enabled: true
   vehicle: uav1
