@@ -1,0 +1,10 @@
+{
+  "detail": "resource capacity complete",
+  "facts": {
+    "load1": 4.33,
+    "mem_available_bytes": 13530673152,
+    "swap_in": 108092,
+    "swap_out": 579944
+  },
+  "ok": true
+}

@@ -7,7 +7,7 @@ manifest_sha256: 03a790ccfb322b7a1176e4d41795f2432c70dec8862b145445f3d5cdca447b2
 source_hash_manifest_sha256: e1bbf67557f796d458c8d1d2b4700121cc21082d8731e9321ad66294e22e5531
 issued_by: sol
 max_uses: 1
-issuance_id: lb-overnight-20260824-3uav-300s-r3-fix-dropout-race
+issuance_id: lb-matrix-closeout-20260824-3uav-300s
 dropout:
   enabled: true
   vehicle: uav1

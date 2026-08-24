@@ -265,6 +265,16 @@ def _append_ledger(key, record):
 
 def render_md(state):
     lines = ["# Load-balancing matrix results (300s)", ""]
+    done = sum(1 for v in state["runs"].values() if v.get("status") == "done")
+    failed = sum(1 for v in state["runs"].values()
+                 if v.get("status") in ("failed", "error"))
+    if state.get("finished_utc"):
+        lines.append("> **矩阵已全部完成** (finished_utc=%s, done=%d, failed=%d). "
+                     "运行结束后已等待人工重启。" % (state["finished_utc"], done, failed))
+    else:
+        lines.append("> 进行中… done=%d failed=%d (started=%s)"
+                     % (done, failed, state.get("started_utc", "-")))
+    lines.append("")
     lines.append("| Run | Group | Objective | Capacity | Dropout | Status | Exit | Safety | Runroot |")
     lines.append("|-----|-------|-----------|----------|---------|--------|------|--------|---------|")
     for run in all_runs():
@@ -340,6 +350,12 @@ def cmd_run(groups=None, max_runs=None):
     save_state(state)
     render_md(state)
     print("stopping (executed=%d)" % executed, flush=True)
+    if state.get("finished_utc"):
+        done = sum(1 for v in state["runs"].values() if v.get("status") == "done")
+        failed = sum(1 for v in state["runs"].values()
+                     if v.get("status") in ("failed", "error"))
+        print("MATRIX COMPLETE: done=%d failed=%d — 全部运行结束，等待人工重启电脑。"
+              % (done, failed), flush=True)
 
 
 def main():

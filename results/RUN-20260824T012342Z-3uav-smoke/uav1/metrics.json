@@ -1,0 +1,143 @@
+{
+  "ack_count": 4463,
+  "ack_timeout": {
+    "count": 0,
+    "recovered_count": 0,
+    "recovered_trajectory_ids": [],
+    "threshold_s": 6.0,
+    "trajectory_ids": []
+  },
+  "completion": {
+    "marker": "finish exploration.",
+    "observed": false,
+    "source": "/rosout",
+    "wall_s": null
+  },
+  "contact": {
+    "ground": 0,
+    "inter_uav": 0,
+    "obstacle": 0
+  },
+  "coverage": {
+    "available": true,
+    "callback_wall_duration_s": [
+      2.9130023904144764e-06,
+      3.3339965739287436e-06,
+      5.893998604733497e-06,
+      4.099994839634746e-06,
+      4.713001544587314e-06,
+      7.091999577824026e-06,
+      3.6860001273453236e-06,
+      3.449000359978527e-06,
+      7.40899849915877e-06,
+      7.914000889286399e-06,
+      3.7320060073398054e-06,
+      6.3449988374486566e-06
+    ],
+    "coalesced": 1,
+    "denominator_voxels": 268912,
+    "last_message_wall_s": 41903.452870998,
+    "last_processed_sim_s": null,
+    "last_processed_wall_s": 41907.379547306,
+    "message_age_s": 653.9486726960022,
+    "missing_policy": "abort_after_startup_grace",
+    "observed_voxels": 6715,
+    "processed": 11,
+    "processed_age_s": 650.0219963880008,
+    "processing_wall_duration_s": [
+      5.346999387256801e-06,
+      1.1502001143526286e-05,
+      0.0026207519986201078,
+      0.0041264799947384745,
+      0.0029371159980655648,
+      0.006213964996277355,
+      0.005267856999125797,
+      0.00989968900103122,
+      0.005390505997638684,
+      0.006286175004788674,
+      0.013137113004631829
+    ],
+    "ratio": 0.02497099422859523,
+    "received": 12
+  },
+  "coverage_seq": [
+    [
+      41725.209784864,
+      0
+    ],
+    [
+      41730.57051084,
+      0
+    ],
+    [
+      41735.688681537,
+      666
+    ],
+    [
+      41741.250780432,
+      1352
+    ],
+    [
+      41777.065277786,
+      1816
+    ],
+    [
+      41818.33611538,
+      2515
+    ],
+    [
+      41880.537450036,
+      3945
+    ],
+    [
+      41885.843119031,
+      4665
+    ],
+    [
+      41891.388576573,
+      5423
+    ],
+    [
+      41896.974495695,
+      6118
+    ],
+    [
+      41907.379547306,
+      6715
+    ]
+  ],
+  "crash": false,
+  "dropout": true,
+  "dropout_classification": "intentional_dropout",
+  "dropout_mode": "node_level",
+  "dropout_pids": {
+    "/exploration_node_2": 1124296,
+    "/px4_bridge_2": 1124015,
+    "/traj_server_2": 1124303
+  },
+  "dropout_sim_s": 93.988,
+  "freeze": false,
+  "hold_at_goal": false,
+  "last_ack_id": 8,
+  "path_length_m": 37.30139507457442,
+  "position": [
+    1.4738467428833246,
+    -0.03758068382740021,
+    0.044708251953125
+  ],
+  "telemetry": {
+    "ack": 4463,
+    "cloud": 3214,
+    "frontier": 2086,
+    "health": 323,
+    "occupancy": 11,
+    "odometry": 3215,
+    "pos_cmd": 4493,
+    "trajectory": 8
+  },
+  "telemetry_complete": "dropout_expected",
+  "telemetry_dropout_breakpoint_sim_s": 93.988,
+  "telemetry_expected": true,
+  "telemetry_missing_channels": [],
+  "telemetry_stale_channels": []
+}

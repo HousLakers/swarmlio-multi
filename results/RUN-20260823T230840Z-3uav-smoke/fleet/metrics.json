@@ -1,0 +1,155 @@
+{
+  "abort_reasons": [],
+  "clock": {
+    "last_sim_s": 328.151,
+    "monotonic": true,
+    "samples": 311428
+  },
+  "coverage_definition": "planner_box_volume",
+  "coverage_denominator_voxels": 268912,
+  "dropout_classifications": {
+    "uav0": "none",
+    "uav1": "none",
+    "uav2": "none"
+  },
+  "fleet_contact_count": 0,
+  "fleet_coverage_ratio": 0.20338995656571668,
+  "fleet_coverage_voxels": 54694,
+  "lost_after_seen": [],
+  "map_consistency_jaccard": 0.744796171365969,
+  "minimum_inter_uav_distance_m": 0.7637499505715718,
+  "never_seen": [],
+  "overlap_ratio": 0.8612098853231398,
+  "process_liveness": {
+    "/exploration_node_1": true,
+    "/exploration_node_2": true,
+    "/exploration_node_3": true,
+    "/px4_bridge_1": true,
+    "/px4_bridge_2": true,
+    "/px4_bridge_3": true,
+    "/traj_server_1": true,
+    "/traj_server_2": true,
+    "/traj_server_3": true,
+    "/two_uav_collector": true,
+    "/two_uav_gt_mapper": true
+  },
+  "task_allocation_state_samples": 12309,
+  "telemetry_completeness": true,
+  "tf_last_wall_s": {
+    "uav0/base_link": 34811.211671955,
+    "uav1/base_link": 34810.936376656,
+    "uav2/base_link": 34811.036623958
+  },
+  "tf_parents": {
+    "uav0/base_link": [
+      "world"
+    ],
+    "uav1/base_link": [
+      "world"
+    ],
+    "uav2/base_link": [
+      "world"
+    ]
+  },
+  "topic_owners": {
+    "/cloud_registered_1": [
+      "/two_uav_gt_mapper"
+    ],
+    "/cloud_registered_2": [
+      "/two_uav_gt_mapper"
+    ],
+    "/cloud_registered_3": [
+      "/two_uav_gt_mapper"
+    ],
+    "/lidar_slam/odom_1": [
+      "/two_uav_gt_mapper"
+    ],
+    "/lidar_slam/odom_2": [
+      "/two_uav_gt_mapper"
+    ],
+    "/lidar_slam/odom_3": [
+      "/two_uav_gt_mapper"
+    ],
+    "/lidar_slam/pose_1": [
+      "/two_uav_gt_mapper"
+    ],
+    "/lidar_slam/pose_2": [
+      "/two_uav_gt_mapper"
+    ],
+    "/lidar_slam/pose_3": [
+      "/two_uav_gt_mapper"
+    ],
+    "/planning/bspline_1": [
+      "/exploration_node_1"
+    ],
+    "/planning/bspline_2": [
+      "/exploration_node_2"
+    ],
+    "/planning/bspline_3": [
+      "/exploration_node_3"
+    ],
+    "/planning/command_ack_1": [
+      "/px4_bridge_1"
+    ],
+    "/planning/command_ack_2": [
+      "/px4_bridge_2"
+    ],
+    "/planning/command_ack_3": [
+      "/px4_bridge_3"
+    ],
+    "/planning/pos_cmd_1": [
+      "/traj_server_1"
+    ],
+    "/planning/pos_cmd_2": [
+      "/traj_server_2"
+    ],
+    "/planning/pos_cmd_3": [
+      "/traj_server_3"
+    ],
+    "/planning_vis/frontier_1": [
+      "/exploration_node_1"
+    ],
+    "/planning_vis/frontier_2": [
+      "/exploration_node_2"
+    ],
+    "/planning_vis/frontier_3": [
+      "/exploration_node_3"
+    ],
+    "/sdf_map/occupancy_all_1": [
+      "/exploration_node_1"
+    ],
+    "/sdf_map/occupancy_all_2": [
+      "/exploration_node_2"
+    ],
+    "/sdf_map/occupancy_all_3": [
+      "/exploration_node_3"
+    ],
+    "/uav0/livox/scan": [
+      "/gazebo"
+    ],
+    "/uav0/mavros/local_position/odom": [
+      "/uav0/mavros"
+    ],
+    "/uav0/mavros/state": [
+      "/uav0/mavros"
+    ],
+    "/uav1/livox/scan": [
+      "/gazebo"
+    ],
+    "/uav1/mavros/local_position/odom": [
+      "/uav1/mavros"
+    ],
+    "/uav1/mavros/state": [
+      "/uav1/mavros"
+    ],
+    "/uav2/livox/scan": [
+      "/gazebo"
+    ],
+    "/uav2/mavros/local_position/odom": [
+      "/uav2/mavros"
+    ],
+    "/uav2/mavros/state": [
+      "/uav2/mavros"
+    ]
+  }
+}

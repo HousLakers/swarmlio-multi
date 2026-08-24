@@ -1,0 +1,16 @@
+{
+  "baseline": {
+    "load1": 5.63,
+    "mem_available_bytes": 13369151488,
+    "swap_in": 93524,
+    "swap_out": 543054
+  },
+  "detail": "resource capacity complete",
+  "facts": {
+    "load1": 4.63,
+    "mem_available_bytes": 3520847872,
+    "swap_in": 93532,
+    "swap_out": 543054
+  },
+  "ok": true
+}

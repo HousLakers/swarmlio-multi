@@ -1,0 +1,147 @@
+{
+  "exit_reason": "duration_complete",
+  "final_safety_detail": "smoke command chain complete",
+  "final_safety_passed": true,
+  "fleet_metrics": true,
+  "resource_usage": {
+    "available": true,
+    "roles": {
+      "bridges": {
+        "cpu_delta_ticks": 11070,
+        "max_cpu_cores": 0.7408137872399673,
+        "max_rss_kb": 182936,
+        "p50_cpu_cores": 0.12846982628215994,
+        "p50_rss_kb": 136864,
+        "p95_cpu_cores": 0.1967092987241833,
+        "p95_rss_kb": 182936
+      },
+      "collector": {
+        "cpu_delta_ticks": 6260,
+        "max_cpu_cores": 0.1422438370528322,
+        "max_rss_kb": 102400,
+        "p50_cpu_cores": 0.05986702222807259,
+        "p50_rss_kb": 84456,
+        "p95_cpu_cores": 0.12011649925555057,
+        "p95_rss_kb": 102084
+      },
+      "gazebo": {
+        "cpu_delta_ticks": 124192,
+        "max_cpu_cores": 4.146655843044509,
+        "max_rss_kb": 7541892,
+        "p50_cpu_cores": 1.380236140661905,
+        "p50_rss_kb": 7541328,
+        "p95_cpu_cores": 1.4054387919991707,
+        "p95_rss_kb": 7541892
+      },
+      "gt_mapper": {
+        "cpu_delta_ticks": 43899,
+        "max_cpu_cores": 0.5474676408962853,
+        "max_rss_kb": 145620,
+        "p50_cpu_cores": 0.4972053637300986,
+        "p50_rss_kb": 142856,
+        "p95_cpu_cores": 0.5255786547633355,
+        "p95_rss_kb": 145620
+      },
+      "racer": {
+        "cpu_delta_ticks": 99095,
+        "max_cpu_cores": 3.1201026179341667,
+        "max_rss_kb": 2708712,
+        "p50_cpu_cores": 1.3561719980410936,
+        "p50_rss_kb": 1869556,
+        "p95_cpu_cores": 2.9644347514304887,
+        "p95_rss_kb": 2704920
+      }
+    },
+    "rt_factor": {
+      "max": 2.0005342164300743,
+      "p50": 0.3757112132949656,
+      "p95": 0.3990191660902722
+    },
+    "samples": 413,
+    "top_cpu_consumers": [
+      "gazebo",
+      "racer",
+      "gt_mapper",
+      "bridges",
+      "collector"
+    ],
+    "valid_rt_samples": 389
+  },
+  "runroot": "/home/houslakers/auto_tune_racer/swarmlio_multi/results/RUN-20260824T015334Z-3uav-smoke",
+  "stop": {
+    "clean": true,
+    "descendants": [
+      1219822,
+      1219890,
+      1219898,
+      1219908,
+      1219922,
+      1220041,
+      1220073,
+      1220082,
+      1220255,
+      1220283,
+      1222522,
+      1222524,
+      1222793,
+      1222794,
+      1222795,
+      1222800,
+      1222807,
+      1222809,
+      1222820,
+      1222822,
+      1222823,
+      1222828,
+      1269938,
+      1269939
+    ],
+    "identity_confirmed": true,
+    "kill": [
+      1223600
+    ],
+    "master_port_released": true,
+    "survivors": [],
+    "term": [
+      1219635,
+      1219822,
+      1219890,
+      1219898,
+      1219908,
+      1219922,
+      1220041,
+      1220073,
+      1220082,
+      1220255,
+      1220283,
+      1220713,
+      1222428,
+      1222522,
+      1222524,
+      1222669,
+      1222793,
+      1222794,
+      1222795,
+      1222800,
+      1222807,
+      1222809,
+      1222820,
+      1222822,
+      1222823,
+      1222828,
+      1223600,
+      1269938,
+      1269939
+    ],
+    "top_level": [
+      1219635,
+      1220713,
+      1222428,
+      1222669,
+      1223600
+    ]
+  },
+  "uav0_metrics": true,
+  "uav1_metrics": true,
+  "uav2_metrics": true
+}

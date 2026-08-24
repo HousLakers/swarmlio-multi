@@ -1,0 +1,434 @@
+{
+  "checks": [
+    {
+      "detail": "all present",
+      "name": "live.required_topics",
+      "ok": true
+    },
+    {
+      "detail": "1",
+      "name": "live.clock_single_publisher",
+      "ok": true
+    },
+    {
+      "detail": "true",
+      "name": "live.use_sim_time",
+      "ok": true
+    },
+    {
+      "detail": "all expected TF edges observed",
+      "name": "live.tf_expected_unique_dynamic_edges",
+      "ok": true
+    },
+    {
+      "detail": "payload",
+      "name": "live.payload.uav0.raw_cloud",
+      "ok": true
+    },
+    {
+      "detail": "payload",
+      "name": "live.payload.uav0.mavros_odom",
+      "ok": true
+    },
+    {
+      "detail": "payload",
+      "name": "live.payload.uav0.registered_cloud",
+      "ok": true
+    },
+    {
+      "detail": "payload",
+      "name": "live.payload.uav0.registered_odom",
+      "ok": true
+    },
+    {
+      "detail": "payload",
+      "name": "live.payload.uav0.frontier",
+      "ok": true
+    },
+    {
+      "detail": "payload",
+      "name": "live.payload.uav1.raw_cloud",
+      "ok": true
+    },
+    {
+      "detail": "payload",
+      "name": "live.payload.uav1.mavros_odom",
+      "ok": true
+    },
+    {
+      "detail": "payload",
+      "name": "live.payload.uav1.registered_cloud",
+      "ok": true
+    },
+    {
+      "detail": "payload",
+      "name": "live.payload.uav1.registered_odom",
+      "ok": true
+    },
+    {
+      "detail": "payload",
+      "name": "live.payload.uav1.frontier",
+      "ok": true
+    },
+    {
+      "detail": "payload",
+      "name": "live.payload.uav2.raw_cloud",
+      "ok": true
+    },
+    {
+      "detail": "payload",
+      "name": "live.payload.uav2.mavros_odom",
+      "ok": true
+    },
+    {
+      "detail": "payload",
+      "name": "live.payload.uav2.registered_cloud",
+      "ok": true
+    },
+    {
+      "detail": "payload",
+      "name": "live.payload.uav2.registered_odom",
+      "ok": true
+    },
+    {
+      "detail": "payload",
+      "name": "live.payload.uav2.frontier",
+      "ok": true
+    },
+    {
+      "detail": "0.1",
+      "name": "readback.uav0.sdf_map/resolution",
+      "ok": true
+    },
+    {
+      "detail": "0.35",
+      "name": "readback.uav0.sdf_map/obstacles_inflation",
+      "ok": true
+    },
+    {
+      "detail": "20.0",
+      "name": "readback.uav0.sdf_map/max_ray_length",
+      "ok": true
+    },
+    {
+      "detail": "20.5",
+      "name": "readback.uav0.map_ros/depth_filter_maxdist",
+      "ok": true
+    },
+    {
+      "detail": "2.0",
+      "name": "readback.uav0.map_ros/all_map_publish_period",
+      "ok": true
+    },
+    {
+      "detail": "false",
+      "name": "readback.uav0.planner_escape/v2_progress_guard_enabled",
+      "ok": true
+    },
+    {
+      "detail": "false",
+      "name": "readback.uav0.trajectory_safety/global_postplan_guard_enabled",
+      "ok": true
+    },
+    {
+      "detail": "false",
+      "name": "readback.uav0.trajectory_safety/reject_unknown",
+      "ok": true
+    },
+    {
+      "detail": "20.0",
+      "name": "readback.uav0.perception_utils/max_dist",
+      "ok": true
+    },
+    {
+      "detail": "omnidirectional",
+      "name": "readback.uav0.perception_utils/horizontal_model",
+      "ok": true
+    },
+    {
+      "detail": "50.0",
+      "name": "readback.uav0.sdf_map/map_size_x",
+      "ok": true
+    },
+    {
+      "detail": "50.0",
+      "name": "readback.uav0.sdf_map/map_size_y",
+      "ok": true
+    },
+    {
+      "detail": "-24.5",
+      "name": "readback.uav0.sdf_map/box_min_x",
+      "ok": true
+    },
+    {
+      "detail": "-24.5",
+      "name": "readback.uav0.sdf_map/box_min_y",
+      "ok": true
+    },
+    {
+      "detail": "24.5",
+      "name": "readback.uav0.sdf_map/box_max_x",
+      "ok": true
+    },
+    {
+      "detail": "24.5",
+      "name": "readback.uav0.sdf_map/box_max_y",
+      "ok": true
+    },
+    {
+      "detail": "/home/houslakers/auto_tune_racer/swarmlio_multi/results/RUN-20260824T013834Z-3uav-smoke/uav0",
+      "name": "logdir.uav0",
+      "ok": true
+    },
+    {
+      "detail": "0.1",
+      "name": "readback.uav1.sdf_map/resolution",
+      "ok": true
+    },
+    {
+      "detail": "0.35",
+      "name": "readback.uav1.sdf_map/obstacles_inflation",
+      "ok": true
+    },
+    {
+      "detail": "20.0",
+      "name": "readback.uav1.sdf_map/max_ray_length",
+      "ok": true
+    },
+    {
+      "detail": "20.5",
+      "name": "readback.uav1.map_ros/depth_filter_maxdist",
+      "ok": true
+    },
+    {
+      "detail": "2.0",
+      "name": "readback.uav1.map_ros/all_map_publish_period",
+      "ok": true
+    },
+    {
+      "detail": "false",
+      "name": "readback.uav1.planner_escape/v2_progress_guard_enabled",
+      "ok": true
+    },
+    {
+      "detail": "false",
+      "name": "readback.uav1.trajectory_safety/global_postplan_guard_enabled",
+      "ok": true
+    },
+    {
+      "detail": "false",
+      "name": "readback.uav1.trajectory_safety/reject_unknown",
+      "ok": true
+    },
+    {
+      "detail": "20.0",
+      "name": "readback.uav1.perception_utils/max_dist",
+      "ok": true
+    },
+    {
+      "detail": "omnidirectional",
+      "name": "readback.uav1.perception_utils/horizontal_model",
+      "ok": true
+    },
+    {
+      "detail": "50.0",
+      "name": "readback.uav1.sdf_map/map_size_x",
+      "ok": true
+    },
+    {
+      "detail": "50.0",
+      "name": "readback.uav1.sdf_map/map_size_y",
+      "ok": true
+    },
+    {
+      "detail": "-24.5",
+      "name": "readback.uav1.sdf_map/box_min_x",
+      "ok": true
+    },
+    {
+      "detail": "-24.5",
+      "name": "readback.uav1.sdf_map/box_min_y",
+      "ok": true
+    },
+    {
+      "detail": "24.5",
+      "name": "readback.uav1.sdf_map/box_max_x",
+      "ok": true
+    },
+    {
+      "detail": "24.5",
+      "name": "readback.uav1.sdf_map/box_max_y",
+      "ok": true
+    },
+    {
+      "detail": "/home/houslakers/auto_tune_racer/swarmlio_multi/results/RUN-20260824T013834Z-3uav-smoke/uav1",
+      "name": "logdir.uav1",
+      "ok": true
+    },
+    {
+      "detail": "0.1",
+      "name": "readback.uav2.sdf_map/resolution",
+      "ok": true
+    },
+    {
+      "detail": "0.35",
+      "name": "readback.uav2.sdf_map/obstacles_inflation",
+      "ok": true
+    },
+    {
+      "detail": "20.0",
+      "name": "readback.uav2.sdf_map/max_ray_length",
+      "ok": true
+    },
+    {
+      "detail": "20.5",
+      "name": "readback.uav2.map_ros/depth_filter_maxdist",
+      "ok": true
+    },
+    {
+      "detail": "2.0",
+      "name": "readback.uav2.map_ros/all_map_publish_period",
+      "ok": true
+    },
+    {
+      "detail": "false",
+      "name": "readback.uav2.planner_escape/v2_progress_guard_enabled",
+      "ok": true
+    },
+    {
+      "detail": "false",
+      "name": "readback.uav2.trajectory_safety/global_postplan_guard_enabled",
+      "ok": true
+    },
+    {
+      "detail": "false",
+      "name": "readback.uav2.trajectory_safety/reject_unknown",
+      "ok": true
+    },
+    {
+      "detail": "20.0",
+      "name": "readback.uav2.perception_utils/max_dist",
+      "ok": true
+    },
+    {
+      "detail": "omnidirectional",
+      "name": "readback.uav2.perception_utils/horizontal_model",
+      "ok": true
+    },
+    {
+      "detail": "50.0",
+      "name": "readback.uav2.sdf_map/map_size_x",
+      "ok": true
+    },
+    {
+      "detail": "50.0",
+      "name": "readback.uav2.sdf_map/map_size_y",
+      "ok": true
+    },
+    {
+      "detail": "-24.5",
+      "name": "readback.uav2.sdf_map/box_min_x",
+      "ok": true
+    },
+    {
+      "detail": "-24.5",
+      "name": "readback.uav2.sdf_map/box_min_y",
+      "ok": true
+    },
+    {
+      "detail": "24.5",
+      "name": "readback.uav2.sdf_map/box_max_x",
+      "ok": true
+    },
+    {
+      "detail": "24.5",
+      "name": "readback.uav2.sdf_map/box_max_y",
+      "ok": true
+    },
+    {
+      "detail": "/home/houslakers/auto_tune_racer/swarmlio_multi/results/RUN-20260824T013834Z-3uav-smoke/uav2",
+      "name": "logdir.uav2",
+      "ok": true
+    },
+    {
+      "detail": "/home/houslakers/auto_tune_racer/swarmlio_multi/results/RUN-20260824T013834Z-3uav-smoke/fleet",
+      "name": "logdir.fleet",
+      "ok": true
+    },
+    {
+      "detail": "schema complete",
+      "name": "live.resource_profile",
+      "ok": true
+    },
+    {
+      "detail": "watchdog evidence complete",
+      "name": "live.watchdog_soak",
+      "ok": true
+    }
+  ],
+  "passed": true,
+  "resource_usage": {
+    "available": true,
+    "roles": {
+      "bridges": {
+        "cpu_delta_ticks": 1320,
+        "max_cpu_cores": 3.465714816915141,
+        "max_rss_kb": 182752,
+        "p50_cpu_cores": 0.15714318154633988,
+        "p50_rss_kb": 182716,
+        "p95_cpu_cores": 0.18701429214026064,
+        "p95_rss_kb": 182752
+      },
+      "collector": {
+        "cpu_delta_ticks": 396,
+        "max_cpu_cores": 0.1188714337315256,
+        "max_rss_kb": 54984,
+        "p50_cpu_cores": 0.04918336438530724,
+        "p50_rss_kb": 53672,
+        "p95_cpu_cores": 0.09833198751416264,
+        "p95_rss_kb": 54984
+      },
+      "gazebo": {
+        "cpu_delta_ticks": 13347,
+        "max_cpu_cores": 4.074439335299445,
+        "max_rss_kb": 7539820,
+        "p50_cpu_cores": 1.3682898835223005,
+        "p50_rss_kb": 7539820,
+        "p95_cpu_cores": 1.445717270226327,
+        "p95_rss_kb": 7539820
+      },
+      "gt_mapper": {
+        "cpu_delta_ticks": 3704,
+        "max_cpu_cores": 0.5017321520424292,
+        "max_rss_kb": 134368,
+        "p50_cpu_cores": 0.4423491924662902,
+        "p50_rss_kb": 134088,
+        "p95_cpu_cores": 0.490215750980853,
+        "p95_rss_kb": 134368
+      },
+      "racer": {
+        "cpu_delta_ticks": 8304,
+        "max_cpu_cores": 2.726471522255379,
+        "max_rss_kb": 2669448,
+        "p50_cpu_cores": 1.9372553077552255,
+        "p50_rss_kb": 2664524,
+        "p95_cpu_cores": 2.6282978338162177,
+        "p95_rss_kb": 2669380
+      }
+    },
+    "rt_factor": {
+      "max": 1.971512220966723,
+      "p50": 0.0,
+      "p95": 1.9636897906578277
+    },
+    "samples": 48,
+    "top_cpu_consumers": [
+      "gazebo",
+      "racer",
+      "gt_mapper",
+      "bridges",
+      "collector"
+    ],
+    "valid_rt_samples": 23
+  }
+}

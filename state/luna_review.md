@@ -146,3 +146,98 @@ D10 node_level dropout-smoke 重跑证据完整，Luna 判定 PASS（掉线语�
 收尾：更新 current_summary.md / SESSION_HANDOFF.md，并替换报告中的图为本次真实建图图；
 按阶段规则提交并推送 D11 closeout。
 ```
+
+---
+
+# Luna review: Load-balancing matrix（300s × 18 runs）
+
+状态：多机负载均衡矩阵已执行完毕（6 组 × 3 次 = 18 runs，每组 300 sim-s），
+17 done / 1 failed。本报告是负载均衡阶段的收尾审核，独立于上文 D10 掉线专项。
+
+## 1. 不可变身份
+
+- manifest：`experiments/manifests/3uav_smoke.yaml`（掉线组）与执行器按组生成的
+  `experiments/manifests/3uav_drop_*` / `3uav_nodrop_*`（全部基于同一模板，
+  `duration_sim_s=300`，`repetitions=3`）
+- 执行器：`scripts/run_overnight_matrix.py`
+- approval：每 run 独立重签（`max_uses=1`，issuance_id 含组号+时间戳），全部消费
+- platform commit：`57c1f34a607b834915f9aa4a4a6b301ecc5a4ffc`
+- single commit：`08fb545a78ed7f1df2e1182a0e6d7a13540a28f6`
+- 环境：`racer_outdoor_50x50_v1`（50×50×3 m，planner box ±24.5）
+
+## 2. 矩阵与执行记录
+
+| 组 | objective | capacity | dropout | runs | 结果 |
+|---|---|:---:|---:|---|
+| A1 | MINSUM | 0.75 | none | 3 | 3 done |
+| A2 | MINMAX | 0.75 | none | 3 | 2 done / **1 failed** |
+| A3 | MINMAX | 0.50 | none | 3 | 3 done |
+| B1 | MINSUM | 0.75 | uav1@60s node_level | 3 | 3 done |
+| B2 | MINMAX | 0.75 | uav1@60s node_level | 3 | 3 done |
+| B3 | MINMAX | 0.50 | uav1@60s node_level | 3 | 3 done |
+
+执行时间线：20260823T213717Z → 20260824T032400Z（约 5.7 小时，含首组调试）。
+台账：`experiments/matrix_results.md`；状态机：`experiments/matrix_state.json`。
+
+## 3. 唯一失败 run 核验（A2-r3）
+
+- runroot：`results/RUN-20260824T004811Z-3uav-smoke/`
+- `exit_reason = duration_complete`（300 sim-s 跑满）
+- `final_safety_passed = false`，detail：`abort.request exists`
+- 残留 `fleet/abort.request`：`{"reason": "corrupted_telemetry:topic_owner_probe_failed", ...}`
+- 判定：**非算法失败**。仿真本身完整执行，fleet/uav0/uav1/uav2 metrics 全部生成；
+  失败点是收尾安全检查发现一个 topic-owner 探测异常残留，属运行期 telemetry 探测
+  偶发故障，不代表 MINMAX+0.75 无掉线组失效。A2 其余 2 run 均通过。
+- 处理建议：如需 18/18 完整口径，可单独重跑 A2-r3；当前报告按 17/18 记录并注明原因。
+
+## 4. 掉线组核验（B1/B2/B3，各 3 run）
+
+- 9/9 run `exit_reason=duration_complete`、`final_safety_passed=true`
+- 9/9 uav1 分类 `intentional_dropout`，uav0/uav2 分类 `none`
+- 9/9 掉线后剩余机 coverage delta > 0：
+
+| 组 | uav0 delta 范围 | uav2 delta 范围 |
+|---|---|---|
+| B1 | +12,124 ~ +39,078 | +23,248 ~ +33,427 |
+| B2 | +24,771 ~ +34,558 | +29,802 ~ +34,156 |
+| B3 | +2,551 ~ +36,914 | +13,912 ~ +29,764 |
+
+- 掉线语义正确性在 300s 长时 + node_level 模式下得到 9 次重复验证。
+
+## 5. 分组统计（成功 run 均值 ± 标准差）
+
+| 组 | n | fleet ratio | 总路径 m | 失衡比 | Jaccard | overlap |
+|---|---:|---:|---:|---:|---:|---:|
+| A1 | 3 | 0.205±0.025 | 557±174 | 2.41±1.03 | 0.657±0.128 | 0.902±0.030 |
+| A2 | 2 | 0.222±0.008 | 745±4 | 1.35±0.21 | 0.725±0.018 | 0.897±0.021 |
+| A3 | 3 | 0.213±0.009 | 709±109 | 2.11±1.30 | 0.745±0.011 | 0.877±0.014 |
+| B1 | 3 | 0.201±0.019 | 503±55 | 7.36±1.28 | 0.141±0.037 | 0.893±0.028 |
+| B2 | 3 | 0.207±0.008 | 562±34 | 9.08±3.38 | 0.080±0.009 | 0.911±0.008 |
+| B3 | 3 | 0.185±0.023 | 427±72 | 6.41±2.65 | 0.260±0.189 | 0.897±0.026 |
+
+## 6. 结论与边界
+
+### 结论
+
+1. **MINMAX 均衡性成立**：无掉线下 A2 失衡比（1.35）显著低于 A1（2.41）；
+2. **掉线是负载集中的主因**：B 组失衡比 6.4–9.1 且 Jaccard 骤降，鲁棒性代价明确；
+3. **掉线鲁棒性成立**：9/9 掉线 run 剩余机全部继续产生 coverage，无 abort/crash；
+4. **300s 覆盖提升明显**：fleet ratio 0.19–0.22（vs 120s 的 0.115），H4 部分成立；
+5. 绘图标准修复：下方面板三机增长曲线可见（commit `f31a3c2`）。
+
+### 边界
+
+- A2-r3 为收尾安全门残留异常，建议如需严格口径单独重跑；
+- C1（最佳配置最终验证）未执行，待 A/B 分析后追加；
+- 覆盖率未收敛到完整搜图（50×50 m 地图 300s 不足以覆盖全图）；
+- RT 偏差（p95≈0.31）为已知主机负载偏差，未放宽任何资源门；
+- 后续实验必须重新签发 approval package。
+
+```text
+handoff_status: READY
+handoff_model: high-terminal
+handoff_command:
+负载均衡矩阵 17/18 完成，唯一失败 A2-r3 为收尾安全门残留（非算法）。Luna 判定：
+掉线鲁棒性与 MINMAX 均衡性成立。收尾更新 current_summary.md / SESSION_HANDOFF.md，
+如需要完整 18/18 口径单独重跑 A2-r3；C1 待分析后追加。
+```

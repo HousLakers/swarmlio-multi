@@ -1,0 +1,24 @@
+[20260824T002721Z] A2-r1 starting (objective=MINMAX capacity=0.75 dropout=False)
+[20260824T004811Z] A2-r1 -> done
+[20260824T004811Z] A2-r3 starting (objective=MINMAX capacity=0.75 dropout=False)
+[20260824T010835Z] A2-r3 -> failed
+[20260824T010835Z] B1-r1 starting (objective=MINSUM capacity=0.75 dropout=True)
+[20260824T012342Z] B1-r1 -> done
+[20260824T012342Z] B1-r2 starting (objective=MINSUM capacity=0.75 dropout=True)
+[20260824T013834Z] B1-r2 -> done
+[20260824T013834Z] B1-r3 starting (objective=MINSUM capacity=0.75 dropout=True)
+[20260824T015334Z] B1-r3 -> done
+[20260824T015334Z] B2-r1 starting (objective=MINMAX capacity=0.75 dropout=True)
+[20260824T020835Z] B2-r1 -> done
+[20260824T020835Z] B2-r2 starting (objective=MINMAX capacity=0.75 dropout=True)
+[20260824T022347Z] B2-r2 -> done
+[20260824T022347Z] B2-r3 starting (objective=MINMAX capacity=0.75 dropout=True)
+[20260824T023856Z] B2-r3 -> done
+[20260824T023856Z] B3-r1 starting (objective=MINMAX capacity=0.5 dropout=True)
+[20260824T025403Z] B3-r1 -> done
+[20260824T025403Z] B3-r2 starting (objective=MINMAX capacity=0.5 dropout=True)
+[20260824T030857Z] B3-r2 -> done
+[20260824T030857Z] B3-r3 starting (objective=MINMAX capacity=0.5 dropout=True)
+[20260824T032400Z] B3-r3 -> done
+stopping (executed=11)
+MATRIX COMPLETE: done=17 failed=1 — 全部运行结束，等待人工重启电脑。
