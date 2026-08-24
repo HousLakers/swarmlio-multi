@@ -1,6 +1,6 @@
 # Load-balancing matrix results (300s)
 
-> **矩阵已全部完成** (finished_utc=20260824T032400Z, done=17, failed=1). 运行结束后已等待人工重启。
+> **矩阵已全部完成** (finished_utc=20260824T114044Z, done=21, failed=0). 运行结束后已等待人工重启。
 
 | Run | Group | Objective | Capacity | Dropout | Status | Exit | Safety | Runroot |
 |-----|-------|-----------|----------|---------|--------|------|--------|---------|
@@ -9,7 +9,7 @@
 | A1-r3 | A1 | MINSUM | 0.75 | none | done | duration_complete | True | /home/houslakers/auto_tune_racer/swarmlio_multi/results/RUN-20260823T221655Z-3uav-smoke |
 | A2-r1 | A2 | MINMAX | 0.75 | none | done | duration_complete | True | /home/houslakers/auto_tune_racer/swarmlio_multi/results/RUN-20260824T002722Z-3uav-smoke |
 | A2-r2 | A2 | MINMAX | 0.75 | none | done | duration_complete | True | /home/houslakers/auto_tune_racer/swarmlio_multi/results/RUN-20260823T224518Z-3uav-smoke |
-| A2-r3 | A2 | MINMAX | 0.75 | none | failed | duration_complete | False | /home/houslakers/auto_tune_racer/swarmlio_multi/results/RUN-20260824T004811Z-3uav-smoke |
+| A2-r3 | A2 | MINMAX | 0.75 | none | done | duration_complete | True | /home/houslakers/auto_tune_racer/swarmlio_multi/results/RUN-20260824T092806Z-3uav-smoke |
 | A3-r1 | A3 | MINMAX | 0.5 | none | done | duration_complete | True | /home/houslakers/auto_tune_racer/swarmlio_multi/results/RUN-20260823T230840Z-3uav-smoke |
 | A3-r2 | A3 | MINMAX | 0.5 | none | done | duration_complete | True | /home/houslakers/auto_tune_racer/swarmlio_multi/results/RUN-20260823T232924Z-3uav-smoke |
 | A3-r3 | A3 | MINMAX | 0.5 | none | done | duration_complete | True | /home/houslakers/auto_tune_racer/swarmlio_multi/results/RUN-20260823T234944Z-3uav-smoke |
@@ -22,3 +22,6 @@
 | B3-r1 | B3 | MINMAX | 0.5 | uav1@60s | done | duration_complete | True | /home/houslakers/auto_tune_racer/swarmlio_multi/results/RUN-20260824T023856Z-3uav-smoke |
 | B3-r2 | B3 | MINMAX | 0.5 | uav1@60s | done | duration_complete | True | /home/houslakers/auto_tune_racer/swarmlio_multi/results/RUN-20260824T025403Z-3uav-smoke |
 | B3-r3 | B3 | MINMAX | 0.5 | uav1@60s | done | duration_complete | True | /home/houslakers/auto_tune_racer/swarmlio_multi/results/RUN-20260824T030857Z-3uav-smoke |
+| C1-r1 | C1 | MINMAX | 0.75 | none | done | duration_complete | True | /home/houslakers/auto_tune_racer/swarmlio_multi/results/RUN-20260824T110657Z-3uav-smoke |
+| C1-r2 | C1 | MINMAX | 0.75 | none | done | duration_complete | True | results/RUN-20260824T100002Z-3uav-smoke |
+| C1-r3 | C1 | MINMAX | 0.75 | none | done | duration_complete | True | /home/houslakers/auto_tune_racer/swarmlio_multi/results/RUN-20260824T112459Z-3uav-smoke |

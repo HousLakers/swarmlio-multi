@@ -16,6 +16,8 @@ Usage:
   run_overnight_matrix.py run                 # execute all pending runs
   run_overnight_matrix.py run --groups A1,B1  # restrict to groups
   run_overnight_matrix.py run --max-runs N    # cap runs this invocation
+  run_overnight_matrix.py run --rerun-failed  # retry failed/error runs
+                                               # (default skips them)
 """
 from __future__ import annotations
 
@@ -46,6 +48,8 @@ MATRIX = [
     {"id": "B1", "objective": "MINSUM", "capacity": 0.75, "dropout": True},
     {"id": "B2", "objective": "MINMAX", "capacity": 0.75, "dropout": True},
     {"id": "B3", "objective": "MINMAX", "capacity": 0.50, "dropout": True},
+    # C1: final best-config validation (MINMAX+0.75 no-drop, from A/B analysis)
+    {"id": "C1", "objective": "MINMAX", "capacity": 0.75, "dropout": False},
 ]
 REPS = 3
 DURATION_SIM_S = 300
@@ -294,40 +298,46 @@ def render_md(state):
 def cmd_plan():
     runs = all_runs()
     est = len(runs) * 30
-    print("Matrix: %d runs (6 groups x %d reps), %d sim-s each" %
-          (len(runs), REPS, DURATION_SIM_S))
+    print("Matrix: %d runs (%d groups x %d reps), %d sim-s each" %
+          (len(runs), len(MATRIX), REPS, DURATION_SIM_S), flush=True)
     print("Estimated wall time: ~%d minutes (~%.1f h) at 30 min/run"
-          % (est, est / 60.0))
+          % (est, est / 60.0), flush=True)
     for group in MATRIX:
         print("  %s  objective=%-6s capacity=%.2f dropout=%s  x%d"
               % (group["id"], group["objective"], group["capacity"],
-                 "node_level@60s" if group["dropout"] else "none", REPS))
+                 "node_level@60s" if group["dropout"] else "none", REPS),
+              flush=True)
 
 
 def cmd_status():
     state = load_state()
+    total = len(all_runs())
     done = sum(1 for v in state["runs"].values() if v.get("status") in ("done",))
     failed = sum(1 for v in state["runs"].values() if v.get("status") in ("failed", "error"))
     running = sum(1 for v in state["runs"].values() if v.get("status") == "running")
-    pending = 18 - done - failed - running
-    print("done=%d failed=%d running=%d pending=%d" % (done, failed, running, pending))
+    pending = total - done - failed - running
+    print("done=%d failed=%d running=%d pending=%d (of %d total)" %
+          (done, failed, running, pending, total), flush=True)
     render_md(state)
     if MATRIX_MD.is_file():
         print("ledger: %s" % MATRIX_MD)
 
 
-def cmd_run(groups=None, max_runs=None):
+def cmd_run(groups=None, max_runs=None, rerun_failed=False):
     state = load_state()
     if state.get("started_utc") is None:
         state["started_utc"] = now_utc()
     executed = 0
     consecutive_failures = 0
+    skip_status = ("done", "running")
+    if not rerun_failed:
+        skip_status = skip_status + ("failed", "error")
     for run in all_runs():
         if groups and run["group"] not in groups:
             continue
         key = "%s-r%d" % (run["group"], run["rep"])
         rec = state["runs"].get(key, {})
-        if rec.get("status") in ("done", "failed", "error", "running"):
+        if rec.get("status") in skip_status:
             continue
         if max_runs is not None and executed >= max_runs:
             break
@@ -364,6 +374,8 @@ def main():
     parser.add_argument("--groups", default=None,
                         help="comma-separated group ids (A1,A2,B3)")
     parser.add_argument("--max-runs", type=int, default=None)
+    parser.add_argument("--rerun-failed", action="store_true",
+                        help="retry runs whose previous status was failed/error")
     args = parser.parse_args()
     groups = set(args.groups.split(",")) if args.groups else None
     if args.command == "plan":
@@ -371,7 +383,8 @@ def main():
     elif args.command == "status":
         cmd_status()
     else:
-        cmd_run(groups=groups, max_runs=args.max_runs)
+        cmd_run(groups=groups, max_runs=args.max_runs,
+                rerun_failed=args.rerun_failed)
 
 
 if __name__ == "__main__":

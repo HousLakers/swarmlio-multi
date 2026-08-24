@@ -1098,6 +1098,28 @@ def sim_time_s(runroot):
     return secs + nsecs / 1e9
 
 
+def sim_time_s_from_telemetry(runroot):
+    """Fallback sim-time probe: read the collector's last fleet telemetry stamp.
+
+    The primary probe (rostopic echo /clock) may fail transiently when the ROS
+    master is under load or during teardown.  The collector appends
+    fleet/telemetry.jsonl every 2 s with an authoritative clock.last_sim_s,
+    so this gives a monotonic sim-time source without spawning rostopic.
+    """
+    path = Path(runroot) / "fleet" / "telemetry.jsonl"
+    fleet = last_jsonl(path)
+    clock = fleet.get("clock")
+    if not isinstance(clock, dict) or clock.get("last_sim_s") is None:
+        raise RuntimeError("telemetry clock missing last_sim_s")
+    return float(clock["last_sim_s"])
+
+
+# How many consecutive probe failures (primary + fallback) before monitor_until
+# gives up instead of spinning on sleep/continue.  Wall clock ~1 s per loop, so
+# 60 iterations ≈ 60 s of a completely dark telemetry stream.
+SIM_PROBE_CONSECUTIVE_FAIL_LIMIT = 60
+
+
 def monitor_until(active, duration_sim_s, dropout_config=None, config=None,
                   sim_time_probe=None, dropout_executor=None,
                   monotonic=time.monotonic, sleep=time.sleep):
@@ -1105,11 +1127,19 @@ def monitor_until(active, duration_sim_s, dropout_config=None, config=None,
 
     When dropout_config is enabled the D1 white-list fault injection fires
     once at trigger_sim_s of elapsed sim time; the abort path stays active.
+
+    The primary sim-time probe may fail transiently under load; when it does,
+    monitor_until falls back to the collector's fleet/telemetry.jsonl
+    clock.last_sim_s.  Only after SIM_PROBE_CONSECUTIVE_FAIL_LIMIT consecutive
+    failures (primary + fallback both dark) does the loop give up, so a
+    telemetry stall can never leave a run spinning to the wall deadline.
     """
     runroot = Path(active["runroot"])
     start_sim_s = None
     wall_deadline = monotonic() + max(600.0, duration_sim_s * 10.0)
     sim_time_probe = sim_time_probe or (lambda: sim_time_s(runroot))
+    fallback_probe = lambda: sim_time_s_from_telemetry(runroot)
+    probe_failures = 0
     dropout_triggered = False
     while monotonic() < wall_deadline:
         profiler = resource_profiler(runroot, active["processes"])
@@ -1121,11 +1151,19 @@ def monitor_until(active, duration_sim_s, dropout_config=None, config=None,
                 os.kill(int(spec["pid"]), 0)
             except ProcessLookupError:
                 return "process_death:" + name
+        current_sim_s = None
         try:
             current_sim_s = sim_time_probe()
-        except (OSError, ValueError, subprocess.SubprocessError):
-            sleep(1.0)
-            continue
+        except (OSError, ValueError, RuntimeError, subprocess.SubprocessError):
+            try:
+                current_sim_s = fallback_probe()
+            except (OSError, ValueError, RuntimeError, subprocess.SubprocessError):
+                probe_failures += 1
+                if probe_failures >= SIM_PROBE_CONSECUTIVE_FAIL_LIMIT:
+                    return "sim_time_probe_stall"
+                sleep(1.0)
+                continue
+        probe_failures = 0
         profiler.sample(current_sim_s)
         if start_sim_s is None:
             start_sim_s = current_sim_s
@@ -2067,6 +2105,64 @@ def self_test():
         reason4 = monitor_until(mu_active4, 120, monotonic=mu_monotonic4, sleep=mu_sleep,
                                 sim_time_probe=sim_probe4)
         assert reason4 == "duration_complete"  # no dropout, no crash
+
+    # monitor_until: primary probe fails transiently, telemetry fallback carries
+    # the run to duration_complete (no infinite sleep/continue loop).
+    with tempfile.TemporaryDirectory() as tempdir:
+        mu_runroot5 = Path(tempdir) / "RUN-fallback"
+        mu_runroot5.mkdir()
+        telemetry_path = mu_runroot5 / "fleet"
+        telemetry_path.mkdir()
+        stamps = iter([40.0, 80.0, 120.0, 140.0])
+
+        def append_stamp(stamp):
+            with (telemetry_path / "telemetry.jsonl").open("a") as tf:
+                tf.write(json.dumps({"clock": {"last_sim_s": stamp,
+                                               "monotonic": True}}) + "\n")
+
+        append_stamp(0.0)  # initial collector heartbeat before monitor starts
+        mu_active5 = {"runroot": str(mu_runroot5),
+                      "processes": {"test": {"pid": str(os.getpid())}}}
+
+        def sim_probe5():
+            # primary probe fails, but the collector keeps appending telemetry
+            try:
+                append_stamp(next(stamps))
+            except StopIteration:
+                pass
+            raise OSError("rostopic unavailable (simulated)")
+
+        mu_time5 = [0.0]
+        def mu_monotonic5():
+            val = mu_time5[0]
+            mu_time5[0] += 1.0
+            return val
+        reason5 = monitor_until(mu_active5, 100, monotonic=mu_monotonic5, sleep=mu_sleep,
+                                sim_time_probe=sim_probe5)
+        assert reason5 == "duration_complete", reason5
+        assert mu_time5[0] <= 6  # completed promptly via fallback, not wall timeout
+
+    # monitor_until: both probes fail for SIM_PROBE_CONSECUTIVE_FAIL_LIMIT
+    # iterations -> sim_time_probe_stall instead of spinning to wall deadline.
+    with tempfile.TemporaryDirectory() as tempdir:
+        mu_runroot6 = Path(tempdir) / "RUN-stall"
+        mu_runroot6.mkdir()
+        (mu_runroot6 / "fleet").mkdir()
+        mu_active6 = {"runroot": str(mu_runroot6),
+                      "processes": {"test": {"pid": str(os.getpid())}}}
+
+        def sim_probe6():
+            raise OSError("rostopic unavailable (simulated)")
+
+        mu_time6 = [0.0]
+        def mu_monotonic6():
+            val = mu_time6[0]
+            mu_time6[0] += 1.0
+            return val
+        reason6 = monitor_until(mu_active6, 100, monotonic=mu_monotonic6, sleep=mu_sleep,
+                                sim_time_probe=sim_probe6)
+        assert reason6 == "sim_time_probe_stall", reason6
+        assert mu_time6[0] <= SIM_PROBE_CONSECUTIVE_FAIL_LIMIT + 2  # bounded
 
     # D8: manifest whitelist accepts any experiments/manifests/*.yaml only.
     assert manifest_allowed(ROOT / "experiments/manifests/2uav_smoke.yaml")
