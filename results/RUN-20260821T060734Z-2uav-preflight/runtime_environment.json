@@ -1,6 +1,0 @@
-{
-  "ros_environment": {
-    "ROS_HOME": "/home/houslakers/auto_tune_racer/swarmlio_multi/results/RUN-20260821T060734Z-2uav-preflight/logs/ros-home",
-    "ROS_LOG_DIR": "/home/houslakers/auto_tune_racer/swarmlio_multi/results/RUN-20260821T060734Z-2uav-preflight/logs/ros"
-  }
-}

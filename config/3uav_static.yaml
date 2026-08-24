@@ -53,7 +53,7 @@ baseline_runtime:
   global_trajectory_reject_unknown: false
   registration_source: gt
 exploration:
-  mtsp_objective: MINSUM
+  mtsp_objective: MINMAX
   capacity_factor: 0.75
 vehicles:
 - name: uav0

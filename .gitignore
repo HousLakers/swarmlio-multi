@@ -9,3 +9,19 @@ results/*/*/telemetry.jsonl
 # Executor-generated per-run manifests (state is tracked via matrix_state.json).
 experiments/manifests/3uav_nodrop_*.yaml
 experiments/manifests/3uav_drop_*.yaml
+
+# Experiment runroot data stays local only (immutable, not versioned);
+# report-referenced figures (PNG) are the only results artifacts kept in git.
+results/**
+!results/RUN-20260823T224518Z-3uav-smoke-A2-r2/
+!results/RUN-20260823T224518Z-3uav-smoke-A2-r2/*.png
+!results/RUN-20260824T020835Z-3uav-smoke-B2-r2/
+!results/RUN-20260824T020835Z-3uav-smoke-B2-r2/*.png
+!results/RUN-20260824T092806Z-3uav-smoke-A2-r3/
+!results/RUN-20260824T092806Z-3uav-smoke-A2-r3/*.png
+!results/RUN-20260824T100002Z-3uav-smoke/
+!results/RUN-20260824T100002Z-3uav-smoke/*.png
+!results/RUN-20260824T010835Z-3uav-smoke-B1-r1/
+!results/RUN-20260824T010835Z-3uav-smoke-B1-r1/*.png
+!results/RUN-20260824T110657Z-3uav-smoke/
+!results/RUN-20260824T110657Z-3uav-smoke/*.png

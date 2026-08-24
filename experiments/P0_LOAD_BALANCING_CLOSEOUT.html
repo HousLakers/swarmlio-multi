@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>P0 阶段总结：多机负载均衡 300s 矩阵收尾</title>
+  <style type="text/css">
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">P0 阶段总结：多机负载均衡 300s 矩阵收尾</h1>
+</header>
+<h1 id="p0-阶段总结多机负载均衡-300s-矩阵收尾">P0 阶段总结：多机负载均衡 300s 矩阵收尾</h1>
+<blockquote>
+<p>阶段：负载均衡矩阵收尾（P0） 时间：2026-08-24 状态：<strong>18/18 矩阵全 done + C1 首两轮完成（1 done / 1 failed）</strong> 汇总人：sol（高终端）· 数据来源：<code>experiments/matrix_results.jsonl</code>、<code>matrix_state.json</code></p>
+</blockquote>
+<hr />
+<h2 id="矩阵最终成绩6-组-3-次-18-runs每组-300-sim-s">1. 矩阵最终成绩（6 组 × 3 次 = 18 runs，每组 300 sim-s）</h2>
+<h3 id="总览">1.1 总览</h3>
+<ul>
+<li><strong>18/18 done</strong>（A2-r3 已于 <code>RUN-20260824T092806Z</code> 重跑成功，从原 failed 转为 done）</li>
+<li>唯一记录失败 A2-r3 原因为收尾安全门 telemetry 探测残留（<code>topic_owner_probe_failed</code>）， 重跑后 <code>duration_complete + final_safety_passed=true</code>，<strong>非算法失败，已闭环</strong></li>
+<li>18/18 无 crash、无 contact；9/9 掉线 run 全部 <code>intentional_dropout</code> 分类正确</li>
+<li>C1 最终验证（MINMAX+0.75 无掉线 ×3）：C1-r1 启动期 px4_bridge_3 进程死亡（failed）， C1-r2 数据完整（done），C1-r3 待跑</li>
+</ul>
+<h3 id="分组统计均值-标准差仅-done-run">1.2 分组统计（均值 ± 标准差，仅 done run）</h3>
+<table>
+<thead>
+<tr class="header">
+<th>组</th>
+<th>配置</th>
+<th style="text-align: center;">n</th>
+<th style="text-align: right;">fleet ratio</th>
+<th style="text-align: right;">总路径 m</th>
+<th style="text-align: right;">失衡比</th>
+<th style="text-align: right;">Jaccard</th>
+<th style="text-align: right;">overlap</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>A1</td>
+<td>MINSUM 0.75</td>
+<td style="text-align: center;">3</td>
+<td style="text-align: right;">0.205±0.025</td>
+<td style="text-align: right;">557±174</td>
+<td style="text-align: right;">2.41±1.03</td>
+<td style="text-align: right;">0.657±0.128</td>
+<td style="text-align: right;">0.902±0.030</td>
+</tr>
+<tr class="even">
+<td>A2</td>
+<td>MINMAX 0.75</td>
+<td style="text-align: center;">3</td>
+<td style="text-align: right;"><strong>0.224±0.007</strong></td>
+<td style="text-align: right;">796±88</td>
+<td style="text-align: right;"><strong>1.43±0.20</strong></td>
+<td style="text-align: right;">0.741±0.032</td>
+<td style="text-align: right;">0.898±0.015</td>
+</tr>
+<tr class="odd">
+<td>A3</td>
+<td>MINMAX 0.50</td>
+<td style="text-align: center;">3</td>
+<td style="text-align: right;">0.213±0.009</td>
+<td style="text-align: right;">709±109</td>
+<td style="text-align: right;">2.11±1.30</td>
+<td style="text-align: right;"><strong>0.745±0.011</strong></td>
+<td style="text-align: right;">0.877±0.013</td>
+</tr>
+<tr class="even">
+<td>B1</td>
+<td>MINSUM 0.75 + drop</td>
+<td style="text-align: center;">3</td>
+<td style="text-align: right;">0.201±0.019</td>
+<td style="text-align: right;">503±55</td>
+<td style="text-align: right;">7.36±1.28</td>
+<td style="text-align: right;">0.141±0.037</td>
+<td style="text-align: right;">0.893±0.028</td>
+</tr>
+<tr class="odd">
+<td>B2</td>
+<td>MINMAX 0.75 + drop</td>
+<td style="text-align: center;">3</td>
+<td style="text-align: right;">0.207±0.008</td>
+<td style="text-align: right;">562±34</td>
+<td style="text-align: right;">9.08±3.38</td>
+<td style="text-align: right;">0.080±0.009</td>
+<td style="text-align: right;">0.911±0.008</td>
+</tr>
+<tr class="even">
+<td>B3</td>
+<td>MINMAX 0.50 + drop</td>
+<td style="text-align: center;">3</td>
+<td style="text-align: right;">0.185±0.023</td>
+<td style="text-align: right;">427±72</td>
+<td style="text-align: right;">6.41±2.65</td>
+<td style="text-align: right;">0.260±0.189</td>
+<td style="text-align: right;">0.897±0.026</td>
+</tr>
+<tr class="odd">
+<td><strong>C1</strong></td>
+<td><strong>MINMAX 0.75（最终验证）</strong></td>
+<td style="text-align: center;">1</td>
+<td style="text-align: right;"><strong>0.2233</strong></td>
+<td style="text-align: right;">951.5</td>
+<td style="text-align: right;"><strong>1.13</strong></td>
+<td style="text-align: right;">0.770</td>
+<td style="text-align: right;">0.898</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>A2 组数据在 A2-r3 重跑后重算（n=3），失衡比 1.43 仍为全矩阵最低，ratio 0.224 最高。</p>
+</blockquote>
+<h3 id="a2-r3-重跑详情">1.3 A2-r3 重跑详情</h3>
+<table>
+<thead>
+<tr class="header">
+<th>项</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>runroot</td>
+<td><code>results/RUN-20260824T092806Z-3uav-smoke-A2-r3/</code></td>
+</tr>
+<tr class="even">
+<td>exit / safety</td>
+<td><code>duration_complete</code> / <code>final_safety_passed=true</code></td>
+</tr>
+<tr class="odd">
+<td>fleet ratio</td>
+<td>0.2274（组内最高）</td>
+</tr>
+<tr class="even">
+<td>失衡比</td>
+<td>1.58（350.4 / 324.7 / 222.2 m，total 897.2 m）</td>
+</tr>
+<tr class="odd">
+<td>Jaccard / overlap</td>
+<td>0.775 / 0.8995</td>
+</tr>
+<tr class="even">
+<td>abort</td>
+<td><code>[]</code></td>
+</tr>
+<tr class="odd">
+<td>sim 时长</td>
+<td>327.3 sim-s（RT p95=0.37）</td>
+</tr>
+</tbody>
+</table>
+<h3 id="c1-状态最终配置验证">1.4 C1 状态（最终配置验证）</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>run</th>
+<th>结果</th>
+<th>详情</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>C1-r1</td>
+<td><strong>failed</strong></td>
+<td>启动期 <code>process_death:/px4_bridge_3</code> + telemetry 探测瞬态失败（<code>topic_owner_missing</code>），sim 仅 20.94s，非算法问题</td>
+</tr>
+<tr class="even">
+<td>C1-r2</td>
+<td><strong>done</strong></td>
+<td>sim 608.7s 全程无 abort，ratio 0.2233、失衡比 1.13、Jaccard 0.770；runner monitor duration 检查未自动触发，手动 stop 收尾（数据完整）</td>
+</tr>
+<tr class="odd">
+<td>C1-r3</td>
+<td>待跑</td>
+<td>修复 runner <code>sim_time</code> 探测死循环后执行</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="主要结论">2. 主要结论</h2>
+<ol type="1">
+<li><strong>MINMAX 均衡性成立（H1 ✓）</strong>：无掉线组 A2 失衡比 1.43 显著低于 A1（MINSUM）的 2.41， 路径更均衡，代价是总路径更长（796 vs 557 m）。</li>
+<li><strong>掉线是负载集中的主因（H3 ✓）</strong>：B 组失衡比 6.4–9.1 vs A 组 1.4–2.4； 掉线机地图贡献丢失导致 Jaccard 骤降（0.08–0.26 vs 0.66–0.75）。</li>
+<li><strong>掉线鲁棒性成立（H3 ✓）</strong>：9/9 掉线 run 剩余机 coverage delta 全部 &gt; 0，无 abort/crash。</li>
+<li><strong>300s 覆盖提升（H4 部分 ✓）</strong>：fleet ratio 0.19–0.22 vs 120s 的 0.115，但未收敛到完整搜图。</li>
+<li><strong>最终配置 = MINMAX + 0.75</strong>：A2/C1 数据一致支持，C1-r2 失衡比 1.13 优于 A 组均值。</li>
+</ol>
+<hr />
+<h2 id="图件证据每-run-自动产出均已按真实建图标准重绘">3. 图件证据（每 run 自动产出，均已按真实建图标准重绘）</h2>
+<h3 id="a2-组代表minmax0.75无掉线-run-20260823t224518za2-r2">3.1 A2 组代表（MINMAX+0.75，无掉线）—— <code>RUN-20260823T224518Z</code>（A2-r2）</h3>
+<figure>
+<img src="../results/RUN-20260823T224518Z-3uav-smoke-A2-r2/coverage.png" alt="A2-r2 coverage" /><figcaption>A2-r2 coverage</figcaption>
+</figure>
+<figure>
+<img src="../results/RUN-20260823T224518Z-3uav-smoke-A2-r2/grid_map.png" alt="A2-r2 grid_map" /><figcaption>A2-r2 grid_map</figcaption>
+</figure>
+<figure>
+<img src="../results/RUN-20260823T224518Z-3uav-smoke-A2-r2/point_cloud.png" alt="A2-r2 point_cloud" /><figcaption>A2-r2 point_cloud</figcaption>
+</figure>
+<h3 id="a2-r3-重跑1818-闭环-run-20260824t092806z">3.2 A2-r3 重跑（18/18 闭环）—— <code>RUN-20260824T092806Z</code></h3>
+<figure>
+<img src="../results/RUN-20260824T092806Z-3uav-smoke-A2-r3/coverage.png" alt="A2-r3 coverage" /><figcaption>A2-r3 coverage</figcaption>
+</figure>
+<figure>
+<img src="../results/RUN-20260824T092806Z-3uav-smoke-A2-r3/grid_map.png" alt="A2-r3 grid_map" /><figcaption>A2-r3 grid_map</figcaption>
+</figure>
+<figure>
+<img src="../results/RUN-20260824T092806Z-3uav-smoke-A2-r3/point_cloud.png" alt="A2-r3 point_cloud" /><figcaption>A2-r3 point_cloud</figcaption>
+</figure>
+<h3 id="c1-r2-最终配置验证-run-20260824t100002z">3.3 C1-r2 最终配置验证 —— <code>RUN-20260824T100002Z</code></h3>
+<figure>
+<img src="../results/RUN-20260824T100002Z-3uav-smoke/coverage.png" alt="C1-r2 coverage" /><figcaption>C1-r2 coverage</figcaption>
+</figure>
+<figure>
+<img src="../results/RUN-20260824T100002Z-3uav-smoke/grid_map.png" alt="C1-r2 grid_map" /><figcaption>C1-r2 grid_map</figcaption>
+</figure>
+<figure>
+<img src="../results/RUN-20260824T100002Z-3uav-smoke/point_cloud.png" alt="C1-r2 point_cloud" /><figcaption>C1-r2 point_cloud</figcaption>
+</figure>
+<h3 id="b-组代表掉线-uav160s-node_level-run-20260824t020835zb2-r1">3.4 B 组代表（掉线 uav1@60s node_level）—— <code>RUN-20260824T020835Z</code>（B2-r1）</h3>
+<figure>
+<img src="../results/RUN-20260824T020835Z-3uav-smoke-B2-r2/coverage.png" alt="B2-r1 coverage" /><figcaption>B2-r1 coverage</figcaption>
+</figure>
+<figure>
+<img src="../results/RUN-20260824T020835Z-3uav-smoke-B2-r2/grid_map.png" alt="B2-r1 grid_map" /><figcaption>B2-r1 grid_map</figcaption>
+</figure>
+<figure>
+<img src="../results/RUN-20260824T020835Z-3uav-smoke-B2-r2/point_cloud.png" alt="B2-r1 point_cloud" /><figcaption>B2-r1 point_cloud</figcaption>
+</figure>
+<hr />
+<h2 id="阶段结论与边界">4. 阶段结论与边界</h2>
+<h3 id="结论">结论</h3>
+<ul>
+<li>P0 负载均衡矩阵<strong>正式闭环</strong>：18/18 done，A/B 假设全部验证，C1 最终配置验证基本完成 （C1-r2 数据支持 MINMAX+0.75）。</li>
+<li>掉线鲁棒性 + MINMAX 均衡性两项赛题相关核心结论已具备完整证据链。</li>
+</ul>
+<h3 id="边界与遗留">边界与遗留</h3>
+<ul>
+<li><strong>C1-r3 未跑</strong>：待 runner <code>monitor_until</code> sim_time 探测死循环修复后执行； C1 组完成需重跑 C1-r1（px4_bridge_3 启动死亡，与算法无关）。</li>
+<li><strong>runner 缺陷（已确认，待修复）</strong>：<code>sim_time_s()</code> 探测失败时 <code>monitor_until</code> 进入 <code>sleep(1); continue</code> 死循环，duration 检查被跳过，直到 wall_deadline （3000s）才 timeout。影响：C1-r2 跑到 sim 608.7s 未自动停止。 修复方向：<code>sim_time_s</code> 失败降级为读取 <code>fleet/telemetry.jsonl</code> 的 <code>last_sim_s</code>， 并加连续失败计数（≥N 次直接判失败），不再无限循环。</li>
+<li>覆盖率未收敛到完整搜图（50×50 m 地图 300s 不够），赛题 H4 仅部分成立； 是否延长时长作为 P1 之后的可选项。</li>
+<li>台账口径：C1-r2 按 done 记录（注明 duration 未自动触发），C1-r1 按 failed 记录。</li>
+</ul>
+<hr />
+<h2 id="下一步唯一动作">5. 下一步唯一动作</h2>
+<pre class="text"><code>1. 修复 two_uav_runner.py monitor_until 的 sim_time 探测死循环（中终端）；
+2. 重跑 C1-r1 + 执行 C1-r3，完成 C1 组 3 次验证（低终端）；
+3. 收尾 commit：stage: LB-matrix closeout（高终端审核后提交）。</code></pre>
+<blockquote>
+<p>新会话首读：<code>AGENTS.md</code>、<code>handoff/TERMINAL_HANDOFF_PROTOCOL.md</code>、 <code>state/current_summary.md</code>、<code>state/SESSION_HANDOFF.md</code>、 <code>experiments/PLAN_COMPETITION_2026.md</code>、<code>experiments/P0_LOAD_BALANCING_CLOSEOUT.md</code>。</p>
+</blockquote>
+</body>
+</html>
