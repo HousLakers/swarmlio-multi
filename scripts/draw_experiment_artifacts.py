@@ -212,12 +212,14 @@ def plot_coverage(runroot, box_min, box_max, trajectories, voxels_by_vehicle, se
         color = VEHICLE_COLORS.get(name, "#666666")
         ts = [p[0] for p in seq]
         ns = [p[1] for p in seq]
-        ax2.plot(ts, ns, color=color, lw=1.7, label=f"{name} coverage")
+        ax2.plot(ts, ns, color=color, lw=1.8, alpha=1.0,
+                 label=f"{name} coverage", zorder=10)
         if len(ts) > len(fleet_union_t):
             fleet_union_t = ts
             fleet_union_n = ns
     if fleet_union_t:
-        ax2.plot(fleet_union_t, fleet_union_n, color="black", lw=2.3, label="fleet union")
+        ax2.plot(fleet_union_t, fleet_union_n, color="black", lw=0.8,
+                 ls="--", alpha=0.25, label="fleet union", zorder=5)
     ax2.set_xlabel("sim time (s)")
     ax2.set_ylabel("unique coverage voxels")
     ax2.set_title("coverage growth")
