@@ -408,22 +408,21 @@ def execute_dropout(runroot, dropout_config, config, sim_s=None,
 
     The killed nodes are descendants of the tracked bridges/racer process trees,
     so stop_active's existing descendant closure reclaims any residue.
+
+    Ordering: the record is written *before* any kill. The collector exempts
+    the dropped vehicle only after it can read fleet/dropout.json; killing
+    first opens a race window in which topic-owner/liveness checks mislabel the
+    injected fault as an abort.
     """
     runroot = Path(runroot)
     pid_probe = pid_probe or (lambda node: rosnode_pid(runroot, node))
     killer = killer or (lambda node: rosnode_kill(runroot, node))
     targets = dropout_target_nodes(config, dropout_config)
     pids = {}
-    killed = []
-    missing = []
     for node_name in targets:
         pid = pid_probe(node_name)
         if pid is not None:
             pids[node_name] = pid
-        if killer(node_name):
-            killed.append(node_name)
-        else:
-            missing.append(node_name)
     record = {
         "vehicle": dropout_config["vehicle"],
         "mode": dropout_config["mode"],
@@ -432,14 +431,24 @@ def execute_dropout(runroot, dropout_config, config, sim_s=None,
                   else sim_probe(runroot)),
         "wall_s": monotonic(),
         "pids": pids,
-        "killed_nodes": killed,
-        "missing_nodes": missing,
+        "killed_nodes": [],
+        "missing_nodes": [],
         "cleanup_policy": dropout_config["cleanup_policy"],
         "record": dropout_config["record"],
         "reason": "intentional_dropout",
     }
     record_path = runroot / "fleet" / "dropout.json"
     record_path.parent.mkdir(parents=True, exist_ok=True)
+    record_path.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    killed = []
+    missing = []
+    for node_name in targets:
+        if killer(node_name):
+            killed.append(node_name)
+        else:
+            missing.append(node_name)
+    record["killed_nodes"] = killed
+    record["missing_nodes"] = missing
     record_path.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return record
 
