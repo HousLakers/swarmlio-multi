@@ -36,10 +36,10 @@ environment:
   - 2.7
   validation_state: static_validated_runtime_pending
 frozen:
-  platform_commit: 57c1f34a607b834915f9aa4a4a6b301ecc5a4ffc
-  single_commit: 82366bf26e26cd0dddea3ee57e8591d3a2a42c7f
+  platform_commit: f64c8259ed2481c9bcfff3188244cf4b316da8d9
+  single_commit: 0b9965ee00dd9628dec774ecd9268e81f7110b92
   overlay_manifest: platform_overlays/range20m_omnidirectional_load_balancing_v1/current_config.sha256
-  overlay_manifest_sha256: 1c70655e9bdb1a82bad808dd74e989852e59534767cdfbcf0a5db246a4d15c42
+  overlay_manifest_sha256: 787d35c7a79dc1d5dac34f17e1a73f448bdda7e4ed70cc27a4bfe9ab2ee90536
   overlay_installer: scripts/apply_range20m_omnidirectional_load_balancing_overlay.sh
   overlay_installer_sha256: a0a208d6b28f2a6a0eeb3eb4ce939cb82ca4cec72caf4a99e515499b1c40372c
 baseline_runtime:

@@ -3,11 +3,11 @@ stage: smoke
 approved: true
 allowed_actions:
 - launch
-manifest_sha256: 2ebfeac1d57b893d5bd76901a6bd9780eedab71cf8b585ee9c96cc556b57aea4
-source_hash_manifest_sha256: 2a30fdc0352a5979462c7cf8e7e6525d43eecb6d5ec294e6a378cecd44f98a72
+manifest_sha256: 3738ce95a6966f3a171455b5de787429f9809e6c96ecfbaffef6c06eb570982f
+source_hash_manifest_sha256: 0b57ee69f373b634e16fc3a9ee7562aeb3b9f5f38d084d68bcb965bc35a5010c
 issued_by: sol
 max_uses: 1
-issuance_id: lb-C1-r3-C1-20260824T112459Z-3uav-300s
+issuance_id: verify-droploss20-90s-3738ce95-v2
 dropout:
   enabled: false
   vehicle: uav1
