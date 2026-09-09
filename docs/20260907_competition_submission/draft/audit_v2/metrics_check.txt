@@ -1,0 +1,508 @@
+{
+  "tool": "compare_metrics",
+  "findings": [
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "A1.coverage.mean @ paper_draft_v2.md Table 8",
+      "message": "A1.coverage.mean: paper 0.2053 ~= run 'A1.coverage.mean'=0.20529020646159338 (|d|=9.794e-06 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "A1.coverage.sd @ paper_draft_v2.md Table 8",
+      "message": "A1.coverage.sd: paper 0.0249 ~= run 'A1.coverage.sd'=0.024926210187816464 (|d|=2.621e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "A1.imbalance.mean @ paper_draft_v2.md Table 8",
+      "message": "A1.imbalance.mean: paper 2.4089 ~= run 'A1.imbalance.mean'=2.408887256920968 (|d|=1.274e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "A1.imbalance.sd @ paper_draft_v2.md Table 8",
+      "message": "A1.imbalance.sd: paper 1.0324 ~= run 'A1.imbalance.sd'=1.0324195652892216 (|d|=1.957e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "A1.jaccard.mean @ paper_draft_v2.md Table 8",
+      "message": "A1.jaccard.mean: paper 0.6572 ~= run 'A1.jaccard.mean'=0.6572284261127717 (|d|=2.843e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "A1.jaccard.sd @ paper_draft_v2.md Table 8",
+      "message": "A1.jaccard.sd: paper 0.1278 ~= run 'A1.jaccard.sd'=0.1277890301675603 (|d|=1.097e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "A1.overlap.mean @ paper_draft_v2.md Table 8",
+      "message": "A1.overlap.mean: paper 0.9015 ~= run 'A1.overlap.mean'=0.9015352385940981 (|d|=3.524e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "A1.overlap.sd @ paper_draft_v2.md Table 8",
+      "message": "A1.overlap.sd: paper 0.0296 ~= run 'A1.overlap.sd'=0.029579012312044663 (|d|=2.099e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "A1.path_m.mean @ paper_draft_v2.md Table 8",
+      "message": "A1.path_m.mean: paper 556.6883 ~= run 'A1.path_m.mean'=556.6882939814469 (|d|=6.019e-06 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "A1.path_m.sd @ paper_draft_v2.md Table 8",
+      "message": "A1.path_m.sd: paper 174.272 ~= run 'A1.path_m.sd'=174.27202087359473 (|d|=2.087e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "A2.coverage.mean @ paper_draft_v2.md Table 8",
+      "message": "A2.coverage.mean: paper 0.2235 ~= run 'A2.coverage.mean'=0.22352293687154162 (|d|=2.294e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "A2.coverage.sd @ paper_draft_v2.md Table 8",
+      "message": "A2.coverage.sd: paper 0.0067 ~= run 'A2.coverage.sd'=0.0067404686074672045 (|d|=4.047e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "A2.imbalance.mean @ paper_draft_v2.md Table 8",
+      "message": "A2.imbalance.mean: paper 1.4249 ~= run 'A2.imbalance.mean'=1.4248760823846989 (|d|=2.392e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "A2.imbalance.sd @ paper_draft_v2.md Table 8",
+      "message": "A2.imbalance.sd: paper 0.2011 ~= run 'A2.imbalance.sd'=0.2011348490167506 (|d|=3.485e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "A2.jaccard.mean @ paper_draft_v2.md Table 8",
+      "message": "A2.jaccard.mean: paper 0.7414 ~= run 'A2.jaccard.mean'=0.7413796286567926 (|d|=2.037e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "A2.jaccard.sd @ paper_draft_v2.md Table 8",
+      "message": "A2.jaccard.sd: paper 0.0318 ~= run 'A2.jaccard.sd'=0.031828743958968654 (|d|=2.874e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "A2.overlap.mean @ paper_draft_v2.md Table 8",
+      "message": "A2.overlap.mean: paper 0.898 ~= run 'A2.overlap.mean'=0.8980294288793456 (|d|=2.943e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "A2.overlap.sd @ paper_draft_v2.md Table 8",
+      "message": "A2.overlap.sd: paper 0.0149 ~= run 'A2.overlap.sd'=0.014948837642319506 (|d|=4.884e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "A2.path_m.mean @ paper_draft_v2.md Table 8",
+      "message": "A2.path_m.mean: paper 795.9225 ~= run 'A2.path_m.mean'=795.9224817220555 (|d|=1.828e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "A2.path_m.sd @ paper_draft_v2.md Table 8",
+      "message": "A2.path_m.sd: paper 87.791 ~= run 'A2.path_m.sd'=87.79102009435594 (|d|=2.009e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "A3.coverage.mean @ paper_draft_v2.md Table 8",
+      "message": "A3.coverage.mean: paper 0.2134 ~= run 'A3.coverage.mean'=0.21338827076019912 (|d|=1.173e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "A3.coverage.sd @ paper_draft_v2.md Table 8",
+      "message": "A3.coverage.sd: paper 0.0093 ~= run 'A3.coverage.sd'=0.009337757009008655 (|d|=3.776e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "A3.imbalance.mean @ paper_draft_v2.md Table 8",
+      "message": "A3.imbalance.mean: paper 2.1122 ~= run 'A3.imbalance.mean'=2.1122172301832673 (|d|=1.723e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "A3.imbalance.sd @ paper_draft_v2.md Table 8",
+      "message": "A3.imbalance.sd: paper 1.2992 ~= run 'A3.imbalance.sd'=1.2992480424450157 (|d|=4.804e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "A3.jaccard.mean @ paper_draft_v2.md Table 8",
+      "message": "A3.jaccard.mean: paper 0.7452 ~= run 'A3.jaccard.mean'=0.7452099149419326 (|d|=9.915e-06 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "A3.jaccard.sd @ paper_draft_v2.md Table 8",
+      "message": "A3.jaccard.sd: paper 0.0114 ~= run 'A3.jaccard.sd'=0.011415908981646863 (|d|=1.591e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "A3.overlap.mean @ paper_draft_v2.md Table 8",
+      "message": "A3.overlap.mean: paper 0.8767 ~= run 'A3.overlap.mean'=0.8767446606437042 (|d|=4.466e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "A3.overlap.sd @ paper_draft_v2.md Table 8",
+      "message": "A3.overlap.sd: paper 0.0135 ~= run 'A3.overlap.sd'=0.013474458363054373 (|d|=2.554e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "A3.path_m.mean @ paper_draft_v2.md Table 8",
+      "message": "A3.path_m.mean: paper 709.0476 ~= run 'A3.path_m.mean'=709.0476326113704 (|d|=3.261e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "A3.path_m.sd @ paper_draft_v2.md Table 8",
+      "message": "A3.path_m.sd: paper 108.9905 ~= run 'A3.path_m.sd'=108.9904639293952 (|d|=3.607e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "B1.coverage.mean @ paper_draft_v2.md Table 8",
+      "message": "B1.coverage.mean: paper 0.2009 ~= run 'B1.coverage.mean'=0.2009418198766387 (|d|=4.182e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "B1.coverage.sd @ paper_draft_v2.md Table 8",
+      "message": "B1.coverage.sd: paper 0.019 ~= run 'B1.coverage.sd'=0.019012031377700515 (|d|=1.203e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "B1.imbalance.mean @ paper_draft_v2.md Table 8",
+      "message": "B1.imbalance.mean: paper 7.3572 ~= run 'B1.imbalance.mean'=7.357192756990285 (|d|=7.243e-06 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "B1.imbalance.sd @ paper_draft_v2.md Table 8",
+      "message": "B1.imbalance.sd: paper 1.2845 ~= run 'B1.imbalance.sd'=1.2845280757026847 (|d|=2.808e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "B1.jaccard.mean @ paper_draft_v2.md Table 8",
+      "message": "B1.jaccard.mean: paper 0.1407 ~= run 'B1.jaccard.mean'=0.14067676371270268 (|d|=2.324e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "B1.jaccard.sd @ paper_draft_v2.md Table 8",
+      "message": "B1.jaccard.sd: paper 0.0365 ~= run 'B1.jaccard.sd'=0.03647864647408119 (|d|=2.135e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "B1.overlap.mean @ paper_draft_v2.md Table 8",
+      "message": "B1.overlap.mean: paper 0.8925 ~= run 'B1.overlap.mean'=0.892462920795401 (|d|=3.708e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "B1.overlap.sd @ paper_draft_v2.md Table 8",
+      "message": "B1.overlap.sd: paper 0.028 ~= run 'B1.overlap.sd'=0.027970650528245166 (|d|=2.935e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "B1.path_m.mean @ paper_draft_v2.md Table 8",
+      "message": "B1.path_m.mean: paper 503.0029 ~= run 'B1.path_m.mean'=503.00293846430884 (|d|=3.846e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "B1.path_m.sd @ paper_draft_v2.md Table 8",
+      "message": "B1.path_m.sd: paper 54.5564 ~= run 'B1.path_m.sd'=54.5564341772243 (|d|=3.418e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "B2.coverage.mean @ paper_draft_v2.md Table 8",
+      "message": "B2.coverage.mean: paper 0.2071 ~= run 'B2.coverage.mean'=0.20713591559072608 (|d|=3.592e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "B2.coverage.sd @ paper_draft_v2.md Table 8",
+      "message": "B2.coverage.sd: paper 0.0084 ~= run 'B2.coverage.sd'=0.008403923965419322 (|d|=3.924e-06 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "B2.imbalance.mean @ paper_draft_v2.md Table 8",
+      "message": "B2.imbalance.mean: paper 9.077 ~= run 'B2.imbalance.mean'=9.077022162924527 (|d|=2.216e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "B2.imbalance.sd @ paper_draft_v2.md Table 8",
+      "message": "B2.imbalance.sd: paper 3.3791 ~= run 'B2.imbalance.sd'=3.379074362867196 (|d|=2.564e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "B2.jaccard.mean @ paper_draft_v2.md Table 8",
+      "message": "B2.jaccard.mean: paper 0.0799 ~= run 'B2.jaccard.mean'=0.07991700595281587 (|d|=1.701e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "B2.jaccard.sd @ paper_draft_v2.md Table 8",
+      "message": "B2.jaccard.sd: paper 0.0089 ~= run 'B2.jaccard.sd'=0.008882951778475635 (|d|=1.705e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "B2.overlap.mean @ paper_draft_v2.md Table 8",
+      "message": "B2.overlap.mean: paper 0.9108 ~= run 'B2.overlap.mean'=0.9108487446665596 (|d|=4.874e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "B2.overlap.sd @ paper_draft_v2.md Table 8",
+      "message": "B2.overlap.sd: paper 0.0077 ~= run 'B2.overlap.sd'=0.007655916209190232 (|d|=4.408e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "B2.path_m.mean @ paper_draft_v2.md Table 8",
+      "message": "B2.path_m.mean: paper 561.8552 ~= run 'B2.path_m.mean'=561.8551967840107 (|d|=3.216e-06 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "B2.path_m.sd @ paper_draft_v2.md Table 8",
+      "message": "B2.path_m.sd: paper 33.8731 ~= run 'B2.path_m.sd'=33.87312665457355 (|d|=2.665e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "B3.coverage.mean @ paper_draft_v2.md Table 8",
+      "message": "B3.coverage.mean: paper 0.1854 ~= run 'B3.coverage.mean'=0.1853729100969834 (|d|=2.709e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "B3.coverage.sd @ paper_draft_v2.md Table 8",
+      "message": "B3.coverage.sd: paper 0.023 ~= run 'B3.coverage.sd'=0.023036561499351342 (|d|=3.656e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "B3.imbalance.mean @ paper_draft_v2.md Table 8",
+      "message": "B3.imbalance.mean: paper 6.4079 ~= run 'B3.imbalance.mean'=6.407889684697515 (|d|=1.032e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "B3.imbalance.sd @ paper_draft_v2.md Table 8",
+      "message": "B3.imbalance.sd: paper 2.6533 ~= run 'B3.imbalance.sd'=2.65334462266447 (|d|=4.462e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "B3.jaccard.mean @ paper_draft_v2.md Table 8",
+      "message": "B3.jaccard.mean: paper 0.2597 ~= run 'B3.jaccard.mean'=0.2597099030090325 (|d|=9.903e-06 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "B3.jaccard.sd @ paper_draft_v2.md Table 8",
+      "message": "B3.jaccard.sd: paper 0.1888 ~= run 'B3.jaccard.sd'=0.18876715419184714 (|d|=3.285e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "B3.overlap.mean @ paper_draft_v2.md Table 8",
+      "message": "B3.overlap.mean: paper 0.897 ~= run 'B3.overlap.mean'=0.8969584557028007 (|d|=4.154e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "B3.overlap.sd @ paper_draft_v2.md Table 8",
+      "message": "B3.overlap.sd: paper 0.026 ~= run 'B3.overlap.sd'=0.02601397599748418 (|d|=1.398e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "B3.path_m.mean @ paper_draft_v2.md Table 8",
+      "message": "B3.path_m.mean: paper 426.9326 ~= run 'B3.path_m.mean'=426.9326300235489 (|d|=3.002e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "B3.path_m.sd @ paper_draft_v2.md Table 8",
+      "message": "B3.path_m.sd: paper 71.9215 ~= run 'B3.path_m.sd'=71.92154026687197 (|d|=4.027e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "C1.coverage.mean @ paper_draft_v2.md Table 8",
+      "message": "C1.coverage.mean: paper 0.2271 ~= run 'C1.coverage.mean'=0.2270891592788719 (|d|=1.084e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "C1.coverage.sd @ paper_draft_v2.md Table 8",
+      "message": "C1.coverage.sd: paper 0.0063 ~= run 'C1.coverage.sd'=0.006331859973140677 (|d|=3.186e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "C1.imbalance.mean @ paper_draft_v2.md Table 8",
+      "message": "C1.imbalance.mean: paper 1.0907 ~= run 'C1.imbalance.mean'=1.090688853457294 (|d|=1.115e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "C1.imbalance.sd @ paper_draft_v2.md Table 8",
+      "message": "C1.imbalance.sd: paper 0.0009 ~= run 'C1.imbalance.sd'=0.000936232262474217 (|d|=3.623e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "C1.jaccard.mean @ paper_draft_v2.md Table 8",
+      "message": "C1.jaccard.mean: paper 0.7568 ~= run 'C1.jaccard.mean'=0.756751706462042 (|d|=4.829e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "C1.jaccard.sd @ paper_draft_v2.md Table 8",
+      "message": "C1.jaccard.sd: paper 0.0317 ~= run 'C1.jaccard.sd'=0.03169143380452237 (|d|=8.566e-06 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "C1.overlap.mean @ paper_draft_v2.md Table 8",
+      "message": "C1.overlap.mean: paper 0.892 ~= run 'C1.overlap.mean'=0.891971856133722 (|d|=2.814e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "C1.overlap.sd @ paper_draft_v2.md Table 8",
+      "message": "C1.overlap.sd: paper 0.0173 ~= run 'C1.overlap.sd'=0.017316383349719904 (|d|=1.638e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "C1.path_m.mean @ paper_draft_v2.md Table 8",
+      "message": "C1.path_m.mean: paper 753.4932 ~= run 'C1.path_m.mean'=753.4931763562545 (|d|=2.364e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "C1.path_m.sd @ paper_draft_v2.md Table 8",
+      "message": "C1.path_m.sd: paper 120.705 ~= run 'C1.path_m.sd'=120.70498669984461 (|d|=1.33e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "R1.coverage_final @ paper_draft_v2.md Table 11",
+      "message": "R1.coverage_final: paper 0.990774 ~= run 'R1.coverage_final'=0.990774 (|d|=0 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "R1.elapsed_s @ paper_draft_v2.md Table 11",
+      "message": "R1.elapsed_s: paper 126.6157 ~= run 'R1.elapsed_s'=126.61567600000001 (|d|=2.4e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "R1.path_xy_m @ paper_draft_v2.md Table 11",
+      "message": "R1.path_xy_m: paper 27.2955 ~= run 'R1.path_xy_m'=27.29548986048267 (|d|=1.014e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "R1.trajectory_samples @ paper_draft_v2.md Table 11",
+      "message": "R1.trajectory_samples: paper 1267.0 ~= run 'R1.trajectory_samples'=1267 (|d|=0 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "R2.coverage_final @ paper_draft_v2.md Table 11",
+      "message": "R2.coverage_final: paper 0.9288 ~= run 'R2.coverage_final'=0.9288 (|d|=0 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "R2.elapsed_s @ paper_draft_v2.md Table 11",
+      "message": "R2.elapsed_s: paper 43.2143 ~= run 'R2.elapsed_s'=43.214285000000004 (|d|=1.5e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "R2.path_xy_m @ paper_draft_v2.md Table 11",
+      "message": "R2.path_xy_m: paper 34.6427 ~= run 'R2.path_xy_m'=34.64269418365397 (|d|=5.816e-06 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "R2.trajectory_samples @ paper_draft_v2.md Table 11",
+      "message": "R2.trajectory_samples: paper 433.0 ~= run 'R2.trajectory_samples'=433 (|d|=0 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "R3.coverage_final @ paper_draft_v2.md Table 11",
+      "message": "R3.coverage_final: paper 0.98742 ~= run 'R3.coverage_final'=0.98742 (|d|=0 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "R3.elapsed_s @ paper_draft_v2.md Table 11",
+      "message": "R3.elapsed_s: paper 84.2076 ~= run 'R3.elapsed_s'=84.207637 (|d|=3.7e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "R3.path_xy_m @ paper_draft_v2.md Table 11",
+      "message": "R3.path_xy_m: paper 55.3374 ~= run 'R3.path_xy_m'=55.33738802525727 (|d|=1.197e-05 within tol)"
+    },
+    {
+      "severity": "INFO",
+      "check": "metric/match",
+      "where": "R3.trajectory_samples @ paper_draft_v2.md Table 11",
+      "message": "R3.trajectory_samples: paper 843.0 ~= run 'R3.trajectory_samples'=843 (|d|=0 within tol)"
+    }
+  ],
+  "notes": [
+    "verdict: 82 match, 0 MISMATCH, 0 missing produced value, 0 unclaimed; tolerance rel=0.0 abs=5e-05",
+    "MATCH = consistent within tolerance, NOT independently reproduced; tighten/loosen tolerance to your metric's scale"
+  ],
+  "summary": {
+    "matched": 82,
+    "mismatched": 0,
+    "missing": 0,
+    "unclaimed": 0,
+    "produced_total": 82
+  }
+}

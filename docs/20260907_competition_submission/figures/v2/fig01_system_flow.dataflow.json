@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "多无人机感知、协同与执行流程",
+    "locale": "zh-CN",
+    "viewBox": [1080, 800],
+    "animation": "none",
+    "quality_profile": "showcase",
+    "views": [
+      {"id":"per-vehicle","label":"单机处理链","focus":["sensing","estimation","frontiers","assignment","execution"],"note":"每架无人机独立估计、规划和执行；图示为系统设计。"},
+      {"id":"coordination","label":"协同与恢复","focus":["assignment","teammates","health","execution"],"note":"共享任务状态、检测失联并重新分配任务；缺失的实机结果不由箭头推断。"}
+    ]
+  },
+  "stages": [
+    {"label":"机载观测"}, {"label":"状态估计"}, {"label":"环境表示"}, {"label":"协同决策"}, {"label":"规划与执行"}
+  ],
+  "nodes": [
+    {"id":"sensing","type":"external","label":"激光雷达与 IMU","sublabel":"带时间戳的机载观测","stage":0,"row":1,"width":150},
+    {"id":"estimation","type":"backend","label":"Swarm-LIO","sublabel":"位姿估计与点云配准","stage":1,"row":1,"width":150},
+    {"id":"frontiers","type":"database","label":"地图与 frontier","sublabel":"占据表示、候选视点","stage":2,"row":1,"width":150},
+    {"id":"assignment","type":"backend","label":"任务分配","sublabel":"MINSUM / MINMAX","stage":3,"row":1,"width":150},
+    {"id":"execution","type":"security","label":"轨迹与飞控执行","sublabel":"RACER · MAVROS / PX4","stage":4,"row":1,"width":160},
+    {"id":"reference","type":"external","label":"参考与坐标对齐","sublabel":"按实验披露外部参考角色","stage":1,"row":3,"width":185},
+    {"id":"teammates","type":"messagebus","label":"队友协同状态","sublabel":"任务、地图与相对状态","stage":3,"row":3,"width":185},
+    {"id":"health","type":"backend","label":"状态反馈与接管","sublabel":"新鲜度、心跳、执行状态","stage":4,"row":4,"width":190}
+  ],
+  "flows": [
+    {"id":"observations","from":"sensing","to":"estimation","label":"点云 / 惯性","variant":"emphasis","labelDy":-32},
+    {"id":"registered-state","from":"estimation","to":"frontiers","label":"位姿 / 几何","variant":"emphasis","labelDy":-32},
+    {"id":"tasks","from":"frontiers","to":"assignment","label":"待探索任务","variant":"emphasis","labelDy":-32},
+    {"id":"assigned-targets","from":"assignment","to":"execution","label":"目标 / 路线","variant":"emphasis","labelDy":-32},
+    {"id":"reference-role","from":"reference","to":"estimation","label":"参考变换","variant":"dashed"},
+    {"id":"peer-task-state","from":"teammates","to":"assignment","label":"心跳 / 认领","variant":"default"},
+    {"id":"executed-state","from":"execution","to":"health","label":"执行反馈","variant":"security","labelAt":[960,440]},
+    {"id":"redistribute","from":"health","to":"teammates","label":"失联 / 接管","variant":"security"}
+  ],
+  "cards": [
+    {"dot":"cyan","title":"逐机独立运行","items":["感知、任务规划和控制保持实例隔离。"]},
+    {"dot":"amber","title":"证据范围","items":["架构示意不代表三机实飞、功耗或重规划时限已验证。"]}
+  ]
+}

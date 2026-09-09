@@ -1,0 +1,30 @@
+schema_version: 1
+updated: 2026-09-08
+paper_title: "面向国产算力的多无人机具身智能感知与弹性探索系统"
+vertical: systems
+contribution_type: system
+audience: practitioners
+venue_tier: undecided
+target_venues:
+  - "XH-202629 赛题系统报告"
+risk_appetite: safe
+writing_preferences:
+  person: venue-default
+  tone: formal
+  notation: light
+preferred_terms:
+  - Swarm-LIO
+  - RACER
+  - MINMAX
+  - MINSUM
+  - "节点级baseline"
+  - "任务层丢包"
+avoid_terms:
+  - "首次"
+  - "最优"
+  - "显著"
+  - "全面达成"
+  - "赋能"
+  - "值得注意的是"
+constraints:
+  - "中文七章原始标题;只读证据;禁止新实验;禁止虚构结果或文献;禁止提交推送;定位由用户本轮指令约束而非独立访谈"

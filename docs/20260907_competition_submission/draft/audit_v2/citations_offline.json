@@ -1,0 +1,86 @@
+{
+  "file": "/home/houslakers/auto_tune_racer/swarmlio_multi/docs/20260907_competition_submission/draft/literature_v2/references.bib",
+  "checked_at": "2026-09-08T09:18:42Z",
+  "mode": "offline",
+  "verdict": "PASS",
+  "verdict_line": "PASS: 0/8 verified, 0 errors, 0 warnings (0 checks skipped)",
+  "skipped_checks": [],
+  "entries": [
+    {
+      "key": "best2022",
+      "type": "inproceedings",
+      "line": 5,
+      "status": "PARSED_ONLY",
+      "resolved": null,
+      "flags": []
+    },
+    {
+      "key": "cbba2009",
+      "type": "article",
+      "line": 14,
+      "status": "PARSED_ONLY",
+      "resolved": null,
+      "flags": []
+    },
+    {
+      "key": "fastlio2021",
+      "type": "misc",
+      "line": 26,
+      "status": "PARSED_ONLY",
+      "resolved": null,
+      "flags": []
+    },
+    {
+      "key": "fuel2020",
+      "type": "misc",
+      "line": 35,
+      "status": "PARSED_ONLY",
+      "resolved": null,
+      "flags": []
+    },
+    {
+      "key": "racer2023",
+      "type": "article",
+      "line": 44,
+      "status": "PARSED_ONLY",
+      "resolved": null,
+      "flags": []
+    },
+    {
+      "key": "swarmlio2022",
+      "type": "misc",
+      "line": 56,
+      "status": "PARSED_ONLY",
+      "resolved": null,
+      "flags": []
+    },
+    {
+      "key": "swarmlio2025",
+      "type": "article",
+      "line": 65,
+      "status": "PARSED_ONLY",
+      "resolved": null,
+      "flags": []
+    },
+    {
+      "key": "yamauchi1997",
+      "type": "inproceedings",
+      "line": 76,
+      "status": "PARSED_ONLY",
+      "resolved": null,
+      "flags": []
+    }
+  ],
+  "summary": {
+    "total": 8,
+    "verified": 0,
+    "errors": 0,
+    "warnings_only": 0,
+    "warnings_by_flag": {},
+    "unresolved": 0,
+    "retracted": 0,
+    "canonical_instance": 0,
+    "low_relevance": 0,
+    "checks_skipped": 0
+  }
+}

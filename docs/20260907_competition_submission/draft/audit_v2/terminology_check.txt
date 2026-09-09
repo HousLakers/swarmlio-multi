@@ -1,0 +1,47 @@
+# Terminology check — /home/houslakers/auto_tune_racer/swarmlio_multi/docs/20260907_competition_submission/draft/paper_draft_v2.md
+
+## Findings
+
+- WARN [acronym-undefined] line 7: MINMAX used (x12, lines 7, 7, 99, 127, 163, 164, ...) but never defined — define at first use or add to --allow if it is universally known
+- WARN [acronym-undefined] line 7: MINSUM used (x7, lines 7, 7, 99, 126, 162, 165, ...) but never defined — define at first use or add to --allow if it is universally known
+- WARN [acronym-undefined] line 21: FAST used (x4, lines 21, 31, 35, 361) but never defined — define at first use or add to --allow if it is universally known
+- WARN [acronym-undefined] line 21: LIO2 used (x9, lines 21, 21, 31, 31, 35, 35, ...) but never defined — define at first use or add to --allow if it is universally known
+- WARN [acronym-undefined] line 23: FUEL used (x4, lines 23, 32, 99, 369) but never defined — define at first use or add to --allow if it is universally known
+- WARN [acronym-undefined] line 23: RACER used (x7, lines 23, 33, 92, 99, 121, 315, ...) but never defined — define at first use or add to --allow if it is universally known
+- WARN [acronym-undefined] line 25: CBBA used (x3, lines 25, 33, 34) but never defined — define at first use or add to --allow if it is universally known
+- WARN [acronym-undefined] line 63: SVG used (x1, lines 63) but never defined — define at first use or add to --allow if it is universally known
+- WARN [acronym-undefined] line 156: PX4 used (x1, lines 156) but never defined — define at first use or add to --allow if it is universally known
+- WARN [acronym-undefined] line 156: SITL used (x1, lines 156) but never defined — define at first use or add to --allow if it is universally known
+- WARN [compound-variant] line 228: one concept, 2 spellings: 'ate rmse' (x1, lines 228); 'ate-rmse' (x3, lines 284, 342, 343) — pick one form and use it everywhere
+- WARN [acronym-undefined] line 242: UAV1 used (x3, lines 242, 250, 251) but never defined — define at first use or add to --allow if it is universally known
+- WARN [acronym-undefined] line 242: UAV2 used (x2, lines 242, 252) but never defined — define at first use or add to --allow if it is universally known
+- WARN [acronym-undefined] line 250: RUN used (x3, lines 250, 251, 252) but never defined — define at first use or add to --allow if it is universally known
+- WARN [acronym-undefined] line 258: XY used (x2, lines 258, 266) but never defined — define at first use or add to --allow if it is universally known
+- WARN [acronym-undefined] line 361: CAI used (x1, lines 361) but never defined — define at first use or add to --allow if it is universally known
+- WARN [acronym-undefined] line 361: HE used (x1, lines 361) but never defined — define at first use or add to --allow if it is universally known
+- WARN [acronym-undefined] line 361: XU used (x2, lines 361, 371) but never defined — define at first use or add to --allow if it is universally known
+- WARN [acronym-undefined] line 363: KONG used (x1, lines 363) but never defined — define at first use or add to --allow if it is universally known
+- WARN [acronym-undefined] line 363: REN used (x2, lines 363, 365) but never defined — define at first use or add to --allow if it is universally known
+- WARN [acronym-undefined] line 363: ZHU used (x2, lines 363, 365) but never defined — define at first use or add to --allow if it is universally known
+- WARN [acronym-undefined] line 365: TRO used (x6, lines 365, 365, 371, 371, 373, 373) but never defined — define at first use or add to --allow if it is universally known
+- WARN [acronym-undefined] line 365: YIN used (x1, lines 365) but never defined — define at first use or add to --allow if it is universally known
+- WARN [acronym-undefined] line 367: YAMAUCHI used (x1, lines 367) but never defined — define at first use or add to --allow if it is universally known
+- WARN [acronym-undefined] line 369: CHEN used (x1, lines 369) but never defined — define at first use or add to --allow if it is universally known
+- WARN [acronym-undefined] line 369: SHEN used (x2, lines 369, 371) but never defined — define at first use or add to --allow if it is universally known
+- WARN [acronym-undefined] line 369: UAV used (x2, lines 369, 371) but never defined — define at first use or add to --allow if it is universally known
+- WARN [acronym-undefined] line 369: ZHANG used (x1, lines 369) but never defined — define at first use or add to --allow if it is universally known
+- WARN [acronym-undefined] line 369: ZHOU used (x2, lines 369, 371) but never defined — define at first use or add to --allow if it is universally known
+- WARN [acronym-undefined] line 373: BRUNET used (x1, lines 373) but never defined — define at first use or add to --allow if it is universally known
+- WARN [acronym-undefined] line 373: CHOI used (x1, lines 373) but never defined — define at first use or add to --allow if it is universally known
+- WARN [acronym-undefined] line 373: HOW used (x1, lines 373) but never defined — define at first use or add to --allow if it is universally known
+- WARN [acronym-undefined] line 375: BEST used (x1, lines 375) but never defined — define at first use or add to --allow if it is universally known
+- WARN [acronym-undefined] line 375: GARG used (x1, lines 375) but never defined — define at first use or add to --allow if it is universally known
+- WARN [acronym-undefined] line 375: HOLLINGER used (x1, lines 375) but never defined — define at first use or add to --allow if it is universally known
+- WARN [acronym-undefined] line 375: KELLER used (x1, lines 375) but never defined — define at first use or add to --allow if it is universally known
+- WARN [acronym-undefined] line 375: RSS used (x1, lines 375) but never defined — define at first use or add to --allow if it is universally known
+- WARN [acronym-undefined] line 375: SCHERER used (x1, lines 375) but never defined — define at first use or add to --allow if it is universally known
+- WARN [acronym-undefined] line 375: XVIII used (x1, lines 375) but never defined — define at first use or add to --allow if it is universally known
+
+## Summary
+
+RISK: 0, WARN: 39, INFO: 0

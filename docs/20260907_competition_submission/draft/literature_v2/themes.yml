@@ -1,0 +1,11 @@
+themes:
+  - name: 激光惯性与协同估计
+    scope: 3.1
+  - name: frontier与层次规划
+    scope: 3.2
+  - name: 去中心化任务分配
+    scope: 3.2与6.2
+  - name: 弹性任务执行
+    scope: 3.3与6.3
+  - name: 机载计算设计动机
+    scope: 2.2；不主张硬件算法协同创新

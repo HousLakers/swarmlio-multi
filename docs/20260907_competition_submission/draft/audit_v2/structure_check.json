@@ -1,0 +1,13 @@
+{
+  "status": "PASS",
+  "chapters": 7,
+  "subsections": 20,
+  "docx_tree_exact_after_authorized_normalization": true,
+  "placeholders": 33,
+  "tables": 15,
+  "figures": 6,
+  "svg_xml_valid": 6,
+  "input_hashes_unchanged": 224,
+  "numeric_claims_extracted": 82,
+  "manuscript_sha256": "8c2a79ea12d92ae23031f19f31f7d163a2dd9abd67da7dc13f158e964db3ca43"
+}

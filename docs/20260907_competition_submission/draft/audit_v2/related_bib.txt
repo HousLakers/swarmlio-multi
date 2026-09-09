@@ -1,0 +1,6 @@
+audit: 8 bib entries, 11 citations (8 unique keys) in 1 tex file(s)
+
+info — citation-command census: natbib author-year=0, plain \cite=11, biblatex=0 (dominant: plain-\cite (numeric-style))
+       match this to the target venue's style — see references/placement-conventions.md
+
+CLEAN — no blocking findings.

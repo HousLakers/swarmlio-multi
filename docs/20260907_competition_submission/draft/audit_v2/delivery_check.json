@@ -1,0 +1,16 @@
+{
+  "files_exist": 7,
+  "local_links": "PASS",
+  "citation_number_binding": "8/8",
+  "archify_hash_binding": "PASS",
+  "word_docx": {
+    "path": "paper_draft_v2.docx",
+    "bytes": 790491,
+    "embedded_png_count": 6,
+    "table_count": 15,
+    "section_heading_count": 20,
+    "round_trip_text_check": "PASS"
+  },
+  "libreoffice_pdf_preview": "UNAVAILABLE: container LibreOffice crashed while initializing Java/desktop profile",
+  "publication_status": "DRAFT_NOT_SUBMITTABLE"
+}

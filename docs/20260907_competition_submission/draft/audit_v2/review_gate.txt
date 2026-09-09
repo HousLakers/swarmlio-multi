@@ -1,0 +1,12 @@
+check_review: /home/houslakers/auto_tune_racer/swarmlio_multi/docs/20260907_competition_submission/draft/literature_v2/review.md against /home/houslakers/auto_tune_racer/swarmlio_multi/docs/20260907_competition_submission/draft/literature_v2/corpus.json
+  8 distinct keys cited, 8 papers in corpus
+  FAIL  unverified    [@best2022] at line 25 -- run the verify-citations skill, then: corpus.py set best2022 --verified yes
+  FAIL  unverified    [@cbba2009] at line 19 (+1 more) -- run the verify-citations skill, then: corpus.py set cbba2009 --verified yes
+  FAIL  unverified    [@fastlio2021] at line 7 (+1 more) -- run the verify-citations skill, then: corpus.py set fastlio2021 --verified yes
+  FAIL  unverified    [@fuel2020] at line 13 -- run the verify-citations skill, then: corpus.py set fuel2020 --verified yes
+  FAIL  unverified    [@racer2023] at line 19 -- run the verify-citations skill, then: corpus.py set racer2023 --verified yes
+  FAIL  unverified    [@swarmlio2022] at line 7 -- run the verify-citations skill, then: corpus.py set swarmlio2022 --verified yes
+  FAIL  unverified    [@swarmlio2025] at line 7 (+1 more) -- run the verify-citations skill, then: corpus.py set swarmlio2025 --verified yes
+  FAIL  unverified    [@yamauchi1997] at line 13 -- run the verify-citations skill, then: corpus.py set yamauchi1997 --verified yes
+
+RESULT: FAIL (8 failures, 0 warnings)

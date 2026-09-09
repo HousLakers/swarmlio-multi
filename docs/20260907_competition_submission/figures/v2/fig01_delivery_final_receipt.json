@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "dataflow",
+  "input": "/home/houslakers/auto_tune_racer/swarmlio_multi/docs/20260907_competition_submission/figures/v2/fig01_system_flow.dataflow.json",
+  "output": "/home/houslakers/auto_tune_racer/swarmlio_multi/docs/20260907_competition_submission/figures/v2/fig01_system_flow.html",
+  "specification": {"sha256": "12d5c7d9ad713206476d50c591cc20eb135c74351fffec128491b22f98e44be9", "bytes": 3214},
+  "artifact": {"sha256": "8f242aec00fa6a48e5dc710244d9708ecac0ae203da34eac9ff885360f242292", "bytes": 712942},
+  "validation": {"checksPassed": 9, "checkCount": 9, "compositionProfile": "showcase", "compositionStatus": "pass", "errors": 0, "warnings": 0}
+}

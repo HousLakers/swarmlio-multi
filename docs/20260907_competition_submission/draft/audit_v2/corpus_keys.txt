@@ -1,0 +1,4 @@
+check-keys: /home/houslakers/auto_tune_racer/swarmlio_multi/docs/20260907_competition_submission/draft/literature_v2/references.bib against /home/houslakers/auto_tune_racer/swarmlio_multi/docs/20260907_competition_submission/draft/literature_v2/corpus.json
+  8 included corpus keys, 8 .bib keys
+
+RESULT: PASS (corpus keys and .bib keys are in lock step)

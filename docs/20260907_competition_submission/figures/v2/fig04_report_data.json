@@ -1,0 +1,20 @@
+{
+  "source": "experiments/多机容错通信改进总结_掉线任务重分配与20%丢包_20260822.md",
+  "level": "report_only_simulation",
+  "dropout_s": 75,
+  "duration_sim_s": 300,
+  "n_per_condition": 1,
+  "values": [
+    {
+      "round": 32,
+      "task_loss": 0,
+      "map_coverage": 0.673
+    },
+    {
+      "round": 33,
+      "task_loss": 0.2,
+      "map_coverage": 0.657
+    }
+  ],
+  "denominator": "not independently bound to raw run"
+}

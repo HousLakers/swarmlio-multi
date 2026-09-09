@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="620" viewBox="0 0 1600 620" role="img" aria-labelledby="title desc">
+  <title id="title">多无人机实时感知、协同探索与飞控执行流程</title>
+  <desc id="desc">从传感器输入经过 Swarm-LIO、地图与前沿、MINMAX 任务分配、轨迹规划到 PX4 执行，并由反馈回到记录与健康监测。</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#f8fbff"/><stop offset="1" stop-color="#eef4fb"/></linearGradient>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L10,3 L0,6 Z" fill="#315b85"/></marker>
+    <style>
+      .title{font:700 26px Arial,'Noto Sans CJK SC',sans-serif;fill:#17324d}.head{font:700 18px Arial,'Noto Sans CJK SC',sans-serif;fill:#17324d}.body{font:15px Arial,'Noto Sans CJK SC',sans-serif;fill:#29465f}.small{font:13px Arial,'Noto Sans CJK SC',sans-serif;fill:#5b7185}.box{stroke:#315b85;stroke-width:2;rx:14}.edge{stroke:#315b85;stroke-width:3;fill:none;marker-end:url(#arrow)}.feedback{stroke:#7b4f8f;stroke-width:3;fill:none;stroke-dasharray:9 7;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="1600" height="620" fill="url(#bg)"/>
+  <text x="800" y="44" text-anchor="middle" class="title">从机载感知到多机弹性执行的统一闭环</text>
+  <text x="800" y="72" text-anchor="middle" class="small">每架 UAV 保持独立状态估计与控制链路，协同总线只交换状态、地图和任务信息</text>
+
+  <g transform="translate(45,135)">
+    <rect width="210" height="190" class="box" fill="#e7f1fb"/>
+    <text x="105" y="34" text-anchor="middle" class="head">输入层</text>
+    <text x="22" y="72" class="body">Livox MID360</text><text x="22" y="100" class="body">IMU / 外部参考</text><text x="22" y="128" class="body">ROS Master / goal</text><text x="22" y="156" class="body">/keys_N 安全接管</text>
+  </g>
+  <g transform="translate(295,135)">
+    <rect width="220" height="190" class="box" fill="#e9f7f2"/>
+    <text x="110" y="34" text-anchor="middle" class="head">感知层</text>
+    <text x="22" y="72" class="body">Swarm-LIO_N</text><text x="22" y="100" class="body">时间同步与配准</text><text x="22" y="128" class="body">odom_N / pose_N</text><text x="22" y="156" class="body">cloud_registered_N</text>
+  </g>
+  <g transform="translate(555,135)">
+    <rect width="220" height="190" class="box" fill="#fff3dc"/>
+    <text x="110" y="34" text-anchor="middle" class="head">地图与前沿</text>
+    <text x="22" y="72" class="body">5 cm occupancy</text><text x="22" y="100" class="body">frontier / viewpoint</text><text x="22" y="128" class="body">可行性与安全边界</text><text x="22" y="156" class="body">局部信息增益</text>
+  </g>
+  <g transform="translate(815,135)">
+    <rect width="230" height="190" class="box" fill="#f4eafb"/>
+    <text x="115" y="34" text-anchor="middle" class="head">协同决策</text>
+    <text x="22" y="72" class="body">MINSUM / MINMAX</text><text x="22" y="100" class="body">capacity factor</text><text x="22" y="128" class="body">pair-opt / heartbeat</text><text x="22" y="156" class="body">release / takeover</text>
+  </g>
+  <g transform="translate(1085,135)">
+    <rect width="220" height="190" class="box" fill="#eaf0f8"/>
+    <text x="110" y="34" text-anchor="middle" class="head">轨迹与执行</text>
+    <text x="22" y="72" class="body">A* / B-Spline</text><text x="22" y="100" class="body">pos_cmd_N</text><text x="22" y="128" class="body">bridge → MAVROS</text><text x="22" y="156" class="body">PX4 / Offboard</text>
+  </g>
+  <g transform="translate(1345,135)">
+    <rect width="210" height="190" class="box" fill="#fcebee"/>
+    <text x="105" y="34" text-anchor="middle" class="head">反馈与证据</text>
+    <text x="22" y="72" class="body">local_position</text><text x="22" y="100" class="body">health / ACK</text><text x="22" y="128" class="body">coverage / safety</text><text x="22" y="156" class="body">runroot / rosout</text>
+  </g>
+
+  <path d="M255 230 H295" class="edge"/><path d="M515 230 H555" class="edge"/><path d="M775 230 H815" class="edge"/><path d="M1045 230 H1085" class="edge"/><path d="M1305 230 H1345" class="edge"/>
+  <path d="M1450 325 C1450 470 680 500 680 325" class="feedback"/>
+  <text x="1070" y="486" text-anchor="middle" class="small">状态反馈、健康监测和实验记录驱动下一轮重规划与证据审计</text>
+  <line x1="55" y1="560" x2="1545" y2="560" stroke="#9bb0c3"/>
+  <text x="800" y="590" text-anchor="middle" class="small">图 1  系统总体架构。实机缺失指标在正式稿中以结构化占位符绑定，不能由流程图推导为已验证结果。</text>
+</svg>

@@ -1,0 +1,35 @@
+[
+  {
+    "run_id": "RUN-20260904T093149Z",
+    "runroot": "state/khadas_real_runs_20260904/RUN-20260904T093149Z",
+    "n": 1,
+    "trajectory_samples": 1267,
+    "trajectory_invalid_rows": 0,
+    "elapsed_s": 126.61567600000001,
+    "path_xy_m": 27.29548986048267,
+    "coverage_final": 0.990774,
+    "pgm_available": true
+  },
+  {
+    "run_id": "RUN-20260906T075343Z",
+    "runroot": "state/real_dual_audit_20260906/single_baseline/board_192.168.43.151_id1/RUN-20260906T075343Z",
+    "n": 1,
+    "trajectory_samples": 433,
+    "trajectory_invalid_rows": 1,
+    "elapsed_s": 43.214285000000004,
+    "path_xy_m": 34.64269418365397,
+    "coverage_final": 0.9288,
+    "pgm_available": false
+  },
+  {
+    "run_id": "RUN-20260906T061914Z",
+    "runroot": "state/real_dual_audit_20260906/single_baseline/board_192.168.43.59_id2/RUN-20260906T061914Z",
+    "n": 1,
+    "trajectory_samples": 843,
+    "trajectory_invalid_rows": 0,
+    "elapsed_s": 84.207637,
+    "path_xy_m": 55.33738802525727,
+    "coverage_final": 0.98742,
+    "pgm_available": true
+  }
+]

@@ -1,0 +1,15 @@
+# Prose lint — /home/houslakers/auto_tune_racer/swarmlio_multi/docs/20260907_competition_submission/draft/paper_draft_v2.md
+
+- 1232 words of prose scanned (math/verbatim/preamble masked)
+
+## Findings
+
+- WARN [emdash-density] 61 em-dashes (49.5/1000 words; threshold 5) — heavy em-dash interruption reads as generated text; keep a few, recast the rest as separate sentences or commas
+- WARN [sentence-length] 30 sentences; mean 58.5 words, longest 923 — split sentences over 60 words
+- INFO [hedge-inventory] 0 hedge terms (0.0/1000 words) — calibrate per references/hedging-and-claims.md: results and limitations keep their hedges, contributions and definitions lose them
+- INFO [passive-density] ~0 passive constructions over 30 sentences (heuristic) — passives are fine for methods, weak for contributions
+- INFO [uniform-paragraphs] 8 paragraphs all have ~4 sentences — uniform paragraph rhythm is a structural tell; merge or split where the content allows
+
+## Summary
+
+RISK: 0, WARN: 2, INFO: 3

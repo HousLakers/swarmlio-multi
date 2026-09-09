@@ -1,0 +1,299 @@
+{
+  "schema": 1,
+  "topic": "多无人机激光惯性感知、分配与任务恢复的系统证据",
+  "created": "2026-09-08",
+  "criteria": {
+    "include": [
+      "直接支持正文五个主题的原论文、作者原文或出版记录",
+      "只引用实际使用的方法或系统范围"
+    ],
+    "exclude": [
+      "未能统一出版实例的候选",
+      "只凭题名相关但正文不使用的补位引用",
+      "营销及二手性能转述"
+    ]
+  },
+  "search_log": [
+    {
+      "date": "2026-09-08",
+      "source": "web primary-source search and open",
+      "query": "FAST-LIO2 arxiv Swarm-LIO Swarm-LIO2 TRO DOI"
+    },
+    {
+      "date": "2026-09-08",
+      "source": "web primary-source search and open",
+      "query": "FUEL RACER paper hierarchical exploration"
+    },
+    {
+      "date": "2026-09-08",
+      "source": "web primary-source search and open",
+      "query": "Yamauchi frontier 1997 original paper"
+    },
+    {
+      "date": "2026-09-08",
+      "source": "web primary-source search and open",
+      "query": "Consensus-Based Decentralized Auctions Robust Task Allocation"
+    },
+    {
+      "date": "2026-09-08",
+      "source": "web primary-source search and open",
+      "query": "Resilient Multi-Sensor Exploration RSS 2022"
+    },
+    {
+      "date": "2026-09-08",
+      "source": "web primary-source search and open",
+      "query": "Navion JSSC algorithm hardware co-design ALLIANCE Parker original paper"
+    }
+  ],
+  "papers": {
+    "fastlio2021": {
+      "title": "FAST-LIO2: Fast Direct LiDAR-inertial Odometry",
+      "authors": [
+        "Wei Xu",
+        "Yixi Cai",
+        "Dongjiao He",
+        "Jiarong Lin",
+        "Fu Zhang"
+      ],
+      "year": 2021,
+      "venue": "arXiv",
+      "doi": null,
+      "arxiv": "2107.06829",
+      "url": "https://arxiv.org/abs/2107.06829",
+      "source": "retrieved-primary-web",
+      "added": "2026-09-08",
+      "theme": null,
+      "reason": "支持正文实际主题；公开一手来源人工核对，自动联网门未完成",
+      "status": {
+        "screened": "included",
+        "fetched": false,
+        "extracted": false,
+        "verified": false,
+        "verified_via": null,
+        "verified_at": null
+      }
+    },
+    "swarmlio2022": {
+      "title": "Swarm-LIO: Decentralized Swarm LiDAR-inertial Odometry",
+      "authors": [
+        "Fangcheng Zhu",
+        "Yunfan Ren",
+        "Fanze Kong",
+        "Huajie Wu",
+        "Siqi Liang",
+        "Nan Chen",
+        "Wei Xu",
+        "Fu Zhang"
+      ],
+      "year": 2022,
+      "venue": "arXiv",
+      "doi": null,
+      "arxiv": "2209.06628",
+      "url": "https://arxiv.org/abs/2209.06628",
+      "source": "retrieved-primary-web",
+      "added": "2026-09-08",
+      "theme": null,
+      "reason": "支持正文实际主题；公开一手来源人工核对，自动联网门未完成",
+      "status": {
+        "screened": "included",
+        "fetched": false,
+        "extracted": false,
+        "verified": false,
+        "verified_via": null,
+        "verified_at": null
+      }
+    },
+    "swarmlio2025": {
+      "title": "Swarm-LIO2: Decentralized Efficient LiDAR-Inertial Odometry for Aerial Swarm Systems",
+      "authors": [
+        "Fangcheng Zhu",
+        "Yunfan Ren",
+        "Longji Yin",
+        "Fanze Kong",
+        "Qingbo Liu",
+        "Ruize Xue",
+        "Wenyi Liu",
+        "Yixi Cai",
+        "Guozheng Lu",
+        "Haotian Li",
+        "Fu Zhang"
+      ],
+      "year": 2025,
+      "venue": "IEEE Transactions on Robotics",
+      "doi": "10.1109/TRO.2024.3522155",
+      "arxiv": null,
+      "url": "https://doi.org/10.1109/TRO.2024.3522155",
+      "source": "retrieved-primary-web",
+      "added": "2026-09-08",
+      "theme": null,
+      "reason": "支持正文实际主题；公开一手来源人工核对，自动联网门未完成",
+      "status": {
+        "screened": "included",
+        "fetched": false,
+        "extracted": false,
+        "verified": false,
+        "verified_via": null,
+        "verified_at": null
+      }
+    },
+    "yamauchi1997": {
+      "title": "A frontier-based approach for autonomous exploration",
+      "authors": [
+        "Brian Yamauchi"
+      ],
+      "year": 1997,
+      "venue": "IEEE International Symposium on Computational Intelligence in Robotics and Automation",
+      "doi": null,
+      "arxiv": null,
+      "url": "https://www.cs.cmu.edu/~motionplanning/papers/sbp_papers/integrated2/yamauchi_frontier_explor.pdf",
+      "source": "retrieved-primary-web",
+      "added": "2026-09-08",
+      "theme": null,
+      "reason": "支持正文实际主题；公开一手来源人工核对，自动联网门未完成",
+      "status": {
+        "screened": "included",
+        "fetched": false,
+        "extracted": false,
+        "verified": false,
+        "verified_via": null,
+        "verified_at": null
+      }
+    },
+    "fuel2020": {
+      "title": "FUEL: Fast UAV Exploration using Incremental Frontier Structure and Hierarchical Planning",
+      "authors": [
+        "Boyu Zhou",
+        "Yichen Zhang",
+        "Xinyi Chen",
+        "Shaojie Shen"
+      ],
+      "year": 2020,
+      "venue": "arXiv",
+      "doi": null,
+      "arxiv": "2010.11561",
+      "url": "https://arxiv.org/abs/2010.11561",
+      "source": "retrieved-primary-web",
+      "added": "2026-09-08",
+      "theme": null,
+      "reason": "支持正文实际主题；公开一手来源人工核对，自动联网门未完成",
+      "status": {
+        "screened": "included",
+        "fetched": false,
+        "extracted": false,
+        "verified": false,
+        "verified_via": null,
+        "verified_at": null
+      }
+    },
+    "racer2023": {
+      "title": "RACER: Rapid Collaborative Exploration With a Decentralized Multi-UAV System",
+      "authors": [
+        "Boyu Zhou",
+        "Hao Xu",
+        "Shaojie Shen"
+      ],
+      "year": 2023,
+      "venue": "IEEE Transactions on Robotics",
+      "doi": "10.1109/TRO.2023.3236945",
+      "arxiv": null,
+      "url": "https://doi.org/10.1109/TRO.2023.3236945",
+      "source": "retrieved-primary-web",
+      "added": "2026-09-08",
+      "theme": null,
+      "reason": "支持正文实际主题；公开一手来源人工核对，自动联网门未完成",
+      "status": {
+        "screened": "included",
+        "fetched": false,
+        "extracted": false,
+        "verified": false,
+        "verified_via": null,
+        "verified_at": null
+      }
+    },
+    "cbba2009": {
+      "title": "Consensus-Based Decentralized Auctions for Robust Task Allocation",
+      "authors": [
+        "Han-Lim Choi",
+        "Luc Brunet",
+        "Jonathan P. How"
+      ],
+      "year": 2009,
+      "venue": "IEEE Transactions on Robotics",
+      "doi": "10.1109/TRO.2009.2022423",
+      "arxiv": null,
+      "url": "https://doi.org/10.1109/TRO.2009.2022423",
+      "source": "retrieved-primary-web",
+      "added": "2026-09-08",
+      "theme": null,
+      "reason": "支持正文实际主题；公开一手来源人工核对，自动联网门未完成",
+      "status": {
+        "screened": "included",
+        "fetched": false,
+        "extracted": false,
+        "verified": false,
+        "verified_via": null,
+        "verified_at": null
+      }
+    },
+    "best2022": {
+      "title": "Resilient Multi-Sensor Exploration of Multifarious Environments with a Team of Aerial Robots",
+      "authors": [
+        "Graeme Best",
+        "Rohit Garg",
+        "John Keller",
+        "Geoffrey A. Hollinger",
+        "Sebastian Scherer"
+      ],
+      "year": 2022,
+      "venue": "Robotics: Science and Systems",
+      "doi": "10.15607/RSS.2022.XVIII.004",
+      "arxiv": null,
+      "url": "https://www.roboticsproceedings.org/rss18/p004.html",
+      "source": "retrieved-primary-web",
+      "added": "2026-09-08",
+      "theme": null,
+      "reason": "支持正文实际主题；公开一手来源人工核对，自动联网门未完成",
+      "status": {
+        "screened": "included",
+        "fetched": false,
+        "extracted": false,
+        "verified": false,
+        "verified_via": null,
+        "verified_at": null
+      }
+    }
+  },
+  "excluded_candidates": [
+    {
+      "name": "ALLIANCE",
+      "reason": "检索到1994作者PDF与1998期刊实例不同，本轮未混用两者；不进入正文。"
+    },
+    {
+      "name": "Navion",
+      "reason": "作者原PDF获取不完整且短研究现状无需加入未充分读取的功耗比较；不进入正文。"
+    }
+  ],
+  "verify_runs": [
+    {
+      "date": "2026-09-08",
+      "report": "/home/houslakers/auto_tune_racer/swarmlio_multi/docs/20260907_competition_submission/draft/audit_v2/citations_offline.json",
+      "verdict": "PASS",
+      "verdict_line": "PASS: 0/8 verified, 0 errors, 0 warnings (0 checks skipped)",
+      "verified": 0
+    },
+    {
+      "date": "2026-09-08",
+      "report": "/home/houslakers/auto_tune_racer/swarmlio_multi/docs/20260907_competition_submission/draft/audit_v2/citations_offline.json",
+      "verdict": "PASS",
+      "verdict_line": "PASS: 0/8 verified, 0 errors, 0 warnings (0 checks skipped)",
+      "verified": 0
+    },
+    {
+      "date": "2026-09-08",
+      "report": "/home/houslakers/auto_tune_racer/swarmlio_multi/docs/20260907_competition_submission/draft/audit_v2/citations_offline.json",
+      "verdict": "PASS",
+      "verdict_line": "PASS: 0/8 verified, 0 errors, 0 warnings (0 checks skipped)",
+      "verified": 0
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+verify-citations — /home/houslakers/auto_tune_racer/swarmlio_multi/docs/20260907_competition_submission/draft/literature_v2/references.bib (8 entries, offline mode)
+
+[1/8] best2022 (@inproceedings, line 5) ... PARSED_ONLY
+[2/8] cbba2009 (@article, line 14) ... PARSED_ONLY
+[3/8] fastlio2021 (@misc, line 26) ... PARSED_ONLY
+[4/8] fuel2020 (@misc, line 35) ... PARSED_ONLY
+[5/8] racer2023 (@article, line 44) ... PARSED_ONLY
+[6/8] swarmlio2022 (@misc, line 56) ... PARSED_ONLY
+[7/8] swarmlio2025 (@article, line 65) ... PARSED_ONLY
+[8/8] yamauchi1997 (@inproceedings, line 76) ... PARSED_ONLY
+
+Summary: 8 entries — 0 verified, 0 with errors (0 unresolved, 0 retracted), 0 with warnings only.
+
+Verdict: PASS
+VERDICT-LINE: PASS: 0/8 verified, 0 errors, 0 warnings (0 checks skipped)
+  ^ Copy the VERDICT-LINE verbatim into any summary or README. Do not paraphrase it cleaner than it is.
+JSON report written to /home/houslakers/auto_tune_racer/swarmlio_multi/docs/20260907_competition_submission/draft/audit_v2/citations_offline.json

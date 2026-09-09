@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "deliver",
+  "stage": "receipt",
+  "type": "dataflow",
+  "input": "/home/houslakers/auto_tune_racer/swarmlio_multi/docs/20260907_competition_submission/figures/v2/fig01_system_flow.dataflow.json",
+  "output": "/home/houslakers/auto_tune_racer/swarmlio_multi/docs/20260907_competition_submission/figures/v2/fig01_system_flow.html",
+  "error": "Could not parse the successful artifact-check receipt: Unexpected end of JSON input",
+  "diagnostics": [
+    {
+      "code": "delivery/receipt-invalid",
+      "severity": "error",
+      "message": "Could not parse the successful artifact-check receipt: Unexpected end of JSON input",
+      "subject": {
+        "output": "/home/houslakers/auto_tune_racer/swarmlio_multi/docs/20260907_competition_submission/figures/v2/fig01_system_flow.html"
+      },
+      "evidence": {
+        "reason": "Unexpected end of JSON input"
+      },
+      "supportedFixes": []
+    }
+  ]
+}

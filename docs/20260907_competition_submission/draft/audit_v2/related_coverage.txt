@@ -1,0 +1,98 @@
+{
+  "floor": 2,
+  "heuristic_cap": 2,
+  "venue_family": "",
+  "n_clusters": 5,
+  "clusters": [
+    {
+      "name": "\u6fc0\u5149\u60ef\u6027\u4e0e\u534f\u540c\u4f30\u8ba1",
+      "required_by": "3.1",
+      "kind": "direct-prior-approach",
+      "expected": true,
+      "n_refs": 3,
+      "n_confirmed": 3,
+      "n_speculative": 0,
+      "refs": [
+        "fastlio2021",
+        "swarmlio2022",
+        "swarmlio2025"
+      ],
+      "speculative_refs": [],
+      "status": "ok"
+    },
+    {
+      "name": "frontier\u4e0e\u5c42\u6b21\u89c4\u5212",
+      "required_by": "3.2",
+      "kind": "direct-prior-approach",
+      "expected": true,
+      "n_refs": 2,
+      "n_confirmed": 2,
+      "n_speculative": 0,
+      "refs": [
+        "yamauchi1997",
+        "fuel2020"
+      ],
+      "speculative_refs": [],
+      "status": "ok"
+    },
+    {
+      "name": "\u53bb\u4e2d\u5fc3\u5316\u4efb\u52a1\u5206\u914d",
+      "required_by": "3.2\u4e0e6.2",
+      "kind": "direct-prior-approach",
+      "expected": true,
+      "n_refs": 2,
+      "n_confirmed": 2,
+      "n_speculative": 0,
+      "refs": [
+        "racer2023",
+        "cbba2009"
+      ],
+      "speculative_refs": [],
+      "status": "ok"
+    },
+    {
+      "name": "\u5f39\u6027\u4efb\u52a1\u6267\u884c",
+      "required_by": "3.3\u4e0e6.3",
+      "kind": "direct-prior-approach",
+      "expected": true,
+      "n_refs": 2,
+      "n_confirmed": 2,
+      "n_speculative": 0,
+      "refs": [
+        "best2022",
+        "cbba2009"
+      ],
+      "speculative_refs": [],
+      "status": "ok"
+    },
+    {
+      "name": "\u673a\u8f7d\u8ba1\u7b97\u8bbe\u8ba1\u52a8\u673a",
+      "required_by": "2.2\uff1b\u4e0d\u4e3b\u5f20\u786c\u4ef6\u7b97\u6cd5\u534f\u540c\u521b\u65b0",
+      "kind": "direct-prior-approach",
+      "expected": true,
+      "n_refs": 2,
+      "n_confirmed": 2,
+      "n_speculative": 0,
+      "refs": [
+        "fastlio2021",
+        "swarmlio2025"
+      ],
+      "speculative_refs": [],
+      "status": "ok"
+    }
+  ],
+  "empty": [],
+  "thin": [],
+  "singleton": [],
+  "padded_with_speculative_only": [],
+  "precision_estimate": {
+    "confirmed": 11,
+    "speculative": 0,
+    "total": 11,
+    "ratio": 1.0
+  },
+  "heuristic_refs": 0,
+  "heuristic_over_cap": false,
+  "worklist": [],
+  "blocking": false
+}

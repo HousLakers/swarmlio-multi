@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="520" viewBox="0 0 1500 520" role="img" aria-labelledby="title desc">
+  <title id="title">掉线与任务层丢包的弹性决策流程</title>
+  <desc id="desc">展示心跳监测、失联确认、任务释放、在线无人机接管、重新规划和安全执行的闭环。</desc>
+  <defs><marker id="a" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0 0 L10 3 L0 6Z" fill="#315b85"/></marker><style>.t{font:700 25px Arial,'Noto Sans CJK SC',sans-serif;fill:#17324d}.h{font:700 18px Arial,'Noto Sans CJK SC',sans-serif;fill:#17324d}.s{font:14px Arial,'Noto Sans CJK SC',sans-serif;fill:#50677b}.b{stroke:#315b85;stroke-width:2;rx:14}.e{stroke:#315b85;stroke-width:3;fill:none;marker-end:url(#a)}.r{stroke:#8d557f;stroke-width:3;fill:none;stroke-dasharray:9 7;marker-end:url(#a)}</style></defs>
+  <rect width="1500" height="520" fill="#fbfdff"/>
+  <text x="750" y="42" text-anchor="middle" class="t">从失联检测到任务继续执行</text>
+  <text x="750" y="70" text-anchor="middle" class="s">通信层事件通过任务所有权协议转化为可恢复的规划状态</text>
+  <g transform="translate(45,155)"><rect width="195" height="150" class="b" fill="#e7f1fb"/><text x="97" y="42" text-anchor="middle" class="h">心跳监测</text><text x="97" y="78" text-anchor="middle" class="s">25 Hz heartbeat</text><text x="97" y="105" text-anchor="middle" class="s">stamp / ACK</text></g>
+  <g transform="translate(285,155)"><rect width="195" height="150" class="b" fill="#fff3dc"/><text x="97" y="42" text-anchor="middle" class="h">失联确认</text><text x="97" y="78" text-anchor="middle" class="s">连续超时门</text><text x="97" y="105" text-anchor="middle" class="s">区分 intentional / unexpected</text></g>
+  <g transform="translate(525,155)"><rect width="195" height="150" class="b" fill="#fcebee"/><text x="97" y="42" text-anchor="middle" class="h">释放任务</text><text x="97" y="78" text-anchor="middle" class="s">未完成 grid</text><text x="97" y="105" text-anchor="middle" class="s">版本化 ownership</text></g>
+  <g transform="translate(765,155)"><rect width="195" height="150" class="b" fill="#e9f7f2"/><text x="97" y="42" text-anchor="middle" class="h">在线机接管</text><text x="97" y="78" text-anchor="middle" class="s">最近邻 / 代价</text><text x="97" y="105" text-anchor="middle" class="s">幂等重答</text></g>
+  <g transform="translate(1005,155)"><rect width="195" height="150" class="b" fill="#f4eafb"/><text x="97" y="42" text-anchor="middle" class="h">重新规划</text><text x="97" y="78" text-anchor="middle" class="s">frontier / B-Spline</text><text x="97" y="105" text-anchor="middle" class="s">[待填-响应时间]</text></g>
+  <g transform="translate(1245,155)"><rect width="195" height="150" class="b" fill="#eaf0f8"/><text x="97" y="42" text-anchor="middle" class="h">继续执行</text><text x="97" y="78" text-anchor="middle" class="s">PX4 / safety gate</text><text x="97" y="105" text-anchor="middle" class="s">coverage / ACK</text></g>
+  <path d="M240 230 H285" class="e"/><path d="M480 230 H525" class="e"/><path d="M720 230 H765" class="e"/><path d="M960 230 H1005" class="e"/><path d="M1200 230 H1245" class="e"/>
+  <path d="M1342 305 C1342 440 142 440 142 305" class="r"/>
+  <text x="750" y="455" text-anchor="middle" class="s">任务层丢包由 timestamp、心跳、重试和回滚维持一致性；图中不把应用层注入等同于真实无线链路实测。</text>
+  <text x="750" y="490" text-anchor="middle" class="s">图 3  弹性决策流程。缺失的恢复延迟和实机故障结果保留为结构化占位。</text>
+</svg>

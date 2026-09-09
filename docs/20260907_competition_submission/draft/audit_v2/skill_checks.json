@@ -1,0 +1,42 @@
+{
+  "metrics": {
+    "exit_code": 0,
+    "artifact": "metrics_check.txt"
+  },
+  "claims": {
+    "exit_code": 2,
+    "artifact": "claim_audit.txt"
+  },
+  "prose": {
+    "exit_code": 0,
+    "artifact": "prose_lint.txt"
+  },
+  "terminology": {
+    "exit_code": 0,
+    "artifact": "terminology_check.txt"
+  },
+  "citations": {
+    "exit_code": 0,
+    "artifact": "citations_offline.txt"
+  },
+  "corpus_verification": {
+    "exit_code": 0,
+    "artifact": "corpus_verification.txt"
+  },
+  "corpus_keys": {
+    "exit_code": 0,
+    "artifact": "corpus_keys.txt"
+  },
+  "related_coverage": {
+    "exit_code": 0,
+    "artifact": "related_coverage.txt"
+  },
+  "related_bib": {
+    "exit_code": 0,
+    "artifact": "related_bib.txt"
+  },
+  "review_gate": {
+    "exit_code": 1,
+    "artifact": "review_gate.txt"
+  }
+}

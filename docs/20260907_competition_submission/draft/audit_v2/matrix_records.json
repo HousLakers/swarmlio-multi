@@ -1,0 +1,443 @@
+[
+  {
+    "key": "A1-r1",
+    "group": "A1",
+    "run_id": "RUN-20260823T213717Z-3uav-smoke-A1-r1",
+    "runroot": "results/RUN-20260823T213717Z-3uav-smoke-A1-r1",
+    "included": true,
+    "role": "main",
+    "coverage": 0.18116335455464985,
+    "path_m": 402.8486789217179,
+    "imbalance": 3.5937756963883154,
+    "jaccard": 0.5171951577095464,
+    "overlap": 0.9300293799288697,
+    "manifest_hash_matches_index": true,
+    "execution_available": true,
+    "per_uav_path_m": [
+      59.539013397956744,
+      129.33980618724593,
+      213.96985933651524
+    ],
+    "contact_count": 0
+  },
+  {
+    "key": "A1-r2",
+    "group": "A1",
+    "run_id": "RUN-20260823T215638Z-3uav-smoke-A1-r2",
+    "runroot": "results/RUN-20260823T215638Z-3uav-smoke-A1-r2",
+    "included": true,
+    "role": "main",
+    "coverage": 0.20376182542988042,
+    "path_m": 521.2659149201984,
+    "imbalance": 1.9301078879744291,
+    "jaccard": 0.7675321430630562,
+    "overlap": 0.9035970888460018,
+    "manifest_hash_matches_index": true,
+    "execution_available": true,
+    "per_uav_path_m": [
+      172.92431945194824,
+      229.45805643615765,
+      118.88353903209249
+    ],
+    "contact_count": 0
+  },
+  {
+    "key": "A1-r3",
+    "group": "A1",
+    "run_id": "RUN-20260823T221655Z-3uav-smoke-A1-r3",
+    "runroot": "results/RUN-20260823T221655Z-3uav-smoke-A1-r3",
+    "included": true,
+    "role": "main",
+    "coverage": 0.2309454394002499,
+    "path_m": 745.9502881024243,
+    "imbalance": 1.70277818640016,
+    "jaccard": 0.6869579775657124,
+    "overlap": 0.8709792470074229,
+    "manifest_hash_matches_index": true,
+    "execution_available": true,
+    "per_uav_path_m": [
+      248.85611519297123,
+      183.91970728886733,
+      313.1744656205858
+    ],
+    "contact_count": 0
+  },
+  {
+    "key": "A2-r1",
+    "group": "A2",
+    "run_id": "RUN-20260824T002722Z-3uav-smoke-A2-r1",
+    "runroot": "results/RUN-20260824T002722Z-3uav-smoke-A2-r1",
+    "included": true,
+    "role": "main",
+    "coverage": 0.2157397215445945,
+    "path_m": 748.0111002319177,
+    "imbalance": 1.1968753178467324,
+    "jaccard": 0.7117617988633556,
+    "overlap": 0.8824159603847253,
+    "manifest_hash_matches_index": true,
+    "execution_available": true,
+    "per_uav_path_m": [
+      226.0022140681338,
+      251.51241436692092,
+      270.4964717968629
+    ],
+    "contact_count": 0
+  },
+  {
+    "key": "A2-r2",
+    "group": "A2",
+    "run_id": "RUN-20260823T224518Z-3uav-smoke-A2-r2",
+    "runroot": "results/RUN-20260823T224518Z-3uav-smoke-A2-r2",
+    "included": true,
+    "role": "main",
+    "coverage": 0.22740524781341107,
+    "path_m": 742.5112683544003,
+    "imbalance": 1.5005754722831428,
+    "jaccard": 0.7373429323734293,
+    "overlap": 0.9122105217635739,
+    "manifest_hash_matches_index": true,
+    "execution_available": true,
+    "per_uav_path_m": [
+      191.04724600599752,
+      264.7832109445593,
+      286.6808114038435
+    ],
+    "contact_count": 0
+  },
+  {
+    "key": "A2-r3",
+    "group": "A2",
+    "run_id": "RUN-20260824T092806Z-3uav-smoke-A2-r3",
+    "runroot": "results/RUN-20260824T092806Z-3uav-smoke-A2-r3",
+    "included": true,
+    "role": "main",
+    "coverage": 0.22742384125661927,
+    "path_m": 897.2450765798487,
+    "imbalance": 1.5771774570242216,
+    "jaccard": 0.775034154733593,
+    "overlap": 0.8994618044897374,
+    "manifest_hash_matches_index": true,
+    "execution_available": true,
+    "per_uav_path_m": [
+      350.38243028976314,
+      324.70474723486075,
+      222.15789905522476
+    ],
+    "contact_count": 0
+  },
+  {
+    "key": "A3-r1",
+    "group": "A3",
+    "run_id": "RUN-20260823T230840Z-3uav-smoke-A3-r1",
+    "runroot": "results/RUN-20260823T230840Z-3uav-smoke-A3-r1",
+    "included": true,
+    "role": "main",
+    "coverage": 0.20338995656571668,
+    "path_m": 584.128301200564,
+    "imbalance": 3.6121358297901933,
+    "jaccard": 0.744796171365969,
+    "overlap": 0.8612098853231398,
+    "manifest_hash_matches_index": true,
+    "execution_available": true,
+    "per_uav_path_m": [
+      259.8679415852497,
+      252.31734478125045,
+      71.94301483406393
+    ],
+    "contact_count": 0
+  },
+  {
+    "key": "A3-r2",
+    "group": "A3",
+    "run_id": "RUN-20260823T232924Z-3uav-smoke-A3-r2",
+    "runroot": "results/RUN-20260823T232924Z-3uav-smoke-A3-r2",
+    "included": true,
+    "role": "main",
+    "coverage": 0.22188299518057952,
+    "path_m": 758.2675208468679,
+    "imbalance": 1.335264936620244,
+    "jaccard": 0.734006502330862,
+    "overlap": 0.885263110872867,
+    "manifest_hash_matches_index": true,
+    "execution_available": true,
+    "per_uav_path_m": [
+      240.8513189439398,
+      221.56638152233316,
+      295.849820380595
+    ],
+    "contact_count": 0
+  },
+  {
+    "key": "A3-r3",
+    "group": "A3",
+    "run_id": "RUN-20260823T234944Z-3uav-smoke-A3-r3",
+    "runroot": "results/RUN-20260823T234944Z-3uav-smoke-A3-r3",
+    "included": true,
+    "role": "main",
+    "coverage": 0.21489186053430118,
+    "path_m": 784.7470757866795,
+    "imbalance": 1.3892509241393645,
+    "jaccard": 0.7568270711289666,
+    "overlap": 0.8837609857351058,
+    "manifest_hash_matches_index": true,
+    "execution_available": true,
+    "per_uav_path_m": [
+      252.20431563214652,
+      222.8910972782656,
+      309.65166287626744
+    ],
+    "contact_count": 0
+  },
+  {
+    "key": "B1-r1",
+    "group": "B1",
+    "run_id": "RUN-20260824T010835Z-3uav-smoke-B1-r1",
+    "runroot": "results/RUN-20260824T010835Z-3uav-smoke-B1-r1",
+    "included": true,
+    "role": "main",
+    "coverage": 0.21956253346819776,
+    "path_m": 565.2545672510664,
+    "imbalance": 8.540497780240214,
+    "jaccard": 0.11174554306579795,
+    "overlap": 0.9247585383974605,
+    "manifest_hash_matches_index": true,
+    "execution_available": true,
+    "per_uav_path_m": [
+      270.0450400572108,
+      31.619356038239662,
+      263.59017115561596
+    ],
+    "contact_count": 0
+  },
+  {
+    "key": "B1-r2",
+    "group": "B1",
+    "run_id": "RUN-20260824T012342Z-3uav-smoke-B1-r2",
+    "runroot": "results/RUN-20260824T012342Z-3uav-smoke-B1-r2",
+    "included": true,
+    "role": "main",
+    "coverage": 0.20170167192241328,
+    "path_m": 463.51318091111557,
+    "imbalance": 5.991037634826108,
+    "jaccard": 0.12862954690491385,
+    "overlap": 0.8766346487675037,
+    "manifest_hash_matches_index": true,
+    "execution_available": true,
+    "per_uav_path_m": [
+      223.47406172329258,
+      37.30139507457442,
+      202.73772411324862
+    ],
+    "contact_count": 0
+  },
+  {
+    "key": "B1-r3",
+    "group": "B1",
+    "run_id": "RUN-20260824T013834Z-3uav-smoke-B1-r3",
+    "runroot": "results/RUN-20260824T013834Z-3uav-smoke-B1-r3",
+    "included": true,
+    "role": "main",
+    "coverage": 0.18156125423930505,
+    "path_m": 480.2410672307445,
+    "imbalance": 7.540042855904534,
+    "jaccard": 0.18165520116739628,
+    "overlap": 0.8759955752212389,
+    "manifest_hash_matches_index": true,
+    "execution_available": true,
+    "per_uav_path_m": [
+      66.39543571554877,
+      48.45943263962257,
+      365.38619887557314
+    ],
+    "contact_count": 0
+  },
+  {
+    "key": "B2-r1",
+    "group": "B2",
+    "run_id": "RUN-20260824T015334Z-3uav-smoke-B2-r1",
+    "runroot": "results/RUN-20260824T015334Z-3uav-smoke-B2-r1",
+    "included": true,
+    "role": "main",
+    "coverage": 0.20869652525733326,
+    "path_m": 597.231106481029,
+    "imbalance": 10.069359977404435,
+    "jaccard": 0.07308705623685058,
+    "overlap": 0.9028761628403175,
+    "manifest_hash_matches_index": true,
+    "execution_available": true,
+    "per_uav_path_m": [
+      278.65008894148855,
+      28.780437007184755,
+      289.80058053235564
+    ],
+    "contact_count": 0
+  },
+  {
+    "key": "B2-r2",
+    "group": "B2",
+    "run_id": "RUN-20260824T020835Z-3uav-smoke-B2-r2",
+    "runroot": "results/RUN-20260824T020835Z-3uav-smoke-B2-r2",
+    "included": true,
+    "role": "main",
+    "coverage": 0.19806107574225026,
+    "path_m": 529.7174160130869,
+    "imbalance": 11.848817881602558,
+    "jaccard": 0.07670471346620143,
+    "overlap": 0.9115272406540471,
+    "manifest_hash_matches_index": true,
+    "execution_available": true,
+    "per_uav_path_m": [
+      177.25086705386767,
+      27.431826974829697,
+      325.03472198438953
+    ],
+    "contact_count": 0
+  },
+  {
+    "key": "B2-r3",
+    "group": "B2",
+    "run_id": "RUN-20260824T022347Z-3uav-smoke-B2-r3",
+    "runroot": "results/RUN-20260824T022347Z-3uav-smoke-B2-r3",
+    "included": true,
+    "role": "main",
+    "coverage": 0.21465014577259475,
+    "path_m": 558.617067857916,
+    "imbalance": 5.312888629766588,
+    "jaccard": 0.08995924815539558,
+    "overlap": 0.9181428305053142,
+    "manifest_hash_matches_index": true,
+    "execution_available": true,
+    "per_uav_path_m": [
+      221.00889579375095,
+      53.47919025092127,
+      284.1289818132438
+    ],
+    "contact_count": 0
+  },
+  {
+    "key": "B3-r1",
+    "group": "B3",
+    "run_id": "RUN-20260824T023856Z-3uav-smoke-B3-r1",
+    "runroot": "results/RUN-20260824T023856Z-3uav-smoke-B3-r1",
+    "included": true,
+    "role": "main",
+    "coverage": 0.15885122270482538,
+    "path_m": 349.1358710514485,
+    "imbalance": 8.76731016326142,
+    "jaccard": 0.20706001251263295,
+    "overlap": 0.9111174014577879,
+    "manifest_hash_matches_index": true,
+    "execution_available": true,
+    "per_uav_path_m": [
+      28.255620446937705,
+      73.15446229081661,
+      247.72578831369415
+    ],
+    "contact_count": 0
+  },
+  {
+    "key": "B3-r2",
+    "group": "B3",
+    "run_id": "RUN-20260824T025403Z-3uav-smoke-B3-r2",
+    "runroot": "results/RUN-20260824T025403Z-3uav-smoke-B3-r2",
+    "included": true,
+    "role": "main",
+    "coverage": 0.20040384958648183,
+    "path_m": 490.9995647807499,
+    "imbalance": 6.920836806083223,
+    "jaccard": 0.10285725608306254,
+    "overlap": 0.912821740691967,
+    "manifest_hash_matches_index": true,
+    "execution_available": true,
+    "per_uav_path_m": [
+      269.8323393280241,
+      38.98839791899861,
+      182.17882753372723
+    ],
+    "contact_count": 0
+  },
+  {
+    "key": "B3-r3",
+    "group": "B3",
+    "run_id": "RUN-20260824T030857Z-3uav-smoke-B3-r3",
+    "runroot": "results/RUN-20260824T030857Z-3uav-smoke-B3-r3",
+    "included": true,
+    "role": "main",
+    "coverage": 0.196863657999643,
+    "path_m": 440.66245423844833,
+    "imbalance": 3.5355220847479014,
+    "jaccard": 0.46921244043140203,
+    "overlap": 0.8669362249586473,
+    "manifest_hash_matches_index": true,
+    "execution_available": true,
+    "per_uav_path_m": [
+      268.2777292398261,
+      96.50407065420013,
+      75.8806543444221
+    ],
+    "contact_count": 0
+  },
+  {
+    "key": "C1-r1",
+    "group": "C1",
+    "run_id": "RUN-20260824T110657Z-3uav-smoke",
+    "runroot": "results/RUN-20260824T110657Z-3uav-smoke",
+    "included": true,
+    "role": "supplement",
+    "coverage": 0.23156646040340334,
+    "path_m": 838.8444909747467,
+    "imbalance": 1.0913508696388552,
+    "jaccard": 0.7791609342107444,
+    "overlap": 0.9042163882259348,
+    "manifest_hash_matches_index": true,
+    "execution_available": true,
+    "per_uav_path_m": [
+      291.43826226681887,
+      280.362631296162,
+      267.04359741176575
+    ],
+    "contact_count": 0
+  },
+  {
+    "key": "C1-r2",
+    "group": "C1",
+    "run_id": "RUN-20260824T100002Z-3uav-smoke",
+    "runroot": "results/RUN-20260824T100002Z-3uav-smoke",
+    "included": false,
+    "role": "excluded_duration_incomplete",
+    "coverage": 0.22332584637353484,
+    "path_m": 951.4986194155599,
+    "imbalance": 1.1331895592924641,
+    "jaccard": 0.7700076087708376,
+    "overlap": 0.8976771537783005,
+    "manifest_hash_matches_index": null,
+    "execution_available": false,
+    "per_uav_path_m": [
+      298.29424481615797,
+      315.1804507767015,
+      338.02392382270045
+    ],
+    "contact_count": 0
+  },
+  {
+    "key": "C1-r3",
+    "group": "C1",
+    "run_id": "RUN-20260824T112459Z-3uav-smoke",
+    "runroot": "results/RUN-20260824T112459Z-3uav-smoke",
+    "included": true,
+    "role": "supplement",
+    "coverage": 0.22261185815434045,
+    "path_m": 668.1418617377624,
+    "imbalance": 1.090026837275733,
+    "jaccard": 0.7343424787133397,
+    "overlap": 0.8797273240415092,
+    "manifest_hash_matches_index": true,
+    "execution_available": true,
+    "per_uav_path_m": [
+      213.1001031428049,
+      222.7569271430734,
+      232.2848314518841
+    ],
+    "contact_count": 0
+  }
+]

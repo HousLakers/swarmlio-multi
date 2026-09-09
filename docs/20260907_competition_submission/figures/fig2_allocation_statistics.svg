@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="680" viewBox="0 0 1200 680" role="img" aria-labelledby="title desc">
+  <title id="title">三机仿真任务分配统计</title>
+  <desc id="desc">展示 A1、A2、A3 和 C1 的负载不均衡与 Jaccard 指标，数据来自 50 米乘 50 米三机 GT registration 仿真矩阵。</desc>
+  <style>
+    .t{font:700 25px Arial,'Noto Sans CJK SC',sans-serif;fill:#17324d}.h{font:700 18px Arial,'Noto Sans CJK SC',sans-serif;fill:#17324d}.s{font:14px Arial,'Noto Sans CJK SC',sans-serif;fill:#50677b}.axis{stroke:#5e7487;stroke-width:2}.grid{stroke:#d7e0e8;stroke-width:1}.imb{fill:#2e75b6}.jac{fill:#57a68e}.value{font:13px Arial,sans-serif;fill:#17324d}.legend{font:14px Arial,'Noto Sans CJK SC',sans-serif;fill:#29465f}
+  </style>
+  <rect width="1200" height="680" fill="#fbfdff"/>
+  <text x="600" y="42" text-anchor="middle" class="t">三机仿真中的任务均衡与区域一致性</text>
+  <text x="600" y="70" text-anchor="middle" class="s">racer_outdoor_50x50_v1 · 3 UAV · GT registration · 各配置 n=3</text>
+  <g transform="translate(90,120)">
+    <text x="250" y="0" text-anchor="middle" class="h">Load imbalance（越低越均衡）</text>
+    <line x1="0" y1="430" x2="500" y2="430" class="axis"/><line x1="0" y1="20" x2="0" y2="430" class="axis"/>
+    <g class="s"><text x="-12" y="434" text-anchor="end">0</text><text x="-12" y="334" text-anchor="end">1</text><text x="-12" y="234" text-anchor="end">2</text><text x="-12" y="134" text-anchor="end">3</text><text x="-12" y="34" text-anchor="end">4</text></g>
+    <path d="M0 330 H500 M0 230 H500 M0 130 H500 M0 30 H500" class="grid"/>
+    <rect x="55" y="189" width="70" height="241" class="imb"/><rect x="175" y="287" width="70" height="143" class="imb"/><rect x="295" y="219" width="70" height="211" class="imb"/><rect x="415" y="320" width="70" height="110" class="imb"/>
+    <g class="value"><text x="90" y="180" text-anchor="middle">2.41±1.03</text><text x="210" y="278" text-anchor="middle">1.43±0.20</text><text x="330" y="210" text-anchor="middle">2.11±1.30</text><text x="450" y="311" text-anchor="middle">1.10±0.02</text></g>
+    <g class="s"><text x="90" y="456" text-anchor="middle">A1</text><text x="210" y="456" text-anchor="middle">A2</text><text x="330" y="456" text-anchor="middle">A3</text><text x="450" y="456" text-anchor="middle">C1</text></g>
+  </g>
+  <g transform="translate(700,120)">
+    <text x="200" y="0" text-anchor="middle" class="h">Jaccard（越高越一致）</text>
+    <line x1="0" y1="430" x2="400" y2="430" class="axis"/><line x1="0" y1="20" x2="0" y2="430" class="axis"/>
+    <g class="s"><text x="-12" y="434" text-anchor="end">0.0</text><text x="-12" y="334" text-anchor="end">0.25</text><text x="-12" y="234" text-anchor="end">0.50</text><text x="-12" y="134" text-anchor="end">0.75</text><text x="-12" y="34" text-anchor="end">1.0</text></g>
+    <path d="M0 330 H400 M0 230 H400 M0 130 H400 M0 30 H400" class="grid"/>
+    <rect x="35" y="160" width="58" height="270" class="jac"/><rect x="135" y="133" width="58" height="297" class="jac"/><rect x="235" y="132" width="58" height="298" class="jac"/><rect x="335" y="126" width="58" height="304" class="jac"/>
+    <g class="value"><text x="64" y="151" text-anchor="middle">0.657±.128</text><text x="164" y="124" text-anchor="middle">0.741±.032</text><text x="264" y="123" text-anchor="middle">0.745±.011</text><text x="364" y="117" text-anchor="middle">0.761±.024</text></g>
+    <g class="s"><text x="64" y="456" text-anchor="middle">A1</text><text x="164" y="456" text-anchor="middle">A2</text><text x="264" y="456" text-anchor="middle">A3</text><text x="364" y="456" text-anchor="middle">C1</text></g>
+  </g>
+  <rect x="100" y="590" width="16" height="16" class="imb"/><text x="125" y="604" class="legend">负载不均衡</text><rect x="280" y="590" width="16" height="16" class="jac"/><text x="305" y="604" class="legend">Jaccard</text>
+  <text x="600" y="650" text-anchor="middle" class="s">图 2  当前已归档的三机仿真统计；不代表真实多机飞行或真实 Swarm-LIO 定位精度。</text>
+</svg>

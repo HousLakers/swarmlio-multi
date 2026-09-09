@@ -1,0 +1,578 @@
+{
+  "claims": [
+    {
+      "id": "A1.coverage.mean",
+      "metric": "A1.coverage.mean",
+      "value": 0.2053,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "A1.coverage.sd",
+      "metric": "A1.coverage.sd",
+      "value": 0.0249,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "A1.path_m.mean",
+      "metric": "A1.path_m.mean",
+      "value": 556.6883,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "A1.path_m.sd",
+      "metric": "A1.path_m.sd",
+      "value": 174.272,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "A1.imbalance.mean",
+      "metric": "A1.imbalance.mean",
+      "value": 2.4089,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "A1.imbalance.sd",
+      "metric": "A1.imbalance.sd",
+      "value": 1.0324,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "A1.jaccard.mean",
+      "metric": "A1.jaccard.mean",
+      "value": 0.6572,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "A1.jaccard.sd",
+      "metric": "A1.jaccard.sd",
+      "value": 0.1278,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "A1.overlap.mean",
+      "metric": "A1.overlap.mean",
+      "value": 0.9015,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "A1.overlap.sd",
+      "metric": "A1.overlap.sd",
+      "value": 0.0296,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "A2.coverage.mean",
+      "metric": "A2.coverage.mean",
+      "value": 0.2235,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "A2.coverage.sd",
+      "metric": "A2.coverage.sd",
+      "value": 0.0067,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "A2.path_m.mean",
+      "metric": "A2.path_m.mean",
+      "value": 795.9225,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "A2.path_m.sd",
+      "metric": "A2.path_m.sd",
+      "value": 87.791,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "A2.imbalance.mean",
+      "metric": "A2.imbalance.mean",
+      "value": 1.4249,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "A2.imbalance.sd",
+      "metric": "A2.imbalance.sd",
+      "value": 0.2011,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "A2.jaccard.mean",
+      "metric": "A2.jaccard.mean",
+      "value": 0.7414,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "A2.jaccard.sd",
+      "metric": "A2.jaccard.sd",
+      "value": 0.0318,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "A2.overlap.mean",
+      "metric": "A2.overlap.mean",
+      "value": 0.898,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "A2.overlap.sd",
+      "metric": "A2.overlap.sd",
+      "value": 0.0149,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "A3.coverage.mean",
+      "metric": "A3.coverage.mean",
+      "value": 0.2134,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "A3.coverage.sd",
+      "metric": "A3.coverage.sd",
+      "value": 0.0093,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "A3.path_m.mean",
+      "metric": "A3.path_m.mean",
+      "value": 709.0476,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "A3.path_m.sd",
+      "metric": "A3.path_m.sd",
+      "value": 108.9905,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "A3.imbalance.mean",
+      "metric": "A3.imbalance.mean",
+      "value": 2.1122,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "A3.imbalance.sd",
+      "metric": "A3.imbalance.sd",
+      "value": 1.2992,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "A3.jaccard.mean",
+      "metric": "A3.jaccard.mean",
+      "value": 0.7452,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "A3.jaccard.sd",
+      "metric": "A3.jaccard.sd",
+      "value": 0.0114,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "A3.overlap.mean",
+      "metric": "A3.overlap.mean",
+      "value": 0.8767,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "A3.overlap.sd",
+      "metric": "A3.overlap.sd",
+      "value": 0.0135,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "B1.coverage.mean",
+      "metric": "B1.coverage.mean",
+      "value": 0.2009,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "B1.coverage.sd",
+      "metric": "B1.coverage.sd",
+      "value": 0.019,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "B1.path_m.mean",
+      "metric": "B1.path_m.mean",
+      "value": 503.0029,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "B1.path_m.sd",
+      "metric": "B1.path_m.sd",
+      "value": 54.5564,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "B1.imbalance.mean",
+      "metric": "B1.imbalance.mean",
+      "value": 7.3572,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "B1.imbalance.sd",
+      "metric": "B1.imbalance.sd",
+      "value": 1.2845,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "B1.jaccard.mean",
+      "metric": "B1.jaccard.mean",
+      "value": 0.1407,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "B1.jaccard.sd",
+      "metric": "B1.jaccard.sd",
+      "value": 0.0365,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "B1.overlap.mean",
+      "metric": "B1.overlap.mean",
+      "value": 0.8925,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "B1.overlap.sd",
+      "metric": "B1.overlap.sd",
+      "value": 0.028,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "B2.coverage.mean",
+      "metric": "B2.coverage.mean",
+      "value": 0.2071,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "B2.coverage.sd",
+      "metric": "B2.coverage.sd",
+      "value": 0.0084,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "B2.path_m.mean",
+      "metric": "B2.path_m.mean",
+      "value": 561.8552,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "B2.path_m.sd",
+      "metric": "B2.path_m.sd",
+      "value": 33.8731,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "B2.imbalance.mean",
+      "metric": "B2.imbalance.mean",
+      "value": 9.077,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "B2.imbalance.sd",
+      "metric": "B2.imbalance.sd",
+      "value": 3.3791,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "B2.jaccard.mean",
+      "metric": "B2.jaccard.mean",
+      "value": 0.0799,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "B2.jaccard.sd",
+      "metric": "B2.jaccard.sd",
+      "value": 0.0089,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "B2.overlap.mean",
+      "metric": "B2.overlap.mean",
+      "value": 0.9108,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "B2.overlap.sd",
+      "metric": "B2.overlap.sd",
+      "value": 0.0077,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "B3.coverage.mean",
+      "metric": "B3.coverage.mean",
+      "value": 0.1854,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "B3.coverage.sd",
+      "metric": "B3.coverage.sd",
+      "value": 0.023,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "B3.path_m.mean",
+      "metric": "B3.path_m.mean",
+      "value": 426.9326,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "B3.path_m.sd",
+      "metric": "B3.path_m.sd",
+      "value": 71.9215,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "B3.imbalance.mean",
+      "metric": "B3.imbalance.mean",
+      "value": 6.4079,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "B3.imbalance.sd",
+      "metric": "B3.imbalance.sd",
+      "value": 2.6533,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "B3.jaccard.mean",
+      "metric": "B3.jaccard.mean",
+      "value": 0.2597,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "B3.jaccard.sd",
+      "metric": "B3.jaccard.sd",
+      "value": 0.1888,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "B3.overlap.mean",
+      "metric": "B3.overlap.mean",
+      "value": 0.897,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "B3.overlap.sd",
+      "metric": "B3.overlap.sd",
+      "value": 0.026,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "C1.coverage.mean",
+      "metric": "C1.coverage.mean",
+      "value": 0.2271,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "C1.coverage.sd",
+      "metric": "C1.coverage.sd",
+      "value": 0.0063,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "C1.path_m.mean",
+      "metric": "C1.path_m.mean",
+      "value": 753.4932,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "C1.path_m.sd",
+      "metric": "C1.path_m.sd",
+      "value": 120.705,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "C1.imbalance.mean",
+      "metric": "C1.imbalance.mean",
+      "value": 1.0907,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "C1.imbalance.sd",
+      "metric": "C1.imbalance.sd",
+      "value": 0.0009,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "C1.jaccard.mean",
+      "metric": "C1.jaccard.mean",
+      "value": 0.7568,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "C1.jaccard.sd",
+      "metric": "C1.jaccard.sd",
+      "value": 0.0317,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "C1.overlap.mean",
+      "metric": "C1.overlap.mean",
+      "value": 0.892,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "C1.overlap.sd",
+      "metric": "C1.overlap.sd",
+      "value": 0.0173,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 8"
+    },
+    {
+      "id": "R1.trajectory_samples",
+      "metric": "R1.trajectory_samples",
+      "value": 1267.0,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 11"
+    },
+    {
+      "id": "R1.elapsed_s",
+      "metric": "R1.elapsed_s",
+      "value": 126.6157,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 11"
+    },
+    {
+      "id": "R1.path_xy_m",
+      "metric": "R1.path_xy_m",
+      "value": 27.2955,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 11"
+    },
+    {
+      "id": "R1.coverage_final",
+      "metric": "R1.coverage_final",
+      "value": 0.990774,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 11"
+    },
+    {
+      "id": "R2.trajectory_samples",
+      "metric": "R2.trajectory_samples",
+      "value": 433.0,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 11"
+    },
+    {
+      "id": "R2.elapsed_s",
+      "metric": "R2.elapsed_s",
+      "value": 43.2143,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 11"
+    },
+    {
+      "id": "R2.path_xy_m",
+      "metric": "R2.path_xy_m",
+      "value": 34.6427,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 11"
+    },
+    {
+      "id": "R2.coverage_final",
+      "metric": "R2.coverage_final",
+      "value": 0.9288,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 11"
+    },
+    {
+      "id": "R3.trajectory_samples",
+      "metric": "R3.trajectory_samples",
+      "value": 843.0,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 11"
+    },
+    {
+      "id": "R3.elapsed_s",
+      "metric": "R3.elapsed_s",
+      "value": 84.2076,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 11"
+    },
+    {
+      "id": "R3.path_xy_m",
+      "metric": "R3.path_xy_m",
+      "value": 55.3374,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 11"
+    },
+    {
+      "id": "R3.coverage_final",
+      "metric": "R3.coverage_final",
+      "value": 0.98742,
+      "is_percent": false,
+      "source": "paper_draft_v2.md Table 11"
+    }
+  ]
+}
