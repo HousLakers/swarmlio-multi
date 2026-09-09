@@ -1,6 +1,33 @@
 # 参赛论文与答辩材料工作区
 
-本目录是截至 2026-09-07 的“可写、可追溯、不夸大”写作框架。它把赛题
+## 队友接手入口
+
+本目录对应 GitHub 分支 [`paper-materials-20260909`](https://github.com/HousLakers/swarmlio-multi/tree/paper-materials-20260909)，用于继续整理论文、图表、引用和证据材料。新接手人先读 [团队论文交接说明](TEAM_HANDOFF_论文进一步修改_20260909.md)，再读 [v2 交付索引](draft/REWRITE_V2_INDEX.md)。
+
+当前主稿是 [`draft/paper_draft_v2.md`](draft/paper_draft_v2.md)，Word 是由主稿派生的 [`draft/paper_draft_v2.docx`](draft/paper_draft_v2.docx)。不要把 Word 作为唯一编辑源；修改正文后运行 `draft/build_paper_docx.py` 重新生成 Word。
+
+当前状态：论文结构稿已完成，正文保持 `DRAFT_NOT_SUBMITTABLE`。三机 GT 注册仿真、报告级任务层丢包和单节点实机 baseline 已分层；实机 ATE、统一频率、2 s 重规划、30 W 功耗、室内六/十机、AirSim 闭环、三机实机成功及完整国产化证明仍为空位。所有缺失结果必须保留 `[待填-指标：单位；n=待补；场景=...；数据来源=...；run ID=待补]` 五字段格式。
+
+### 快速文件导航
+
+| 目的 | 文件 |
+|---|---|
+| 继续改正文 | [`draft/paper_draft_v2.md`](draft/paper_draft_v2.md) |
+| 查看 Word 成稿 | [`draft/paper_draft_v2.docx`](draft/paper_draft_v2.docx) |
+| 看论断是否有证据 | [`draft/claim_ledger_v2.md`](draft/claim_ledger_v2.md) |
+| 看赛题指标缺口 | [`evidence_matrix.md`](evidence_matrix.md) |
+| 看引用边界 | [`draft/citation_plan_v2.md`](draft/citation_plan_v2.md) |
+| 看 QA 与已知限制 | [`draft/qa_report_v2.md`](draft/qa_report_v2.md) |
+| 看图件说明 | [`figures/v2/README.md`](figures/v2/README.md) |
+| 看章节树和写作合同 | [`paper_writing_framework_v3.md`](paper_writing_framework_v3.md) |
+
+## 继续修改时的三条规则
+
+1. 数字先进入证据矩阵和论断台账，再同步正文、图表数据、图注和 Word；不能只改摘要或 Word。
+2. 图表只能使用真实数据。缺数据的位置保留空图位，不画推测曲线、伪造轨迹或成功柱状图。
+3. 新结果必须带精确 run ID、执行台账和 metrics，并区分仿真、报告级结果、单节点实机和 fleet 实机层级。
+
+本目录沿用 2026-09-07 建立的“可写、可追溯、不夸大”写作框架，并在 2026-09-09 增加团队接手说明。它把赛题
 `XH-202629` 的四类技术指标与已有仿真、单机实机和双机审计证据分开管理，
 不把缺失的 2026-09-06 18:32 双机数据补写成成功实验。
 

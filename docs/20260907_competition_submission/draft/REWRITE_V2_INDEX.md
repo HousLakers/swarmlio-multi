@@ -1,6 +1,6 @@
 # 论文重写 v2 交付索引
 
-状态：`READY_FOR_REVIEW`；正文：`DRAFT_NOT_SUBMITTABLE`。高级终端写作任务完成，未执行新实验或提交版本。
+状态：`READY_FOR_REVIEW`；正文：`DRAFT_NOT_SUBMITTABLE`。高级终端写作任务完成，未执行新实验或提交版本。队友接手先读 [团队论文交接说明](../TEAM_HANDOFF_论文进一步修改_20260909.md)。
 
 阅读顺序：[框架v3](../paper_writing_framework_v3.md) → [正文v2](paper_draft_v2.md) → [Word排版稿](paper_draft_v2.docx) → [论断台账](claim_ledger_v2.md) → [引用计划](citation_plan_v2.md) → [QA报告](qa_report_v2.md)。
 
